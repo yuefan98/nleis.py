@@ -1,0 +1,19 @@
+name: impedance
+channels:
+  - defaults
+dependencies:
+  - python=3
+  - pip
+
+  - pip:
+    - matplotlib
+    - jupyterlab 
+    - numpy
+    - altair
+    - pandas
+    - scipy
+    - SALib
+    - dqdm
+    - tabulate
+
+    
