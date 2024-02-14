@@ -20,7 +20,7 @@ def data_processing(f,Z1,Z2,max_f=10):
     Z2 = Z2 [mask1]
     return (f,Z1,f2,Z2,Z2_same_dim)
 
-def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, initial_guess, constants={},
+def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, edited_circuit, initial_guess, constants_1={},constants_2={},
                 bounds = None, opt='max',cost = 0.5,max_f=10,param_norm = True,positive = True,
                 **kwargs):
 
@@ -60,14 +60,18 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, initial_guess, constants
     opt : str, optional
         Default is max normalization. Other normalization will be supported
         in the future 
+    cost : float, default = 0.5
+        cost function: cost > 0.5 means more weight on EIS while cost < 0.5 means more weight on NLEIS
 
-    global_opt : bool, optional
-        If global optimization should be used (uses the basinhopping
-        algorithm). Defaults to False
     max_f: int
         The the maximum frequency of interest for NLEIS
-    global_opt : bool, optional
+        
+    positive : bool, optional
         Defaults to True for only positive nyquist plot
+        
+    param_norm : bool, optional
+         Defaults to True for better convergence
+    
 
     kwargs :
         Keyword arguments passed to scipy.optimize.curve_fit or
@@ -82,48 +86,52 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, initial_guess, constants
         one standard deviation error estimates for fit parameters
 
     """
+    ###  Todo fix the negtive loglikelihood
+    ####### removed for calculation efficiency
+    # if constants is not None:
+    #     constants_1 = {}
+    #     constants_2 = {}
+    #     # constants_1 = None
+    #     # constants_2 = None
+    #     for name in constants:
+    #         if name[3] != 'n':
+    #             constants_1[name]=constants[name]
+    #             constants_2[name[0:3]+'n'+name[3:]]=constants[name]
+    #         if name[3] == 'n':
+    #             # constants_1[name[0:3]+name[4:]]=constants[name]
+    #             num_params = check_and_eval(name[0:3]).num_params
+    #             if int(name[-1])<num_params:
+    #                 constants_1[name[0:3]+name[4:]]=constants[name]
+    #             constants_2[name]=constants[name]
+    # else:
+    #     constants_1 = {}
+    #     constants_2 = {}
+        # constants_1 = None
+        # constants_2 = None
+    ################
 
-    if constants is not None:
-        constants_1 = {}
-        constants_2 = {}
-        # constants_1 = None
-        # constants_2 = None
-        for name in constants:
-            if name[3] != 'n':
-                constants_1[name]=constants[name]
-                constants_2[name[0:3]+'n'+name[3:]]=constants[name]
-            if name[3] == 'n':
-                # constants_1[name[0:3]+name[4:]]=constants[name]
-                num_params = check_and_eval(name[0:3]).num_params
-                if int(name[-1])<num_params:
-                    constants_1[name[0:3]+name[4:]]=constants[name]
-                constants_2[name]=constants[name]
-    else:
-        constants_1 = {}
-        constants_2 = {}
-        # constants_1 = None
-        # constants_2 = None
         
     ##    # set upper and lower bounds on a per-element basis
 
     if bounds is None:
-        edit_circuit = ''
-        i=0
-        while i < len(circuit_1):
-            if circuit_1[i] == 'T' :
-                edit_circuit += circuit_1[i:i+3]+'n'
-                i+=3
-            elif circuit_1[i:i+2]=='RC':
-                edit_circuit += circuit_1[i:i+3]+'n'
-                i+=3
-            else:
-                edit_circuit += circuit_1[i]
-                i+=1
-        bounds = set_default_bounds(edit_circuit, constants=constants_2)
+        ###
+        # edit_circuit = ''
+        # i=0
+        # while i < len(circuit_1):
+        #     if circuit_1[i] == 'T' :
+        #         edit_circuit += circuit_1[i:i+3]+'n'
+        #         i+=3
+        #     elif circuit_1[i:i+2]=='RC':
+        #         edit_circuit += circuit_1[i:i+3]+'n'
+        #         i+=3
+        #     else:
+        #         edit_circuit += circuit_1[i]
+        #         i+=1
+        ### the edited_circuit has been replaced and calcued from the EISandNLEIS class
+        bounds = set_default_bounds(edited_circuit, constants=constants_2)
         ub = np.ones(len(bounds[1]))
     else:
         if param_norm:
-            
             ub = bounds[1]
             bounds = bounds/ub
         else:
@@ -173,9 +181,10 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, initial_guess, constants
 
         return popt*ub, perror
     if opt == 'neg':
+        ### This method does not provides converge solution at current development
         bounds = tuple(tuple((bounds[0][i], bounds[1][i])) for i in range(len(bounds[0])))
 
-        res = minimize(warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f), x0=initial_guess,bounds=bounds,**kwargs)
+        res = minimize(warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f,cost = cost), x0=initial_guess,bounds=bounds, **kwargs)
         
         return (res.x*ub,None)
         
@@ -201,7 +210,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, initial_guess, constants
     # return popt*ub, perror
     
 
-def warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f=10):
+def warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f=10,cost=0.5):
     ''' wraps function for negtive log likelihood optimization'''
     
     def warppedNeg_log_likelihood(parameters):
@@ -230,9 +239,13 @@ def warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,co
         mask = np.array(frequencies)<max_f
         f2 = frequencies[mask]
         x1,x2 = wrappedImpedance(circuit_1, constants_1,circuit_2,constants_2,f1,f2,parameters*ub)
-        log1 = np.log(sum((Z1-x1)**2))
-        log2 = np.log(sum((Z2-x2)**2))
-        return(log1+log2)
+        # Z1max = max(np.abs(Z1))
+        # Z2max = max(np.abs(Z2))
+        # log1 = np.log(sum(((Z1.real-x1.real)/Z1max)**2))+np.log(sum(((Z1.imag-x1.imag)/Z1max)**2))
+        # log2 = np.log(sum(((Z2.real-x2.real)/Z2max)**2))+np.log(sum(((Z2.imag-x2.imag)/Z2max)**2))
+        log1 = np.log(sum(((Z1-x1))**2))
+        log2 = np.log(sum(((Z2-x2))**2))
+        return(cost*log1+(1-cost)*log2)
     return warppedNeg_log_likelihood
         
         
@@ -346,7 +359,7 @@ def individual_parameters(circuit,parameters,constants_1,constants_2):
         
         raw_elem = get_element_from_name(elem)
         elem_number_1 = check_and_eval(raw_elem).num_params
-        if elem[0]=='T' or elem[0:2] =='RC' :
+        if elem[0]=='T' or elem[0:2] =='RC' : ### this might be improvable, but depends on how we want to define the name
             elem_number_2 = check_and_eval(raw_elem+'n').num_params
         else: 
             elem_number_2 = elem_number_1

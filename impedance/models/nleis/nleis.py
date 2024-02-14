@@ -70,38 +70,87 @@ class EISandNLEIS:
         self.initial_guess = list(initial_guess)
         self.circuit_1 = circuit_1
         self.circuit_2 = circuit_2
+        elements_1 = extract_circuit_elements(circuit_1)
+        elements_2 = extract_circuit_elements(circuit_2)
+        input_elements = elements_1 + elements_2
                      
+             
         if constants is not None:
             self.constants = constants
             self.constants_1 = {}
             self.constants_2 = {}
+            ## New code for constant separatation
+            ## in the current development the differentiation between linear and nonlinear is separated by 'n'
+            ## using get_element_from_name to get the raw element and adding n to the end
             for name in self.constants:
-                if name[3] != 'n':
+                
+                raw_elem = get_element_from_name(name)
+                raw_circuit_elem = extract_circuit_elements(name)[0]
+                if raw_circuit_elem not in input_elements:
+                    raise ValueError(f'{raw_elem} not in ' +
+                         f'input elements ({input_elements})')
+                    
+                if raw_elem[-1] != 'n':
+                    num_params = check_and_eval(raw_elem).num_params
+                    len_elem = len(raw_elem)
                     self.constants_1[name]=self.constants[name]
-                    self.constants_2[name[0:3]+'n'+name[3:]]=self.constants[name]
-                if name[3] == 'n':
-                    num_params = check_and_eval(name[0:3]).num_params
+                    nl_elem = name[0:len_elem]+'n'+name[len_elem:]
+                    raw_nl_elem = get_element_from_name(nl_elem)
+                    if raw_nl_elem in circuit_elements.keys():
+                        self.constants_2[nl_elem]=self.constants[name]
+                    else:
+                        self.constants_2[name]=self.constants[name]
+
+                if raw_elem[-1] == 'n':
+                    num_params = check_and_eval(raw_elem[0:-1]).num_params
+                    len_elem = len(raw_elem[0:-1])
                     if int(name[-1])<num_params:
-                        self.constants_1[name[0:3]+name[4:]]=self.constants[name]
+                        self.constants_1[name[0:len_elem]+name[len_elem+1:]]=self.constants[name]
                     self.constants_2[name]=self.constants[name]
                     
-
+            #####################
+            ### old code
+            # for name in self.constants:
+            #     if name[3] != 'n':
+            #         self.constants_1[name]=self.constants[name]
+            #         self.constants_2[name[0:3]+'n'+name[3:]]=self.constants[name]
+            #     if name[3] == 'n':
+            #         num_params = check_and_eval(name[0:3]).num_params
+            #         if int(name[-1])<num_params:
+            #             self.constants_1[name[0:3]+name[4:]]=self.constants[name]
+            #         self.constants_2[name]=self.constants[name]
         else:
             self.constants = {}
             self.constants_1 = {}
             self.constants_2 = {}
+        ### new code for circuit length calculation using circuit element
+        ### producing edited circuit 
+        ### i.e. circuit_1 = L0-R0-TDP0-TDS1; circuit_2 = TDPn0-TDSn1; edited_circuit = L0-R0-TDPn0-TDSn1
+                    
+        edited_circuit = ''
+        for elem in elements_1:
+            nl_elem = elem[0:-1]+'n'+elem[-1]
+            if nl_elem in elements_2:
+                edited_circuit += '-'+ nl_elem
+            else:
+                edited_circuit += '-'+ elem
+        self.edited_circuit = edited_circuit[1:]
+        circuit_len = calculateCircuitLength(self.edited_circuit)      
+                
+                
+        ## old code
+        # count = 0
+        # subtract = 0
+        # for i in range(len(self.circuit_1)):
+        #     if self.circuit_1[i]=='T' or self.circuit_1[i:i+2]=='RC' :
+        #         count+=1
+        #     if self.circuit_1[i]=='O':
+        #         subtract+=1
             
-        count = 0
-        subtract = 0
-        for i in range(len(self.circuit_1)):
-            if self.circuit_1[i]=='T' or self.circuit_1[i:i+2]=='RC' :
-                count+=1
-            if self.circuit_1[i]=='O':
-                subtract+=1
-            
-        circuit_len = calculateCircuitLength(self.circuit_1)+count*2-subtract
+        # circuit_len = calculateCircuitLength(self.circuit_1)+count*2-subtract
 
-        ## to be fixed after finish the naming convention
+
+        ## to be fixed after finish the naming convention fixed 
         if len(self.initial_guess) + len(self.constants) != circuit_len:
             raise ValueError('The number of initial guesses ' +
                              f'({len(self.initial_guess)}) + ' +
@@ -115,12 +164,7 @@ class EISandNLEIS:
         self.parameters_ = None
         self.conf_ = None
 
-
-
-
         self.p1, self.p2 = individual_parameters(self.circuit_1,self.initial_guess,self.constants_1,self.constants_2)
-
-
 
     def __eq__(self, other):
         if self.__class__ == other.__class__:
@@ -180,10 +224,10 @@ class EISandNLEIS:
 
         if self.initial_guess != []:
             parameters, conf = simul_fit(frequencies, Z1,Z2,
-                                           self.circuit_1,self.circuit_2, self.initial_guess,
-                                           constants=self.constants,
+                                           self.circuit_1,self.circuit_2,self.edited_circuit, self.initial_guess,
+                                           constants_1=self.constants_1,constants_2=self.constants_2,
                                            bounds=bounds,
-                                           opt=opt,cost = cost,
+                                           opt=opt,cost = cost,max_f = max_f,
                                            **kwargs)
             self.parameters_ = list(parameters)
             if conf is not None:
@@ -234,13 +278,9 @@ class EISandNLEIS:
         f1 =frequencies
         mask = np.array(frequencies)<max_f
         f2 = frequencies[mask]
-        
-        
-
 
         if self._is_fit() and not use_initial:
-            x1,x2 = wrappedImpedance(self.circuit_1, self.constants_1,self.circuit_2,self.constants_2,f1,f2,self.parameters_)
-            
+            x1,x2 = wrappedImpedance(self.circuit_1, self.constants_1,self.circuit_2,self.constants_2,f1,f2,self.parameters_)   
             return x1,x2
         else:
             warnings.warn("Simulating circuit based on initial parameters")
@@ -372,15 +412,17 @@ class EISandNLEIS:
                 ax[0] = plot_nyquist(Z1_data, ls='', marker='s', ax=ax[0], **kwargs)
             if Z2_data is not None:
                 ax[1] = plot_nyquist(Z2_data, units='Ohms/A', ls='', marker='s', ax=ax[1], **kwargs)
-            if self._is_fit():
-                if f_data is not None:
-                    f_pred = f_data
-                else:
-                    f_pred = np.logspace(5, -3)
-                    
-                Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
-                ax[0] = plot_nyquist(Z1_fit, ls='-', marker='', ax=ax[0], **kwargs)
-                ax[1] = plot_nyquist(Z2_fit,units='Ohms/A', ls='-', marker='', ax=ax[1], **kwargs)
+            ## we don't need the if else statement if we want to enable plot without fit 
+            # if self._is_fit():
+            if f_data is not None:
+                f_pred = f_data
+            else:
+                f_pred = np.logspace(5, -3)
+                
+            Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
+            ax[0] = plot_nyquist(Z1_fit, ls='-', marker='', ax=ax[0], **kwargs)
+            ax[1] = plot_nyquist(Z2_fit,units='Ohms/A', ls='-', marker='', ax=ax[1], **kwargs)
+                
             ax[0].legend(['data','fit'])
             ax[1].legend(['data','fit'])
             return ax
@@ -407,16 +449,18 @@ class EISandNLEIS:
                 f2 = f_data[np.array(f_data)<max_f]
                 ax[:,1] = plot_bode(f2, Z2_data,units='Ohms/A', ls='', marker='s',
                                axes=ax[:,1], **kwargs)
+            ## we don't need the if else statement if we want to enable plot without fit 
 
-            if self._is_fit():
-                Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
-                f1 = f_data
-                f2 = f_data[np.array(f_data)<max_f]
+            # if self._is_fit():
+            Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
+            f1 = f_data
+            f2 = f_data[np.array(f_data)<max_f]
 
-                ax[:,0] = plot_bode(f1, Z1_fit, ls='-', marker='o',
-                               axes=ax[:,0], **kwargs)
-                ax[:,1] = plot_bode(f2, Z2_fit,units='Ohms/A', ls='-', marker='o',
-                               axes=ax[:,1], **kwargs)
+            ax[:,0] = plot_bode(f1, Z1_fit, ls='-', marker='o',
+                           axes=ax[:,0], **kwargs)
+            ax[:,1] = plot_bode(f2, Z2_fit,units='Ohms/A', ls='-', marker='o',
+                           axes=ax[:,1], **kwargs)
+
             ax[0,0].set_ylabel(r'$|Z_{1}(\omega)|$ ' +
                       '$[{}]$'.format('Ohms'), fontsize=20)
             ax[1,0].set_ylabel(r'$-\phi_{Z_{1}}(\omega)$ ' + r'$[^o]$', fontsize=20)
@@ -436,24 +480,24 @@ class EISandNLEIS:
             if Z1_data is not None and Z2_data is not None and f_data is not None:
                 plot_dict_1['data'] = {'f': f_data, 'Z': Z1_data}
                 plot_dict_2['data'] = {'f': f_data[np.array(f_data)<max_f], 'Z': Z2_data}
+            ## we don't need the if else statement if we want to enable plot without fit 
+            # if self._is_fit():
+            if f_data is not None:
+                
+                f_pred = f_data
+                
+            else:
+               
+                f_pred = np.logspace(5, -3)
 
-            if self._is_fit():
-                if f_data is not None:
-                    
-                    f_pred = f_data
-                    
-                else:
-                   
-                    f_pred = np.logspace(5, -3)
+            if self.name is not None:
+                name = self.name
+            else:
+                name = 'fit'
+            Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
 
-                if self.name is not None:
-                    name = self.name
-                else:
-                    name = 'fit'
-                Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
-
-                plot_dict_1[name] = {'f': f_pred, 'Z': Z1_fit, 'fmt': '-'}
-                plot_dict_2[name] = {'f': f_pred[np.array(f_pred)<max_f], 'Z': Z2_fit, 'fmt': '-'}
+            plot_dict_1[name] = {'f': f_pred, 'Z': Z1_fit, 'fmt': '-'}
+            plot_dict_2[name] = {'f': f_pred[np.array(f_pred)<max_f], 'Z': Z2_fit, 'fmt': '-'}
             
 
             chart1 = plot_altair(plot_dict_1,units = 'Ω', **kwargs)
