@@ -360,7 +360,9 @@ def individual_parameters(circuit,parameters,constants_1,constants_2):
         raw_elem = get_element_from_name(elem)
         elem_number_1 = check_and_eval(raw_elem).num_params
         if elem[0]=='T' or elem[0:2] =='RC' : ### this might be improvable, but depends on how we want to define the name
+            ## check for nonlinear element
             elem_number_2 = check_and_eval(raw_elem+'n').num_params
+            
         else: 
             elem_number_2 = elem_number_1
         
@@ -370,13 +372,11 @@ def individual_parameters(circuit,parameters,constants_1,constants_2):
                     current_elem_1 = elem + '_{}'.format(j)
                 else:
                     current_elem_1 = None
-                    
-                current_elem_2 = elem[0:3]+'n'+elem[3:] + '_{}'.format(j)
+                len_elem = len(raw_elem)    
+                current_elem_2 = elem[0:len_elem]+'n'+elem[len_elem:] + '_{}'.format(j)
             else:
                 current_elem_1 = elem
                 current_elem_2 = elem
-            
-    
             if current_elem_1 in constants_1.keys()  :
                 continue
                 # p1.append(constants_1[current_elem_1])
@@ -385,13 +385,15 @@ def individual_parameters(circuit,parameters,constants_1,constants_2):
                 continue
                 # p2.append(constants_2[current_elem_2])
             else:
-                if elem_number_1 ==1:
-                     p1.append(parameters[index])
+                if elem_number_1 ==1:    
+                    p1.append(parameters[index])
+                    
                 elif elem_number_1>1 and j<elem_number_1: 
                     p1.append(parameters[index])
                     p2.append(parameters[index])
                 else:
                     p2.append(parameters[index])
+                
                 index += 1
     # for elem in elements_1:
         

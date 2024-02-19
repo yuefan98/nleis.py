@@ -72,6 +72,11 @@ class EISandNLEIS:
         self.circuit_2 = circuit_2
         elements_1 = extract_circuit_elements(circuit_1)
         elements_2 = extract_circuit_elements(circuit_2)
+        for element in elements_2:
+            if element.replace('n', '') not in elements_1 or 'n' not in element:
+                raise TypeError('The pairing of linear and nonlinear elements must be presented correctly for simultaneous fitting.'+ ' Double check the EIS circuit: ' + f'{circuit_1}' + ' and the NLEIS circuit: '+ f'{circuit_2}')
+                
+            
         input_elements = elements_1 + elements_2
                      
              
@@ -85,15 +90,22 @@ class EISandNLEIS:
             for name in self.constants:
                 
                 raw_elem = get_element_from_name(name)
-                raw_circuit_elem = extract_circuit_elements(name)[0]
+                raw_circuit_elem = name.split('_')[0]
+                parm_num = int(name.split('_')[-1])
+                
                 if raw_circuit_elem not in input_elements:
                     raise ValueError(f'{raw_elem} not in ' +
                          f'input elements ({input_elements})')
-                    
+                raw_num_params = check_and_eval(raw_elem).num_params
+
                 if raw_elem[-1] != 'n':
-                    num_params = check_and_eval(raw_elem).num_params
-                    len_elem = len(raw_elem)
+                    
+                    if parm_num>=raw_num_params:
+                        raise ValueError(f'{name} is out of the range of the maximum allowed ' +
+                                         f'number of parameters ({raw_num_params})')
+
                     self.constants_1[name]=self.constants[name]
+                    len_elem = len(raw_elem)
                     nl_elem = name[0:len_elem]+'n'+name[len_elem:]
                     raw_nl_elem = get_element_from_name(nl_elem)
                     if raw_nl_elem in circuit_elements.keys():
@@ -102,11 +114,17 @@ class EISandNLEIS:
                         self.constants_2[name]=self.constants[name]
 
                 if raw_elem[-1] == 'n':
+                    
+                    if parm_num>=raw_num_params:
+                        raise ValueError(f'{name} is out of the range of the maximum allowed ' +
+                                         f'number of parameters ({raw_num_params})')
+                    
                     num_params = check_and_eval(raw_elem[0:-1]).num_params
                     len_elem = len(raw_elem[0:-1])
-                    if int(name[-1])<num_params:
+                    if parm_num<num_params:
                         self.constants_1[name[0:len_elem]+name[len_elem+1:]]=self.constants[name]
                     self.constants_2[name]=self.constants[name]
+
                     
             #####################
             ### old code
