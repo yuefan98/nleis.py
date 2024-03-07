@@ -108,7 +108,7 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
                                     nice=False, padding=5),sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color=alt.Color('kind:N', legend=alt.Legend(title='Legend'))
-        ).add_params(
+        ).add_selection(
             nearest
         ).properties(
             height=size,
@@ -122,7 +122,7 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
                   scale=alt.Scale(type='log', nice=False),sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color='kind:N'
-        ).add_params(
+        ).add_selection(
             nearest
         ).properties(
             width=size,
