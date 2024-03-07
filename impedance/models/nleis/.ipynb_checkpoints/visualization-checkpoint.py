@@ -4,74 +4,9 @@ import numpy as np
 import pandas as pd
 from matplotlib import ticker
 
+### These are all slightly modified versin of the visualization code. Can be seamlessly inegrated into impedance.py in the future.
 
-def plot_nyquist(Z, scale=1, units='Ohms', fmt='.-', ax=None, labelsize=20,
-                 ticksize=14, **kwargs):
-    """ Plots impedance as a Nyquist plot using matplotlib
-
-        Parameters
-        ----------
-        Z: np.array of complex numbers
-            impedance data
-        scale: float
-            the scale for the axes
-        units: string
-            units for :math:`Z(\\omega)`
-        fmt: string
-            format string passed to matplotlib (e.g. '.-' or 'o')
-        ax: matplotlib.axes.Axes (optional)
-            axes on which to plot the nyquist plot
-
-        Other Parameters
-        ----------------
-        **kwargs : `matplotlib.pyplot.Line2D` properties, optional
-            Used to specify line properties like linewidth, line color,
-            marker color, and line labels.
-
-        Returns
-        -------
-        ax: matplotlib.axes.Axes
-    """
-    Z = np.array(Z, dtype=complex)
-
-    if ax is None:
-        _, ax = plt.subplots()
-
-    ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
-
-    # Make the axes square
-    ax.set_aspect(aspect=1)
-
-    # Set the labels to -imaginary vs real
-    ax.set_xlabel(r'$Z^{\prime}(\omega)$ ' +
-                  '$[{}]$'.format(units), fontsize=labelsize)
-    ax.set_ylabel(r'$-Z^{\prime\prime}(\omega)$ ' +
-                  '$[{}]$'.format(units), fontsize=labelsize)
-
-    # Make the tick labels larger
-    ax.tick_params(axis='both', which='major', labelsize=ticksize)
-
-    # Change the number of labels on each axis to five
-    ax.locator_params(axis='x', nbins=5, tight=True)
-    ax.locator_params(axis='y', nbins=5, tight=True)
-
-    # Add a light grid
-    ax.grid(visible=True, which='major', axis='both', alpha=.5)
-
-    # Change axis units to 10**log10(scale) and resize the offset text
-    limits = -np.log10(scale)
-    if limits != 0:
-        ax.ticklabel_format(style='sci', axis='both',
-                            scilimits=(limits, limits))
-    y_offset = ax.yaxis.get_offset_text()
-    y_offset.set_size(18)
-    t = ax.xaxis.get_offset_text()
-    t.set_size(18)
-
-    return ax
-
-
-def plot_altair(data_dict,units = 'Ω', size=400, background='#FFFFFF'):
+def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
     """ Plots impedance as an interactive Nyquist/Bode plot using altair
 
         Parameters
@@ -115,17 +50,20 @@ def plot_altair(data_dict,units = 'Ω', size=400, background='#FFFFFF'):
 
     nearest = alt.selection_single(on='mouseover', nearest=True,
                                    empty='none', fields=['f'])
+    ## potential future improvement
+    # nearest = alt.selection_point(on='mouseover', nearest=True,
+    #                                empty='none', fields=['f'])
 
     fmts = Z_df['fmt'].unique()
     nyquists, bode_mags, bode_phss = [], [], []
     if '-' in fmts:
         df = Z_df.groupby('fmt').get_group('-')
-
+        ##### These are changed to introduce harmonics and units
         nyquist = alt.Chart(df).mark_line().encode(
-            x=alt.X('z_real:Q', axis=alt.Axis(title="Z' ["+units+"]"),
+            x=alt.X('z_real:Q', axis=alt.Axis(title="Z{}' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_x, max_x],
                                     nice=False, padding=5),sort=None),
-            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(title="-Z'' ["+units+"]"),
+            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(title="-Z{}'' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_y, max_y],
                                     nice=False, padding=5),sort=None),
             color='kind:N'
@@ -149,7 +87,7 @@ def plot_altair(data_dict,units = 'Ω', size=400, background='#FFFFFF'):
         )
 
         bode_mag = bode.encode(y=alt.Y('mag:Q',
-                                       axis=alt.Axis(title="|Z| ["+units+"]"),sort=None))
+                                       axis=alt.Axis(title="|Z{}|' [{}]".format(k, units)),sort=None))
         bode_phs = bode.encode(y=alt.Y('neg_phase:Q',
                                        axis=alt.Axis(title="-ϕ [°]"),sort=None))
 
@@ -162,15 +100,15 @@ def plot_altair(data_dict,units = 'Ω', size=400, background='#FFFFFF'):
         df = Z_df.groupby('fmt').get_group('o')
 
         nyquist = alt.Chart(df).mark_circle().encode(
-            x=alt.X('z_real:Q', axis=alt.Axis(title="Z' ["+units+"]"),
+            x=alt.X('z_real:Q', axis=alt.Axis(title="Z{}' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_x, max_x],
                                     nice=False, padding=5),sort=None),
-            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(title="-Z'' ["+units+"]"),
+            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(title="-Z{}'' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_y, max_y],
                                     nice=False, padding=5),sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color=alt.Color('kind:N', legend=alt.Legend(title='Legend'))
-        ).add_selection(
+        ).add_params(
             nearest
         ).properties(
             height=size,
@@ -184,7 +122,7 @@ def plot_altair(data_dict,units = 'Ω', size=400, background='#FFFFFF'):
                   scale=alt.Scale(type='log', nice=False),sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color='kind:N'
-        ).add_selection(
+        ).add_params(
             nearest
         ).properties(
             width=size,
@@ -195,7 +133,7 @@ def plot_altair(data_dict,units = 'Ω', size=400, background='#FFFFFF'):
         ).interactive()
 
         bode_mag = bode.encode(y=alt.Y('mag:Q',
-                                       axis=alt.Axis(title="|Z| ["+units+"]"),sort=None))
+                                       axis=alt.Axis(title="|Z{}|' [{}]".format(k, units)),sort=None))
         bode_phs = bode.encode(y=alt.Y('neg_phase:Q',
                                        axis=alt.Axis(title="-ϕ [°]"),sort=None))
 
@@ -270,14 +208,11 @@ def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
     y_offset.set_size(18)
     t = ax.xaxis.get_offset_text()
     t.set_size(18)
-    
-        # Change axis units to 10**log10(scale) and resize the offset text
-    
 
 
     return ax
 
-def plot_second(ax, Z, scale=1, units='Ohms', fmt='.-', **kwargs):
+def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
     """ Plots impedance as a Nyquist plot using matplotlib
 
         Parameters

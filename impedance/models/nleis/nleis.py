@@ -1,26 +1,18 @@
-
 from .nleis_fitting import simul_fit,wrappedImpedance,individual_parameters
 from .nleis_elements_pair import*
 from impedance.models.circuits.fitting import check_and_eval
 from impedance.models.circuits.elements import circuit_elements,get_element_from_name
 from impedance.models.circuits.circuits import BaseCircuit
-from .fitting import circuit_fit, buildCircuit, calculateCircuitLength
-from .fitting import set_default_bounds,buildCircuit,calculateCircuitLength,extract_circuit_elements
-from impedance.models.circuits.fitting import check_and_eval,rmse
+from .fitting import circuit_fit, buildCircuit,calculateCircuitLength,extract_circuit_elements
 
-from impedance.visualization import plot_bode, plot_nyquist
-from .visualization import plot_altair
-import json
-import matplotlib.pyplot as plt
-import numpy as np
-import warnings
-
-
+from impedance.visualization import plot_bode
+from .visualization import plot_altair, plot_first, plot_second
 
 import json
 import matplotlib.pyplot as plt
 import numpy as np
 import warnings
+
 
 ### ToDO: add SSO method and SO method 
 class EISandNLEIS:
@@ -51,7 +43,7 @@ class EISandNLEIS:
         -----
         A custom circuit is defined as a string comprised of elements in series
         (separated by a `-`) and elements in parallel (grouped as (x,y)) for EIS.
-        For NLEIS, the circuit should be grouped by t(cathode,anode)
+        For NLEIS, the circuit should be grouped by d(cathode,anode)
         Each element can be appended with an integer (e.g. R0) or an underscore
         and an integer (e.g. CPE_1) to make keeping track of multiple elements
         of the same type easier.
@@ -59,7 +51,7 @@ class EISandNLEIS:
         Example:
             A two electrode cell with sperical porous cathode and anode, resistor, and inductor is represents as,
             EIS: circuit_1 = 'L0-R0-TDS0-TDS1'
-            NLEIS: circuit_2 = 't(TDSn0-TDSn1)'
+            NLEIS: circuit_2 = 'd(TDSn0-TDSn1)'
 
         """
         for i in initial_guess:
@@ -73,12 +65,11 @@ class EISandNLEIS:
         elements_1 = extract_circuit_elements(circuit_1)
         elements_2 = extract_circuit_elements(circuit_2)
         for element in elements_2:
-            if element.replace('n', '') not in elements_1 or 'n' not in element:
-                raise TypeError('The pairing of linear and nonlinear elements must be presented correctly for simultaneous fitting.'+ ' Double check the EIS circuit: ' + f'{circuit_1}' + ' and the NLEIS circuit: '+ f'{circuit_2}')
+            if element.replace('n', '') not in elements_1 or ('n' not in element and element != ''):
+                raise TypeError('The pairing of linear and nonlinear elements must be presented correctly for simultaneous fitting.'+ ' Double check the EIS circuit: ' + f'{circuit_1}' + ' and the NLEIS circuit: '+ f'{circuit_2}' +'. The parsed elements are '+f'{elements_1}'+' for circuit_1, and ' + f'{elements_2}'+ ' for circuit_2.')
                 
             
         input_elements = elements_1 + elements_2
-                     
              
         if constants is not None:
             self.constants = constants
@@ -91,52 +82,44 @@ class EISandNLEIS:
                 
                 raw_elem = get_element_from_name(name)
                 raw_circuit_elem = name.split('_')[0]
-                parm_num = int(name.split('_')[-1])
                 
                 if raw_circuit_elem not in input_elements:
                     raise ValueError(f'{raw_elem} not in ' +
                          f'input elements ({input_elements})')
                 raw_num_params = check_and_eval(raw_elem).num_params
-
-                if raw_elem[-1] != 'n':
-                    
-                    if parm_num>=raw_num_params:
-                        raise ValueError(f'{name} is out of the range of the maximum allowed ' +
-                                         f'number of parameters ({raw_num_params})')
-
+                if raw_num_params<=1:
+                    ## currently there is no single parameter nonlinear element,
+                    ## so this can work, but might be changed in the future
                     self.constants_1[name]=self.constants[name]
-                    len_elem = len(raw_elem)
-                    nl_elem = name[0:len_elem]+'n'+name[len_elem:]
-                    raw_nl_elem = get_element_from_name(nl_elem)
-                    if raw_nl_elem in circuit_elements.keys():
-                        self.constants_2[nl_elem]=self.constants[name]
-                    else:
+                else:
+                    param_num = int(name.split('_')[-1])
+                    if raw_elem[-1] != 'n':
+                        
+                        if param_num>=raw_num_params:
+                            raise ValueError(f'{name} is out of the range of the maximum allowed ' +
+                                             f'number of parameters ({raw_num_params})')
+    
+                        self.constants_1[name]=self.constants[name]
+                        len_elem = len(raw_elem)
+                        nl_elem = name[0:len_elem]+'n'+name[len_elem:]
+                        raw_nl_elem = get_element_from_name(nl_elem)
+                        if raw_nl_elem in circuit_elements.keys():
+                            self.constants_2[nl_elem]=self.constants[name]
+                        else:
+                            self.constants_2[name]=self.constants[name]
+    
+                    if raw_elem[-1] == 'n':
+                        
+                        if param_num>=raw_num_params:
+                            raise ValueError(f'{name} is out of the range of the maximum allowed ' +
+                                             f'number of parameters ({raw_num_params})')
+                        
+                        num_params = check_and_eval(raw_elem[0:-1]).num_params
+                        len_elem = len(raw_elem[0:-1])
+                        if param_num<num_params:
+                            self.constants_1[name[0:len_elem]+name[len_elem+1:]]=self.constants[name]
                         self.constants_2[name]=self.constants[name]
 
-                if raw_elem[-1] == 'n':
-                    
-                    if parm_num>=raw_num_params:
-                        raise ValueError(f'{name} is out of the range of the maximum allowed ' +
-                                         f'number of parameters ({raw_num_params})')
-                    
-                    num_params = check_and_eval(raw_elem[0:-1]).num_params
-                    len_elem = len(raw_elem[0:-1])
-                    if parm_num<num_params:
-                        self.constants_1[name[0:len_elem]+name[len_elem+1:]]=self.constants[name]
-                    self.constants_2[name]=self.constants[name]
-
-                    
-            #####################
-            ### old code
-            # for name in self.constants:
-            #     if name[3] != 'n':
-            #         self.constants_1[name]=self.constants[name]
-            #         self.constants_2[name[0:3]+'n'+name[3:]]=self.constants[name]
-            #     if name[3] == 'n':
-            #         num_params = check_and_eval(name[0:3]).num_params
-            #         if int(name[-1])<num_params:
-            #             self.constants_1[name[0:3]+name[4:]]=self.constants[name]
-            #         self.constants_2[name]=self.constants[name]
         else:
             self.constants = {}
             self.constants_1 = {}
@@ -144,31 +127,22 @@ class EISandNLEIS:
         ### new code for circuit length calculation using circuit element
         ### producing edited circuit 
         ### i.e. circuit_1 = L0-R0-TDP0-TDS1; circuit_2 = TDPn0-TDSn1; edited_circuit = L0-R0-TDPn0-TDSn1
-                    
-        edited_circuit = ''
-        for elem in elements_1:
-            nl_elem = elem[0:-1]+'n'+elem[-1]
-            if nl_elem in elements_2:
-                edited_circuit += '-'+ nl_elem
-            else:
-                edited_circuit += '-'+ elem
-        self.edited_circuit = edited_circuit[1:]
-        circuit_len = calculateCircuitLength(self.edited_circuit)      
-                
-                
-        ## old code
-        # count = 0
-        # subtract = 0
-        # for i in range(len(self.circuit_1)):
-        #     if self.circuit_1[i]=='T' or self.circuit_1[i:i+2]=='RC' :
-        #         count+=1
-        #     if self.circuit_1[i]=='O':
-        #         subtract+=1
+        if elements_1 != [''] or elements_2 !=['']:
+            if elements_1 == [''] or elements_2 ==['']:
+                raise ValueError('Either circuit_1 or circuit_2 cannot be empty')
+            edited_circuit = ''
+            for elem in elements_1:
+                nl_elem = elem[0:-1]+'n'+elem[-1]
+                if nl_elem in elements_2:
+                    edited_circuit += '-'+ nl_elem
+                else:
+                    edited_circuit += '-'+ elem
+            self.edited_circuit = edited_circuit[1:]
+        else:
+            self.edited_circuit = ''
             
-        # circuit_len = calculateCircuitLength(self.circuit_1)+count*2-subtract
+        circuit_len = calculateCircuitLength(self.edited_circuit)      
 
-
-        ## to be fixed after finish the naming convention fixed 
         if len(self.initial_guess) + len(self.constants) != circuit_len:
             raise ValueError('The number of initial guesses ' +
                              f'({len(self.initial_guess)}) + ' +
@@ -254,7 +228,6 @@ class EISandNLEIS:
 
             self.p1, self.p2 = individual_parameters(self.circuit_1,self.parameters_,self.constants_1,self.constants_2)
         else:
-            # TODO auto calculate initial guesses
             raise ValueError('no initial guess supplied')
 
         return self
@@ -308,7 +281,7 @@ class EISandNLEIS:
         """ Converts circuit string to names and units """
 
         # parse the element names from the circuit string
-        names = circuit.replace('t', '').replace('(', '').replace(')', '')#edit
+        names = circuit.replace('d', '').replace('(', '').replace(')', '')#edit for nleis.py
 
         names = names.replace('p', '').replace('(', '').replace(')', '')
         names = names.replace(',', '-').replace(' ', '').split('-')
@@ -424,22 +397,30 @@ class EISandNLEIS:
 
         if kind == 'nyquist':
             if ax is None:
-                _, ax = plt.subplots(1,2,figsize=(12, 6))
-
-            if Z1_data is not None:
-                ax[0] = plot_nyquist(Z1_data, ls='', marker='s', ax=ax[0], **kwargs)
-            if Z2_data is not None:
-                ax[1] = plot_nyquist(Z2_data, units='Ohms/A', ls='', marker='s', ax=ax[1], **kwargs)
+                _, ax = plt.subplots(1,2,figsize=(10, 5))
+            
             ## we don't need the if else statement if we want to enable plot without fit 
             # if self._is_fit():
             if f_data is not None:
                 f_pred = f_data
             else:
                 f_pred = np.logspace(5, -3)
+
+            if Z1_data is not None:
+                ax[0] = plot_first(ax[0], Z1_data, scale=1, fmt='s', **kwargs)
+                ## impedance.py style
+                # plot_nyquist(Z1_data, ls='', marker='s', ax=ax[0], **kwargs)
+            if Z2_data is not None:
+                mask = mask =np.array(f_pred)<max_f
+                ax[1] = plot_second(ax[1], Z2_data[mask], scale=1, fmt='s', **kwargs)
+                ## impedance.py style
+                # plot_nyquist(Z2_data, units='Ohms/A', ls='', marker='s', ax=ax[1], **kwargs)
                 
             Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
-            ax[0] = plot_nyquist(Z1_fit, ls='-', marker='', ax=ax[0], **kwargs)
-            ax[1] = plot_nyquist(Z2_fit,units='Ohms/A', ls='-', marker='', ax=ax[1], **kwargs)
+            ax[0] = plot_first(ax[0], Z1_fit, scale=1, fmt='-', **kwargs)
+            # plot_nyquist(Z1_fit, ls='-', marker='', ax=ax[0], **kwargs)
+            ax[1] = plot_second(ax[1], Z2_fit, scale=1, fmt='-', **kwargs)
+            # plot_nyquist(Z2_fit,units='Ohms/A', ls='-', marker='', ax=ax[1], **kwargs)
                 
             ax[0].legend(['data','fit'])
             ax[1].legend(['data','fit'])
@@ -459,16 +440,16 @@ class EISandNLEIS:
                                      ' Z_data for a Bode plot')
                 ax[:,0] = plot_bode(f_data, Z1_data, ls='', marker='s',
                                axes=ax[:,0], **kwargs)
-                # ax[:,0].set_xlabel('')
             if Z2_data is not None:
                 if f_data is None:
                     raise ValueError('f_data must be specified if' +
                                      ' Z_data for a Bode plot')
-                f2 = f_data[np.array(f_data)<max_f]
-                ax[:,1] = plot_bode(f2, Z2_data,units='Ohms/A', ls='', marker='s',
+                mask =np.array(f_pred)<max_f
+                f2 = f_data[mask]
+                Z2 = Z2_data[mask]
+                ax[:,1] = plot_bode(f2,Z2, units='Ohms/A', ls='', marker='s',
                                axes=ax[:,1], **kwargs)
             ## we don't need the if else statement if we want to enable plot without fit 
-
             # if self._is_fit():
             Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
             f1 = f_data
@@ -497,7 +478,8 @@ class EISandNLEIS:
 
             if Z1_data is not None and Z2_data is not None and f_data is not None:
                 plot_dict_1['data'] = {'f': f_data, 'Z': Z1_data}
-                plot_dict_2['data'] = {'f': f_data[np.array(f_data)<max_f], 'Z': Z2_data}
+                mask = np.array(f_data)<max_f
+                plot_dict_2['data'] = {'f': f_data[mask], 'Z': Z2_data[mask]}
             ## we don't need the if else statement if we want to enable plot without fit 
             # if self._is_fit():
             if f_data is not None:
@@ -512,14 +494,15 @@ class EISandNLEIS:
                 name = self.name
             else:
                 name = 'fit'
+            
             Z1_fit,Z2_fit = self.predict(f_pred,max_f=max_f)
-
+            mask = np.array(f_pred)<max_f
             plot_dict_1[name] = {'f': f_pred, 'Z': Z1_fit, 'fmt': '-'}
-            plot_dict_2[name] = {'f': f_pred[np.array(f_pred)<max_f], 'Z': Z2_fit, 'fmt': '-'}
+            plot_dict_2[name] = {'f': f_pred[mask], 'Z': Z2_fit, 'fmt': '-'}
             
 
-            chart1 = plot_altair(plot_dict_1,units = 'Ω', **kwargs)
-            chart2 = plot_altair(plot_dict_2,units = 'Ω/A', **kwargs)
+            chart1 = plot_altair(plot_dict_1,k=1,units = 'Ω', **kwargs)
+            chart2 = plot_altair(plot_dict_2,k=2,units = 'Ω/A', **kwargs)
 
             return chart1,chart2
         else:
@@ -536,8 +519,7 @@ class EISandNLEIS:
 
         model_string_1 = self.circuit_1
         model_string_2 = self.circuit_2
-
-        
+        edited_circuit_str = self.edited_circuit
         model_name = self.name
 
         initial_guess = self.initial_guess
@@ -551,9 +533,12 @@ class EISandNLEIS:
                          "Circuit String 2": model_string_2,
                          "Initial Guess": initial_guess,
                          "Constants": self.constants,
+                         "Constants 1": self.constants_1,
+                         "Constants 2": self.constants_2,
                          "Fit": True,
                          "Parameters": parameters_,
                          "Confidence": model_conf_,
+                         "Edited Circuit Str": edited_circuit_str
                          }
         else:
             data_dict = {"Name": model_name,
@@ -561,6 +546,9 @@ class EISandNLEIS:
                          "Circuit String 2": model_string_2,
                          "Initial Guess": initial_guess,
                          "Constants": self.constants,
+                         "Constants 1": self.constants_1,
+                         "Constants 2": self.constants_2,
+                         "Edited Circuit Str": edited_circuit_str,
                          "Fit": False}
 
         with open(filepath, 'w') as f:
@@ -595,11 +583,15 @@ class EISandNLEIS:
         self.initial_guess = model_initial_guess
         self.circuit_1 = model_string_1
         self.circuit_2 = model_string_2
+        self.edited_circuit = json_data["Edited Circuit Str"]
 
         print(self.circuit_1)
         print(self.circuit_2)
 
         self.constants = model_constants
+        self.constants_1 =json_data["Constants 1"]
+        self.constants_2 =json_data["Constants 2"]
+
         self.name = model_name
 
         if json_data["Fit"]:
@@ -611,6 +603,8 @@ class EISandNLEIS:
     
 
 class NLEISCustomCircuit(BaseCircuit):
+    ### this class can be fully integrated into CustomCircuit in the future
+    ### , but for the stable performance of nleis.py, we overwrite it here
     def __init__(self, circuit='', **kwargs):
         """ Constructor for a customizable equivalent circuit model
 
@@ -648,7 +642,7 @@ class NLEISCustomCircuit(BaseCircuit):
                              ' must be equal to ' +
                              f'the circuit length ({circuit_len})')
     def fit(self, frequencies, impedance, bounds=None,
-            weight_by_modulus=False, **kwargs):
+            weight_by_modulus=False, max_f =10, **kwargs):
         """ Fit the circuit model
 
         Parameters
@@ -668,6 +662,8 @@ class NLEISCustomCircuit(BaseCircuit):
             Uses the modulus of each data (|Z|) as the weighting factor.
             Standard weighting scheme when experimental variances are
             unavailable. Only applicable when global_opt = False
+        max_f : float 
+            Default to 10 Hz based on previous experiments
 
         kwargs :
             Keyword arguments passed to
@@ -687,6 +683,9 @@ class NLEISCustomCircuit(BaseCircuit):
 
         if len(frequencies) != len(impedance):
             raise TypeError('length of frequencies and impedance do not match')
+        mask = np.array(frequencies)<max_f
+        frequencies = frequencies[mask]
+        impedance = impedance[mask]
 
         if self.initial_guess != []:
             parameters, conf = circuit_fit(frequencies, impedance,
@@ -736,7 +735,7 @@ class NLEISCustomCircuit(BaseCircuit):
         """ Converts circuit string to names and units """
 
         # parse the element names from the circuit string
-        names = self.circuit.replace('t', '').replace('(', '').replace(')', '')#edit
+        names = self.circuit.replace('d', '').replace('(', '').replace(')', '')#edited for nleis.py
 
         names = names.replace('p', '').replace('(', '').replace(')', '')
         names = names.replace(',', '-').replace(' ', '').split('-')

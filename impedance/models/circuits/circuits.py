@@ -3,7 +3,6 @@ from .fitting import calculateCircuitLength, check_and_eval
 from impedance.visualization import plot_altair, plot_bode, plot_nyquist
 from .elements import circuit_elements, get_element_from_name
 
-
 import json
 import matplotlib.pyplot as plt
 import numpy as np
@@ -443,4 +442,3 @@ class CustomCircuit(BaseCircuit):
                              f'({len(self.constants)})' +
                              ' must be equal to ' +
                              f'the circuit length ({circuit_len})')
-        

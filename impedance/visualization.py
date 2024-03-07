@@ -2,7 +2,7 @@ import altair as alt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import ticker
+
 
 def plot_nyquist(Z, scale=1, units='Ohms', fmt='.-', ax=None, labelsize=20,
                  ticksize=14, **kwargs):
@@ -168,8 +168,7 @@ def plot_altair(data_dict, size=400, background='#FFFFFF'):
         df = pd.DataFrame({'f': f, 'z_real': Z.real, 'z_imag': Z.imag,
                            'kind': kind, 'fmt': fmt})
 
-        Z_df = pd.concat([Z_df,df])
-        # Z_df.append(df)
+        Z_df = pd.concat([Z_df, df], ignore_index=True)
 
     range_x = max(Z_df['z_real']) - min(Z_df['z_real'])
     range_y = max(-Z_df['z_imag']) - min(-Z_df['z_imag'])
@@ -224,7 +223,6 @@ def plot_altair(data_dict, size=400, background='#FFFFFF'):
         nyquists.append(nyquist)
         bode_mags.append(bode_mag)
         bode_phss.append(bode_phs)
-        nyquists
 
     if 'o' in fmts:
         df = Z_df.groupby('fmt').get_group('o')
@@ -330,144 +328,5 @@ def plot_residuals(ax, f, res_real, res_imag, fmt='.-', y_limits=(-5, 5),
 
     ax.set_ylim(y_limits)
     ax.set_xlim(np.min(f), np.max(f))
-
-    return ax
-
-def plot_first(ax, Z, scale=1, units='Ohms', fmt='.-', **kwargs):
-    """ Plots impedance as a Nyquist plot using matplotlib
-
-        Parameters
-        ----------
-        ax: matplotlib.axes.Axes
-            axes on which to plot the nyquist plot
-        Z: np.array of complex numbers
-            impedance data
-        scale: float
-            the scale for the axes
-        units: string
-            units for :math:`Z(\\omega)`
-        fmt: string
-            format string passed to matplotlib (e.g. '.-' or 'o')
-
-        Other Parameters
-        ----------------
-        **kwargs : `matplotlib.pyplot.Line2D` properties, optional
-            Used to specify line properties like linewidth, line color,
-            marker color, and line labels.
-
-        Returns
-        -------
-        ax: matplotlib.axes.Axes
-    """
-
-    ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
-
-    # Make the axes square
-    ax.set_aspect(aspect=1,anchor='C',adjustable='datalim')
-
-    # Set the labels to -imaginary vs real
-    ax.set_xlabel(r'$\tilde{Z}_{1}^{\prime}(\omega)$' +
-                          ' [$\Omega$]', fontsize=20)
-    ax.set_ylabel(r'$-\tilde{Z}_{1}^{\prime\prime}(\omega)$' +
-                          ' [$\Omega$]', fontsize=20)
-
-    # Make the tick labels larger
-    ax.tick_params(axis='both', which='major', labelsize=20)
-
-    # Change the number of labels on each axis to five
-    ax.locator_params(axis='x', nbins=5, tight=True)
-    ax.locator_params(axis='y', nbins=5, tight=True)
-
-    # Add a light grid
-    ax.grid(visible=True, which='major', axis='both', alpha=.5)
-
-    # Change axis units to 10**log10(scale) and resize the offset text
-    #ax.ticklabel_format(style='sci', axis='both')
-    
-    formatter = ticker.ScalarFormatter(useMathText=True)
-    formatter.set_scientific(True)
-    formatter.set_powerlimits((-1,1))
-    ax.yaxis.set_major_formatter(formatter)
-    ax.xaxis.set_major_formatter(formatter)
-    limits = -np.log10(scale)
-    if limits != 0:
-        ax.ticklabel_format(style='sci', axis='both',
-                            scilimits=(limits, limits))
-    y_offset = ax.yaxis.get_offset_text()
-    y_offset.set_size(18)
-    t = ax.xaxis.get_offset_text()
-    t.set_size(18)
-    
-        # Change axis units to 10**log10(scale) and resize the offset text
-    
-
-
-    return ax
-
-def plot_second(ax, Z, scale=1, units='Ohms', fmt='.-', **kwargs):
-    """ Plots impedance as a Nyquist plot using matplotlib
-
-        Parameters
-        ----------
-        ax: matplotlib.axes.Axes
-            axes on which to plot the nyquist plot
-        Z: np.array of complex numbers
-            impedance data
-        scale: float
-            the scale for the axes
-        units: string
-            units for :math:`Z(\\omega)`
-        fmt: string
-            format string passed to matplotlib (e.g. '.-' or 'o')
-
-        Other Parameters
-        ----------------
-        **kwargs : `matplotlib.pyplot.Line2D` properties, optional
-            Used to specify line properties like linewidth, line color,
-            marker color, and line labels.
-
-        Returns
-        -------
-        ax: matplotlib.axes.Axes
-    """
-
-    ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
-
-    # Make the axes square
-    ax.set_aspect(aspect=1,anchor='C',adjustable='datalim')
-
-    # Set the labels to -imaginary vs real
-
-    ax.set_xlabel(r'$\tilde{Z}_{2}^{\prime}(\omega)$' +
-                          ' [$\Omega / A$]', fontsize=20)
-    ax.set_ylabel(r'$-\tilde{Z}_{2}^{\prime\prime}(\omega)$' +
-                          ' [$\Omega / A$]', fontsize=20)
-    # Make the tick labels larger
-    ax.tick_params(axis='both', which='major', labelsize=20)
-
-    # Change the number of labels on each axis to five
-    ax.locator_params(axis='x', nbins=5, tight=True)
-    ax.locator_params(axis='y', nbins=5, tight=True)
-
-    # Add a light grid
-    ax.grid(visible=True, which='major', axis='both', alpha=.5)
-
-    # Change axis units to 10**log10(scale) and resize the offset text
-    
-    formatter = ticker.ScalarFormatter(useMathText=True)
-    formatter.set_scientific(True) 
-    formatter.set_powerlimits((-1,1))
-    ax.yaxis.set_major_formatter(formatter)
-    ax.xaxis.set_major_formatter(formatter) 
-
-
-    limits = -np.log10(scale)
-    if limits != 0:
-        ax.ticklabel_format(style='scientific', axis='both',
-                            scilimits=(limits, limits))
-    y_offset = ax.yaxis.get_offset_text()
-    y_offset.set_size(18)
-    t = ax.xaxis.get_offset_text()
-    t.set_size(18)
 
     return ax

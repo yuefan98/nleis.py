@@ -313,6 +313,25 @@ def K(p, f):
     return Z
 
 
+@element(num_params=3, units=['Ohm', 'sec', ''])
+def Zarc(p, f):
+    """ An RQ element rewritten with resistance and
+    and time constant as paramenters. Equivalent to a
+    Cole-Cole relaxation in dielectrics.
+
+    Notes
+    -----
+    .. math::
+
+        Z = \\frac{R}{1 + (j \\omega \\tau_k)^\\gamma }
+
+    """
+    omega = 2*np.pi*np.array(f)
+    R, tau_k, gamma = p[0], p[1], p[2]
+    Z = R/(1 + ((1j*omega*tau_k)**gamma))
+    return Z
+
+
 @element(num_params=3, units=["Ohm", "F sec^(gamma - 1)", ""])
 def TLMQ(p, f):
     """Simplified transmission-line model as defined in Eq. 11 of [1]
@@ -331,8 +350,8 @@ def TLMQ(p, f):
     """
     omega = 2 * np.pi * np.array(f)
     Rion, Qs, gamma = p[0], p[1], p[2]
-    Zs = Qs * (1j * omega) ** gamma
-    Z = np.sqrt(Rion / Zs) / np.tanh(np.sqrt(Rion * Zs))
+    Zs = 1 / (Qs * (1j * omega) ** gamma)
+    Z = np.sqrt(Rion * Zs) / np.tanh(np.sqrt(Rion / Zs))
     return Z
 
 

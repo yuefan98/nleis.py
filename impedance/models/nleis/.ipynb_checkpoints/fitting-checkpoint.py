@@ -6,6 +6,8 @@ from scipy.optimize import curve_fit, basinhopping
 from impedance.models.circuits.elements import circuit_elements, get_element_from_name
 from impedance.models.circuits.fitting import check_and_eval,rmse
 
+### Note: a lot of codes are directly adopted from impedance.py. Can be easily perform a full integration in the future, but now we are keep them separated to ensure the stable performance
+
 ints = '0123456789'
 
 
@@ -121,7 +123,7 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['CPE', 'La'] and i == 1:
                 upper_bounds.append(1)
                 lower_bounds.append(0)
-            ## The following are for NLEIS toolbox
+            ## The following are for nleis.py
             elif raw_element in ['Tsn'] and i == 4:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
@@ -147,9 +149,16 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['RCDn','RCSn'] and i == 5 :
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TLMn'] and (i == 6 or i ==3):
+            elif raw_element in ['TLMn'] and (i == 6 or i ==7):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
+
+            elif raw_element in ['TLMSn'] and (i == 9 or i ==10):
+                upper_bounds.append(0.5)
+                lower_bounds.append(-0.5)
+            elif raw_element in ['TLMSn'] and (i == 8):
+                upper_bounds.append(np.inf)
+                lower_bounds.append(-np.inf)            
 
             else:
                 upper_bounds.append(np.inf)
@@ -368,13 +377,13 @@ def buildCircuit(circuit, frequencies, *parameters,
     frequencies = np.array(frequencies).tolist()
     circuit = circuit.replace(' ', '')
 
-    def parse_circuit(circuit, parallel=False, series=False,NLEIS=False,simul_fit=False):
+    def parse_circuit(circuit, parallel=False, series=False,difference=False):
         """ Splits a circuit string by either dashes (series) or commas
             (parallel) outside of any paranthesis. Removes any leading 'p('
-            or trailing ')' when in parallel mode """
+            or trailing ')' when in parallel mode or 'd('or trailing ')' when in difference mode '' """
 
-        assert parallel != series or series != NLEIS or NLEIS != parallel, \
-            'Exactly one of parallel or series must be True'
+        assert parallel != series or series != difference or difference != parallel, \
+            'Exactly one of parallel or series or difference must be True'
 
         def count_parens(string):
             return string.count('('), string.count(')')
@@ -383,9 +392,9 @@ def buildCircuit(circuit, frequencies, *parameters,
             special = ','
             if circuit.endswith(')') and circuit.startswith('p('):
                 circuit = circuit[2:-1]
-        if NLEIS:
+        if difference:
             special = ','
-            if circuit.endswith(')') and circuit.startswith('t('):
+            if circuit.endswith(')') and circuit.startswith('d('):
                 circuit = circuit[2:-1]
 
         if series:
@@ -419,7 +428,7 @@ def buildCircuit(circuit, frequencies, *parameters,
 
     parallel = parse_circuit(circuit, parallel=True)
     series = parse_circuit(circuit, series=True)
-    NLEIS = parse_circuit(circuit, NLEIS=True)
+    difference = parse_circuit(circuit, difference=True)
 
     if series is not None and len(series) > 1:
         eval_string += "s(["
@@ -427,18 +436,17 @@ def buildCircuit(circuit, frequencies, *parameters,
     elif parallel is not None and len(parallel) > 1:
         eval_string += "p(["
         split = parallel
-    ## added for NLEIS toolbox
-    elif NLEIS is not None and len(NLEIS) > 1:
-        eval_string += "t(["
-        split = NLEIS
+    ## added for nleis.py
+    elif difference is not None and len(difference) > 1:
+        eval_string += "d(["
+        split = difference
 
     elif series == parallel:
         eval_string += "(["
         split = series
         
     for i, elem in enumerate(split):
-        ## changed for NLEIS toolbox
-        if ',' in elem or '-' in elem or '*' in elem :
+        if ',' in elem or '-' in elem :
             eval_string, index = buildCircuit(elem, frequencies,
                                               *parameters,
                                               constants=constants,
@@ -510,7 +518,7 @@ def extract_circuit_elements(circuit):
         list of extracted elements.
 
     """
-    p_string = [x for x in circuit if x not in 'p(),-,t()']
+    p_string = [x for x in circuit if x not in 'p(),-,d()']
     extracted_elements = []
     current_element = []
     length = len(p_string)
