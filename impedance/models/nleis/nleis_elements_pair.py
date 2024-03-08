@@ -1,17 +1,65 @@
 import numpy as np
 from scipy.special import iv
-from impedance.models.circuits.elements import element,circuit_elements,ElementError,OverwriteError
+# from impedance.models.circuits.elements import element,circuit_elements,ElementError,OverwriteError
+from impedance.models.circuits.elements import circuit_elements,ElementError,OverwriteError
+
+def element(num_params, units, overwrite=False):
+    """
+    
+    decorator to store metadata for a circuit element
+
+    Parameters
+    ----------
+    num_params : int
+        number of parameters for an element
+    units : list of str
+        list of units for the element parameters
+    overwrite : bool (default False)
+        if true, overwrites any existing element; if false,
+        raises OverwriteError if element name already exists.
+    
+    """
+
+    def decorator(func):
+        def wrapper(p, f):
+            typeChecker(p, f, func.__name__, num_params)
+            return func(p, f)
+
+        wrapper.num_params = num_params
+        wrapper.units = units
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+
+        global circuit_elements
+        if func.__name__ in ["s", "p"]:
+            raise ElementError("cannot redefine elements 's' (series)" +
+                               "or 'p' (parallel)")
+        elif func.__name__ in circuit_elements and not overwrite:
+            raise OverwriteError(
+                f"element {func.__name__} already exists. " +
+                "If you want to overwrite the existing element," +
+                "use `overwrite=True`."
+            )
+        else:
+            circuit_elements[func.__name__] = wrapper
+
+        return wrapper
+
+    return decorator
 
 def d(difference):
-    """ adds elements in second harmonic
+    '''
+    Subtract the second electrode from the first electrode in 2nd-NLEIS
 
     Notes
-    ---------
+    -----
+    
     .. math::
+        
 
-        Z = \\frac{1}{\\frac{1}{Z_1} + \\frac{1}{Z_2} + ... + \\frac{1}{Z_n}}
+    '''
 
-     """
+    
     z = len(difference[0])*[0 + 0*1j]
     z += difference[0]
     z += -difference[-1]
@@ -22,24 +70,28 @@ circuit_elements['d'] = d
 
 @element(num_params=3, units=['Ohms', 'Ohms', 'F'])
 def TPO(p, f):
-    """ EIS: A macrohomogeneous porous electrode model with zero solid resistivity from Ji et al. [1]
+    '''
+    
+    EIS: A macrohomogeneous porous electrode model with zero solid resistivity from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
-
-
+    
+    
     p0=Rpore
     p1=Rct
     p2=Cdl
-
-
+    
+    
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-    """
+
+    '''
 
     omega = 2*np.pi*np.array(f)
 
@@ -52,10 +104,13 @@ def TPO(p, f):
 
 @element(num_params=4, units=['Ohms', 'Ohms', 'F',''])
 def TPOn(p, f):
-    """ 2nd-NLEIS: A macrohomogeneous porous electrode model with zero solid resistivity from Ji et al. [1]
+    """ 
+    
+    2nd-NLEIS: A macrohomogeneous porous electrode model with zero solid resistivity from Ji et al. [1]
 
     Notes
     -----
+    
     .. math::
 
 
@@ -67,8 +122,8 @@ def TPOn(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
@@ -113,11 +168,14 @@ def TPOn(p, f):
 
 @element(num_params=5, units=['Ohms', 'Ohms', 'F','Ohms','s'])
 def TDC(p, f):
-    """ EIS: A macrohomogeneous porous electrode model with cylindrical diffusion 
+    """ 
+    
+    EIS: A macrohomogeneous porous electrode model with cylindrical diffusion 
     and zero solid resistivity from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
     
     p0=Rpore
@@ -128,8 +186,8 @@ def TDC(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
@@ -151,11 +209,14 @@ def TDC(p, f):
     return Z
 @element(num_params=7, units=['Ohms', 'Ohms', 'F','Ohms','s','1/V',''])
 def TDCn(p, f):
-    """ 2nd-NLEIS: A macrohomogeneous porous electrode model with cylindrical diffusion
+    """ 
+    
+    2nd-NLEIS: A macrohomogeneous porous electrode model with cylindrical diffusion
     and zero solid resistivity from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
         
         
@@ -170,8 +231,8 @@ def TDCn(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
@@ -232,10 +293,14 @@ def TDCn(p, f):
 
 @element(num_params=5, units=['Ohms', 'Ohms', 'F','Ohms','s'])
 def TDS(p, f):
-    """ EIS: A macrohomogeneous porous electrode model with spherical diffusion
+    """ 
+    
+    EIS: A macrohomogeneous porous electrode model with spherical diffusion
     and zero solid resistivity from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
         
         
@@ -247,8 +312,8 @@ def TDS(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
     
 
@@ -263,10 +328,14 @@ def TDS(p, f):
     return Z
 @element(num_params=7, units=['Ohms', 'Ohms', 'F','Ohms','s','1/V',''])
 def TDSn(p, f):
-    """ 2nd-NLEIS: A macrohomogeneous porous electrode model with spherical diffusion
+    """ 
+    
+    2nd-NLEIS: A macrohomogeneous porous electrode model with spherical diffusion
     and zero solid resistivity from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
         
     p0=Rpore
@@ -279,8 +348,8 @@ def TDSn(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
     
 
@@ -322,10 +391,14 @@ def TDSn(p, f):
     return Z
 @element(num_params=5, units=['Ohms', 'Ohms', 'F','Ohms','s'])
 def TDP(p, f):
-    """ EIS: A macrohomogeneous porous electrode model with planar diffusion 
+    """ 
+    
+    EIS: A macrohomogeneous porous electrode model with planar diffusion 
     and zero solid resistivity from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
         
         
@@ -338,8 +411,8 @@ def TDP(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
     
 
@@ -355,10 +428,14 @@ def TDP(p, f):
     return Z
 @element(num_params=7, units=['Ohms', 'Ohms', 'F','Ohms','s','1/V',''])
 def TDPn(p, f):
-    """ NLEIS: A macrohomogeneous porous electrode model with planar diffusion
+    """ 
+    
+    NLEIS: A macrohomogeneous porous electrode model with planar diffusion
     and zero solid resistivity from Ji et al. [1]
+   
     Notes
     -----
+    
     .. math::
         
     p0 = Rpore
@@ -371,8 +448,8 @@ def TDPn(p, f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
@@ -414,10 +491,13 @@ def TDPn(p, f):
     return Z
 @element(num_params=2, units=['Ohm', 'F'])
 def RCO(p,f):
-    """ EIS: Randles circuit 
+    """ 
+    
+    EIS: Randles circuit 
     
     Notes
     -----
+    
     .. math::
         
     p0 = Rct
@@ -437,10 +517,13 @@ def RCO(p,f):
     return(Z1)
 @element(num_params=3, units=['Ohm', 'F',''])
 def RCOn(p,f):
-    '''2nd-NLEIS: Randles circuit from Ji et al. [1]
+    '''
+    
+    2nd-NLEIS: Randles circuit from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
         
     p0 = Rct
@@ -449,9 +532,10 @@ def RCOn(p,f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
     '''
     w=np.array(f)*2*np.pi
     Rct=p[0]
@@ -473,10 +557,13 @@ def RCOn(p,f):
 @element(num_params=4, units=['Ohms', 'F','Ohms','s'])
 def RCD(p,f):
     
-    '''EIS: Randles circuit with planar diffusion from Ji et al. [1]
+    '''
+    
+    EIS: Randles circuit with planar diffusion from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
         
     p0 = Rct
@@ -486,9 +573,10 @@ def RCD(p,f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
     '''
     omega=np.array(f)*2*np.pi
     Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
@@ -499,10 +587,13 @@ def RCD(p,f):
     return(Z)
 @element(num_params=6, units=['Ohms', 'F','Ohms','s','1/V',''])
 def RCDn(p,f):
-    '''2nd-NLEIS: Randles circuit with planar diffusion from Ji et al. [1]
+    '''
+    
+    2nd-NLEIS: Randles circuit with planar diffusion from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
         
     p0 = Rct
@@ -514,9 +605,10 @@ def RCDn(p,f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
     '''
     
     omega=np.array(f)*2*np.pi
@@ -540,10 +632,13 @@ def RCDn(p,f):
     return(Z2)
 @element(num_params=4, units=['Ohms', 'F','Ohms','s'])
 def RCS(p,f):
-    '''EIS: Randles circuit with spherical diffusion from Ji et al. [1]
+    '''
+    
+    EIS: Randles circuit with spherical diffusion from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
         
     p0 = Rct
@@ -553,9 +648,10 @@ def RCS(p,f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
     '''
     omega=np.array(f)*2*np.pi
     Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
@@ -567,10 +663,13 @@ def RCS(p,f):
     return(Z)
 @element(num_params=6, units=['Ohms', 'F','Ohms','s','1/V',''])
 def RCSn(p,f):
-    '''2nd-NLEIS: Randles circuit with spherical diffusion from Ji et al. [1]
+    '''
+    
+    2nd-NLEIS: Randles circuit with spherical diffusion from Ji et al. [1]
     
     Notes
     -----
+    
     .. math::
         
     p0 = Rct
@@ -582,9 +681,10 @@ def RCSn(p,f):
     
     [1] Y. Ji, D.T. Schwartz, 
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-        I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-        J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
     '''    
     
 
@@ -610,22 +710,27 @@ def RCSn(p,f):
 
 @element(num_params=5, units=['Ohm', 'Ohm', 'F','', ''])
 def Tsn(p,f):
-    """ Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct
-        p2: Cdl
-        p3: N (number of circuit element)
-        p4: ε
         
-        
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    p0: Rpore
+    p1: Rct
+    p2: Cdl
+    p3: N (number of circuit element)
+    p4: ε
+    
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     I=Ti(p[0:4],f) # calculate the current fraction (1st harmonic)
@@ -697,20 +802,23 @@ def Tsn(p,f):
 def Ti(p,f):
     
     """ current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct
-        p2: Cdl
-        p3: N (number of circuit element)
+    
+    p0: Rpore
+    p1: Rct
+    p2: Cdl
+    p3: N (number of circuit element)
 
-        
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     
@@ -758,27 +866,32 @@ def Ti(p,f):
 ###
 @element(num_params=8, units=['Ohm', 'Ohm', 'F','','Ohm', 'F','', ''])
 def TLMn(p,f):
-    """ Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct,bulk
-        p2: Cdl,bulk
+        
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
 
-        p3: Rct,surface
-        p4: Cdl,surface
-        p5: N (number of circuit element)
-        p6: ε,bulk
-        p7: ε,surface
-       
-        
-        
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    p3: Rct,surface
+    p4: Cdl,surface
+    p5: N (number of circuit element)
+    p6: ε,bulk
+    p7: ε,surface
+   
+    
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     I=mTi(p[0:6],f) # calculate the current fraction (1st harmonic)
@@ -849,23 +962,28 @@ def TLMn(p,f):
 @element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
 def mTi(p,f):
     
-    """ current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct,bulk
-        p2: Cdl,bulk
-        p3: Rct,surface
-        p4: Cdl,surface
-        p5: N (number of circuit element)
-
         
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Rct,surface
+    p4: Cdl,surface
+    p5: N (number of circuit element)
+
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     
@@ -916,23 +1034,28 @@ def mTi(p,f):
 @element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
 def TLM(p,f):
     
-    """ current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct,bulk
-        p2: Cdl,bulk
-        p3: Rct,surface
-        p4: Cdl,surface
-        p5: N (number of circuit element)
-
         
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Rct,surface
+    p4: Cdl,surface
+    p5: N (number of circuit element)
+
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     
@@ -940,7 +1063,7 @@ def TLM(p,f):
     N=int(p[5])
     frequency = f
 
-    w=np.array(f)*2*np.pi
+    # w=np.array(f)*2*np.pi
     Rct=p[1]*N
     Cdl=p[2]/N
     Rpore=p[0]/N
@@ -960,21 +1083,26 @@ def TLM(p,f):
     
 @element(num_params=11, units=['Ohm', 'Ohm', 'F','Ohm', 's','Ohm', 'F','','1/V','', ''])
 def TLMSn(p,f):
-    """ Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct,bulk
-        p2: Cdl,bulk
-        p3: Aw,bulk
-        p4: τ,bulk
-        p5: Rct,surface
-        p6: Cdl,surface
-        p7: N (number of circuit element)
-        p8: κ,bulk
-        p9: ε,bulk
-        p10: ε,surface
+        
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
+    p8: κ,bulk
+    p9: ε,bulk
+    p10: ε,surface
 
         
 
@@ -1055,25 +1183,30 @@ def TLMSn(p,f):
 @element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
 def mTiS(p,f):
     
-    """ current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct,bulk
-        p2: Cdl,bulk
-        p3: Aw,bulk
-        p4: τ,bulk
-        p5: Rct,surface
-        p6: Cdl,surface
-        p7: N (number of circuit element)
-
         
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
+
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
 
@@ -1126,32 +1259,37 @@ def mTiS(p,f):
 @element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
 def TLMS(p,f):
     
-    """ current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    """ 
+    
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
     Notes
     -----
+    
     .. math::
-        p0: Rpore
-        p1: Rct,bulk
-        p2: Cdl,bulk
-        p3: Aw,bulk
-        p4: τ,bulk
-        p5: Rct,surface
-        p6: Cdl,surface
-        p7: N (number of circuit element)
+    
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
 
-        
-        [1] Y. Ji, D.T. Schwartz, 
-        Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-            I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-            J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-        <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     
     N=int(p[7])
     frequency = f
 
-    w=np.array(f)*2*np.pi
+    # w=np.array(f)*2*np.pi
     Rpore=p[0]/N
     Rct=p[1]*N
     Cdl=p[2]/N

@@ -13,6 +13,7 @@ ints = '0123456789'
 
 def mae(a,b):
     ''' 
+   
     Mean Absolute Error
 
     Parameters
@@ -31,6 +32,7 @@ def mae(a,b):
 
 def mape(a,b):
     '''
+   
     Mean Absolute Percentage Error
 
     Parameters
@@ -49,8 +51,9 @@ def mape(a,b):
 
 def seq_fit_parm(input_dic,target_arr,output_arr):
     '''
-     Convert obtained EIS result to a constant of dictionary for 2nd-NLEIS analyssis
-     for sequential optimization disscussed in [1]
+     
+    Convert obtained EIS result to a constant of dictionary for 2nd-NLEIS analyssis
+    for sequential optimization disscussed in [1]
 
     Parameters
     ----------
@@ -84,13 +87,15 @@ def seq_fit_parm(input_dic,target_arr,output_arr):
     return(output_dic)
     
 def set_default_bounds(circuit, constants={}):
-    """ This function sets default bounds for optimization.
+    """ 
+    
+    This function sets default bounds for optimization.
 
     set_default_bounds sets bounds of 0 and np.inf for all parameters,
     except the CPE and La alphas which have an upper bound of 1.
 
     Parameters
-    -----------------
+    ----------
     circuit : string
         String defining the equivalent circuit to be fit
 
@@ -99,9 +104,10 @@ def set_default_bounds(circuit, constants={}):
         (e.g. {"RO": 0.1}). Defaults to {}
 
     Returns
-    ------------
+    -------
     bounds : 2-tuple of array_like
         Lower and upper bounds on parameters.
+        
     """
 
     # extract the elements from the circuit
@@ -189,7 +195,7 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
     global optimization algorithm can be used to attempt a better fit.
 
     Parameters
-    -----------------
+    ----------
     frequencies : numpy array
         Frequencies
 
@@ -212,7 +218,7 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
         which has an upper bound of 1
 
     weight_by_modulus : bool, optional
-        Uses the modulus of each data (|Z|) as the weighting factor.
+        Uses the modulus of each data (`|Z|`) as the weighting factor.
         Standard weighting scheme when experimental variances are unavailable.
         Only applicable when global_opt = False
 
@@ -225,7 +231,7 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
         scipy.optimize.basinhopping
 
     Returns
-    ------------
+    -------
     p_values : list of floats
         best fit parameters for specified equivalent circuit
 
@@ -233,11 +239,12 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
         one standard deviation error estimates for fit parameters
 
     Notes
-    ---------
+    -----
     Need to do a better job of handling errors in fitting.
     Currently, an error of -1 is returned.
 
     """
+    
     f = np.array(frequencies, dtype=float)
     Z = np.array(impedances, dtype=complex)
 
@@ -371,6 +378,7 @@ def buildCircuit(circuit, frequencies, *parameters,
         Python expression for calculating the resulting fit
     index: int
         Tracks parameter index through recursive calling of the function
+    
     """
 
     parameters = np.array(parameters).tolist()

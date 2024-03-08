@@ -30,7 +30,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, edited_circuit, initial_
     to fit the equivalent circuit. 
 
     Parameters
-    -----------------
+    ----------
     frequencies : numpy array
         Frequencies
 
@@ -77,7 +77,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, edited_circuit, initial_
         scipy.optimize.basinhopping
 
     Returns
-    ------------
+    -------
     p_values : list of floats
         best fit parameters for EIS and NLEIS data
 

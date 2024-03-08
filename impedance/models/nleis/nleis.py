@@ -14,11 +14,14 @@ import numpy as np
 import warnings
 
 
-### ToDO: add SSO method and SO method 
+
 class EISandNLEIS:
+    ### ToDO: add SSO method and SO method 
     def __init__(self, circuit_1='',circuit_2='',initial_guess = []
                  ,constants = None, name=None, **kwargs):
-        """ Constructor for a customizable equivalent circuit model
+        """ 
+        
+        Constructor for a customizable equivalent circuit model
 
         Parameters
         ----------
@@ -172,7 +175,9 @@ class EISandNLEIS:
         
     def fit(self, frequencies, Z1,Z2, bounds = None,
             opt='max',max_f=10,cost = 0.5, **kwargs):
-        """ Fit the circuit model
+        """ 
+        
+        Fit the circuit model
 
         Parameters
         ----------
@@ -233,7 +238,11 @@ class EISandNLEIS:
         return self
 
     def _is_fit(self):
-        """ check if model has been fit (parameters_ is not None) """
+        """ 
+        
+        check if model has been fit (parameters_ is not None) 
+        
+        """
         if self.parameters_ is not None:
             return True
         else:
@@ -241,7 +250,9 @@ class EISandNLEIS:
 
 
     def predict(self, frequencies, max_f=10, use_initial=False):
-        """ Predict impedance using an equivalent circuit model
+        """ 
+        
+        Predict impedance using an equivalent circuit model
 
         Parameters
         ----------
@@ -258,6 +269,7 @@ class EISandNLEIS:
         -------
         impedance: ndarray of dtype 'complex128'
             Predicted impedance
+        
         """
         if not isinstance(frequencies, np.ndarray):
             raise TypeError('frequencies is not of type np.ndarray')
@@ -278,7 +290,11 @@ class EISandNLEIS:
             x1,x2 = wrappedImpedance(self.circuit_1, self.constants_1,self.circuit_2,self.constants_2,f1,f2,self.initial_guess)
             return(x1,x2)
     def get_param_names(self,circuit,constants):
-        """ Converts circuit string to names and units """
+        """ 
+        
+        Converts circuit string to names and units 
+        
+        """
 
         # parse the element names from the circuit string
         names = circuit.replace('d', '').replace('(', '').replace(')', '')#edit for nleis.py
@@ -304,7 +320,11 @@ class EISandNLEIS:
 
         return full_names, all_units
     def __str__(self):
-        """ Defines the pretty printing of the circuit"""
+        """ 
+        
+        Defines the pretty printing of the circuit
+        
+        """
 
         to_print = '\n'
         if self.name is not None:
@@ -348,7 +368,11 @@ class EISandNLEIS:
 
         return to_print
     def extract(self):
-        """ extract the printing of the circuit in a dictionary"""
+        """ 
+        
+        extract the printing of the circuit in a dictionary
+        
+        """
     
         names1, units1 = self.get_param_names(self.circuit_1,self.constants_1)
         dic1={}
@@ -367,33 +391,34 @@ class EISandNLEIS:
     
         return dic1,dic2
     def plot(self, ax=None, f_data=None, Z1_data =None, Z2_data= None, kind='nyquist', max_f = 10, **kwargs):
-        """ visualizes the model and optional data as a nyquist,
+        '''
+        
+        visualizes the model and optional data as a nyquist,
             bode, or altair (interactive) plots
+        
 
         Parameters
         ----------
-        ax: matplotlib.axes
+        ax : matplotlib.axes, 
             axes to plot on
-        f_data: np.array of type float
-            Frequencies of input data (for Bode plots)
-        Z_data: np.array of type complex
-            Impedance data to plot
-        kind: {'altair', 'nyquist', 'bode'}
+        f_data : np.array of type float
+           Frequencies of input data (for Bode plots)
+        Z1_data : np.array of type complex
+            DESCRIPTION. The default is None.
+        Z2_data : np.array of type complex
+            DESCRIPTION. The default is None.
+        kind : {'altair', 'nyquist', 'bode'}
             type of plot to visualize
-
-        Other Parameters
-        ----------------
+        max_f : TYPE, optional
+            DESCRIPTION. The default is 10.
         **kwargs : optional
             If kind is 'nyquist' or 'bode', used to specify additional
              `matplotlib.pyplot.Line2D` properties like linewidth,
              line color, marker color, and labels.
             If kind is 'altair', used to specify nyquist height as `size`
 
-        Returns
-        -------
-        ax: matplotlib.axes
-            axes of the created nyquist plot
-        """
+
+        '''
 
         if kind == 'nyquist':
             if ax is None:
@@ -509,12 +534,15 @@ class EISandNLEIS:
             raise ValueError("Kind must be one of 'altair'," +
                              f"'nyquist', or 'bode' (received {kind})")
     def save(self, filepath):
-        """ Exports a model to JSON
+        """ 
+        
+        Exports a model to JSON
 
         Parameters
         ----------
         filepath: str
             Destination for exporting model object
+            
         """
 
         model_string_1 = self.circuit_1
@@ -556,7 +584,9 @@ class EISandNLEIS:
 
 
     def load(self, filepath, fitted_as_initial=False):
-        """ Imports a model from JSON
+        """ 
+        
+        Imports a model from JSON
 
         Parameters
         ----------
@@ -569,6 +599,7 @@ class EISandNLEIS:
 
             Otherwise, loads the model's initial and
             fitted parameters as a completed model
+        
         """
 
         json_data_file = open(filepath, 'r')
@@ -606,7 +637,9 @@ class NLEISCustomCircuit(BaseCircuit):
     ### this class can be fully integrated into CustomCircuit in the future
     ### , but for the stable performance of nleis.py, we overwrite it here
     def __init__(self, circuit='', **kwargs):
-        """ Constructor for a customizable equivalent circuit model
+        """ 
+        
+        Constructor for a customizable equivalent circuit model
 
         Parameters
         ----------
@@ -643,40 +676,42 @@ class NLEISCustomCircuit(BaseCircuit):
                              f'the circuit length ({circuit_len})')
     def fit(self, frequencies, impedance, bounds=None,
             weight_by_modulus=False, max_f =10, **kwargs):
-        """ Fit the circuit model
+        '''
+        
+        Fit the circuit model
 
         Parameters
         ----------
-        frequencies: numpy array
-            Frequencies
-
-        impedance: numpy array of dtype 'complex128'
-            Impedance values to fit
-
-        bounds: 2-tuple of array_like, optional
-            Lower and upper bounds on parameters. Defaults to bounds on all
-            parameters of 0 and np.inf, except the CPE alpha
-            which has an upper bound of 1
-
+        frequencies : numpy array
+            Frequencies.
+        impedance : numpy array of dtype 'complex128'
+            Impedance values to fit.
+        bounds : 2-tuple of array_like, optional
+            Lower and upper bounds on parameters.
         weight_by_modulus : bool, optional
-            Uses the modulus of each data (|Z|) as the weighting factor.
+            Uses the modulus of each data (`|Z|`) as the weighting factor.
             Standard weighting scheme when experimental variances are
             unavailable. Only applicable when global_opt = False
-        max_f : float 
-            Default to 10 Hz based on previous experiments
-
-        kwargs :
+        max_f : float , 10
+            Truncation for 2nd-NLEIS based on previous experiments. The default is 10.
+        **kwargs : 
             Keyword arguments passed to
             impedance.models.circuits.fitting.circuit_fit,
             and subsequently to scipy.optimize.curve_fit
-            or scipy.optimize.basinhopping
+            or scipy.optimize.basinhopping.
+
+        Raises
+        ------
+        TypeError
+            DESCRIPTION.
+        ValueError
+            DESCRIPTION.
 
         Returns
         -------
         self: returns an instance of self
 
-        """
-
+        '''
             
         frequencies = np.array(frequencies, dtype=float)
         impedance = np.array(impedance, dtype=complex)
@@ -702,7 +737,9 @@ class NLEISCustomCircuit(BaseCircuit):
 
         return self
     def predict(self, frequencies, use_initial=False):
-        """ Predict impedance using an equivalent circuit model
+        """ 
+        
+        Predict impedance using an equivalent circuit model
 
         Parameters
         ----------
@@ -715,6 +752,7 @@ class NLEISCustomCircuit(BaseCircuit):
         -------
         impedance: ndarray of dtype 'complex128'
             Predicted impedance at each frequency
+        
         """
         frequencies = np.array(frequencies, dtype=float)
 
@@ -732,7 +770,11 @@ class NLEISCustomCircuit(BaseCircuit):
                                      index=0)[0],
                         circuit_elements)
     def get_param_names(self):
-        """ Converts circuit string to names and units """
+        """ 
+        
+        Converts circuit string to names and units 
+        
+        """
 
         # parse the element names from the circuit string
         names = self.circuit.replace('d', '').replace('(', '').replace(')', '')#edited for nleis.py
@@ -758,7 +800,11 @@ class NLEISCustomCircuit(BaseCircuit):
 
         return full_names, all_units
     def extract(self):
-        """ extract the printing of the circuit"""
+        """ 
+        
+        extract the printing of the circuit 
+        
+        """
 
         names, units = self.get_param_names()
         dic={}
