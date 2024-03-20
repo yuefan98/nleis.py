@@ -444,13 +444,13 @@ def buildCircuit(circuit, frequencies, *parameters,
     elif parallel is not None and len(parallel) > 1:
         eval_string += "p(["
         split = parallel
+        
     ## added for nleis.py
     elif difference is not None and len(difference) > 1:
         eval_string += "d(["
         split = difference
-
-    elif series == parallel:
-        eval_string += "(["
+        
+    elif series == parallel == difference :  # only single element
         split = series
         
     for i, elem in enumerate(split):
@@ -480,9 +480,10 @@ def buildCircuit(circuit, frequencies, *parameters,
             param_string += str(param_list)
             new = raw_elem + '(' + param_string + ',' + str(frequencies) + ')'
             eval_string += new
-
+            
         if i == len(split) - 1:
-            eval_string += '])'
+            if len(split) > 1:  # do not add closing brackets if single element
+                eval_string += '])'
         else:
             eval_string += ','
 

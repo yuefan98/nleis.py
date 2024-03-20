@@ -708,11 +708,14 @@ def RCSn(p,f):
     
     return(Z2)
 
-@element(num_params=5, units=['Ohm', 'Ohm', 'F','', ''])
-def Tsn(p,f):
+
+
+@element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
+def TLM(p,f):
+    
     """ 
     
-    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
     
     Notes
     -----
@@ -720,98 +723,11 @@ def Tsn(p,f):
     .. math::
         
     p0: Rpore
-    p1: Rct
-    p2: Cdl
-    p3: N (number of circuit element)
-    p4: ε
-    
-    
-    [1] Y. Ji, D.T. Schwartz, 
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    """
-    I=Ti(p[0:4],f) # calculate the current fraction (1st harmonic)
-
-    N=int(p[3])
-    w=np.array(f)*2*np.pi
-    Rpore=p[0]/N
-    Rct=p[1]*N
-    Cdl=p[2]/N
-    
-    e=p[4]
-    f=96485.3321233100184/(8.31446261815324*298) ## unit in 1/V
-    
-    Z1r=Rct/(1+(w*Rct*Cdl)**2);
-    Z1i=(-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2);
-    Z1=Z1r+1j*Z1i
-    
-    tau=w*Rct*Cdl
-    
-    Z2r=-e*f*(Z1r**2-Z1i**2+4*tau*Z1r*Z1i)/(1+4*tau**2)
-    Z2i=e*f*((Z1r**2-Z1i**2)*2*tau-2*Z1r*Z1i)/(1+4*tau**2)
-    
-    Z2=Z2r+1j*Z2i
-    Z12t=(Rct/(1+(2*w*Rct*Cdl)**2))+1j*((-w*2*Cdl*Rct**2)/(1+(2*w*Rct*Cdl)**2))
-    #Z12t=Z12t*0
-    if N==1:
-        return(Z2)
-    
-    if N==2:
-        sum1=Z1**2/(2*Z1+Rpore)**2
-        sum2=(Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
-        Z=(sum1+sum2)*Z2
-        return(Z)
-    Z=np.zeros((len(w)),dtype = complex)
-    for freq in range(0,len(w)):
-        Ii=I[freq]
-        
-        A = np.arange(N-1,0,-1)
-        A1 = np.arange(N-1,0,-1)
-        
-        for i in range (0,N-2):
-            for j in range(0,N-1-i):
-                A1[j]=A1[j]-1
-            A=np.vstack((A,A1))
-        A=A*Rpore 
-        A=np.append(A, np.zeros((N-1,1)), axis = 1)
-        A=np.append(A, np.zeros((1,N)), axis = 0)
-        A2=np.zeros((N-1,N))
-        for i in range(0,N-1):
-            A2[i,0]+=1
-            A2[i,N-1-i]-=1
-        A2=np.vstack((A2,np.zeros(N)))
-        A2=A2*Z12t[freq]
-        
-        A3=np.vstack((np.zeros((N-1,N)),np.ones(N)))
-        
-        Ax = A2+A+A3
-        
-        b=np.zeros((N,1),dtype = complex)
-
-        for i in range (0,N-1):
-            b[i]=Ii[-1]**2-Ii[i]**2
-        
-        I2=np.linalg.solve(Ax,-b*Z2[freq])
-        Z[freq]=Z2[freq]*Ii[0]**2+I2[-1]*Z12t[freq]
-    return(Z)
-
-@element(num_params=4, units=['Ohm', 'Ohm', 'F', ''])
-def Ti(p,f):
-    
-    """ current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
-    
-    Notes
-    -----
-    
-    .. math::
-    
-    p0: Rpore
-    p1: Rct
-    p2: Cdl
-    p3: N (number of circuit element)
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Rct,surface
+    p4: Cdl,surface
+    p5: N (number of circuit element)
 
     
     [1] Y. Ji, D.T. Schwartz, 
@@ -823,46 +739,25 @@ def Ti(p,f):
     """
     
     
-    
-    N=int(p[3])
-    w=np.array(f)*2*np.pi
+    N=int(p[5])
+    frequencies = np.array(f)
+
     Rct=p[1]*N
     Cdl=p[2]/N
     Rpore=p[0]/N
-    Z1=Rct/(1+(w*Rct*Cdl)**2);
-    Z2=(-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2);  
-    Zran=Z1+Z2* 1j;
-    Req=Zran;
+    Rs=p[3]*N
+    Cs=p[4]/N
+
+    Z1b = RCO([Rct,Cdl],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
+    Zran = Z1b + Z1s
+    Req = Zran
     for i in range(1,N):
         
         Req_inv=(1/(Req+Rpore))+1/Zran
         Req=1/Req_inv
         
-    Req=Req+Rpore
-    
-    I=np.zeros((len(w),N),dtype=complex)
-    for freq in range (0,len(w)):
-        b1=np.ones(N)*Req[freq]
-
-        A=np.identity(N)*Zran[freq]
-        
-        A1=np.ones((N,N))*Rpore
-        
-        for i in range(0,N):
-            
-            A1[i,:]=A1[i,:]*(i+1)
-            
-            for j in range(0,i):
-                
-                A[i][j]=-(i-j)*Rpore
-
-        A = A+A1
-        
-        b = b1
-        
-        I[freq,:] = np.linalg.solve(A, b)   
-    return(I)
-
+    return (Req)
 ###
 @element(num_params=8, units=['Ohm', 'Ohm', 'F','','Ohm', 'F','', ''])
 def TLMn(p,f):
@@ -897,8 +792,8 @@ def TLMn(p,f):
     I=mTi(p[0:6],f) # calculate the current fraction (1st harmonic)
 
     N=int(p[5])
-    frequency = f
-    w=np.array(f)*2*np.pi
+    frequencies = np.array(f)
+    
     Rpore=p[0]/N
     Rct=p[1]*N
     Cdl=p[2]/N
@@ -908,12 +803,12 @@ def TLMn(p,f):
     eb=p[6]
     es=p[7]
     f=96485.3321233100184/(8.31446261815324*298) ## unit in 1/V
-    Z1b = RCO([Rct,Cdl],frequency)
-    Z1s = RCO([Rs,Cs],frequency)
-    Z2b = RCOn([Rct,Cdl,eb],frequency)
-    Z2s = RCOn([Rs,Cs,es],frequency)
-    Z1b2t = RCO([Rct,Cdl],2*frequency)
-    Z1s2t = RCO([Rs,Cs],2*frequency)
+    Z1b = RCO([Rct,Cdl],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
+    Z2b = RCOn([Rct,Cdl,eb],frequencies)
+    Z2s = RCOn([Rs,Cs,es],frequencies)
+    Z1b2t = RCO([Rct,Cdl],2*frequencies)
+    Z1s2t = RCO([Rs,Cs],2*frequencies)
     Z1 = Z1b+Z1s
     Z2 = Z2b+Z2s
     Z12t = Z1b2t+Z1s2t
@@ -925,8 +820,8 @@ def TLMn(p,f):
         sum2=(Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
         Z=(sum1+sum2)*Z2
         return(Z)
-    Z=np.zeros((len(w)),dtype = complex)
-    for freq in range(0,len(w)):
+    Z=np.zeros((len(frequencies)),dtype = complex)
+    for freq in range(0,len(frequencies)):
         Ii=I[freq]
         
         A = np.arange(N-1,0,-1)
@@ -989,16 +884,15 @@ def mTi(p,f):
     
     
     N=int(p[5])
-    frequency = f
+    frequencies = np.array(f)
 
-    w=np.array(f)*2*np.pi
     Rct=p[1]*N
     Cdl=p[2]/N
     Rpore=p[0]/N
     Rs=p[3]*N
     Cs=p[4]/N
-    Z1b = RCO([Rct,Cdl],frequency)
-    Z1s = RCO([Rs,Cs],frequency)
+    Z1b = RCO([Rct,Cdl],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1,N):
@@ -1008,8 +902,8 @@ def mTi(p,f):
         
     Req=Req+Rpore
     
-    I=np.zeros((len(w),N),dtype=complex)
-    for freq in range (0,len(w)):
+    I=np.zeros((len(frequencies),N),dtype=complex)
+    for freq in range (0,len(frequencies)):
         b1=np.ones(N)*Req[freq]
 
         A=np.identity(N)*Zran[freq]
@@ -1031,8 +925,10 @@ def mTi(p,f):
         I[freq,:] = np.linalg.solve(A, b)   
     return(I)
 
-@element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
-def TLM(p,f):
+
+
+@element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
+def TLMS(p,f):
     
     """ 
     
@@ -1042,13 +938,15 @@ def TLM(p,f):
     -----
     
     .. math::
-        
+    
     p0: Rpore
     p1: Rct,bulk
     p2: Cdl,bulk
-    p3: Rct,surface
-    p4: Cdl,surface
-    p5: N (number of circuit element)
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
 
     
     [1] Y. Ji, D.T. Schwartz, 
@@ -1059,19 +957,20 @@ def TLM(p,f):
 
     """
     
-    
-    N=int(p[5])
-    frequency = f
+    N=int(p[7])
+    frequencies = np.array(f)
 
-    # w=np.array(f)*2*np.pi
+    Rpore=p[0]/N
     Rct=p[1]*N
     Cdl=p[2]/N
-    Rpore=p[0]/N
-    Rs=p[3]*N
-    Cs=p[4]/N
+    Aw=p[3]*N
+    τd=p[4]
+    Rs=p[5]*N
+    Cs=p[6]/N
 
-    Z1b = RCO([Rct,Cdl],frequency)
-    Z1s = RCO([Rs,Cs],frequency)
+    Z1b = RCS([Rct,Cdl,Aw,τd],frequencies)
+
+    Z1s = RCO([Rs,Cs],frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1,N):
@@ -1107,13 +1006,340 @@ def TLMSn(p,f):
         
 
     """
-
     I=mTiS(p[0:8],f) # calculate the current fraction (1st harmonic)
 
     N=int(p[7])
-    frequency = f
-    w=np.array(f)*2*np.pi
+    
+    frequencies = np.array(f)
 
+    Rpore=p[0]/N
+    Rct=p[1]*N
+    Cdl=p[2]/N
+    Aw=p[3]*N
+    τd=p[4]
+    Rs=p[5]*N
+    Cs=p[6]/N
+    κ = p[8]
+    eb = p[9]
+    es = p[10]
+
+    Z1b = RCS([Rct,Cdl,Aw,τd],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
+    Z2b = RCSn([Rct,Cdl,Aw,τd,κ,eb],frequencies)
+    Z2s = RCOn([Rs,Cs,es],frequencies)
+    Z1b2t = RCS([Rct,Cdl,Aw,τd],2*frequencies)
+    Z1s2t = RCO([Rs,Cs],2*frequencies)
+    
+    Z1 = Z1b+Z1s
+    Z2 = Z2b+Z2s
+    Z12t = Z1b2t+Z1s2t
+
+    if N==1:
+        return(Z2)
+    
+    if N==2:
+        sum1=Z1**2/(2*Z1+Rpore)**2
+        sum2=(Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
+        Z=(sum1+sum2)*Z2
+        return(Z)
+        
+    Z=np.zeros(len(frequencies),dtype = complex)
+    for freq in range(0,len(frequencies)):
+        Ii=I[freq]
+        
+        A = np.arange(N-1,0,-1)
+        A1 = np.arange(N-1,0,-1)
+        
+        for i in range (0,N-2):
+            for j in range(0,N-1-i):
+                A1[j]=A1[j]-1
+            A=np.vstack((A,A1))
+        A=A*Rpore 
+        A=np.append(A, np.zeros((N-1,1)), axis = 1)
+        A=np.append(A, np.zeros((1,N)), axis = 0)
+        A2=np.zeros((N-1,N))
+        for i in range(0,N-1):
+            A2[i,0]+=1
+            A2[i,N-1-i]-=1
+        A2=np.vstack((A2,np.zeros(N)))
+        A2=A2*Z12t[freq]
+        
+        A3=np.vstack((np.zeros((N-1,N)),np.ones(N)))
+        
+        Ax = A2+A+A3
+        
+        b=np.zeros((N,1),dtype = complex)
+
+        for i in range (0,N-1):
+            b[i]=Ii[-1]**2-Ii[i]**2
+        
+        I2=np.linalg.solve(Ax,-b*Z2[freq])
+        Z[freq]=Z2[freq]*Ii[0]**2+I2[-1]*Z12t[freq]
+        # Z[freq]=Z2[freq]*Ii[0]**2
+
+    return(Z)
+@element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
+def mTiS(p,f):
+    
+    """ 
+    
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
+    Notes
+    -----
+    
+    .. math::
+        
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
+
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    """
+    N=int(p[7])
+    frequencies = np.array(f)
+
+    Rpore=p[0]/N
+    Rct=p[1]*N
+    Cdl=p[2]/N
+    Aw=p[3]*N
+    τd=p[4]
+    Rs=p[5]*N
+    Cs=p[6]/N
+
+    Z1b = RCS([Rct,Cdl,Aw,τd],frequencies)
+
+    Z1s = RCO([Rs,Cs],frequencies)
+    Zran = Z1b + Z1s
+    Req = Zran
+    for i in range(1,N):
+        
+        Req_inv=(1/(Req+Rpore))+1/Zran
+        Req=1/Req_inv
+        
+    Req=Req+Rpore
+    
+    I=np.zeros((len(frequencies),N),dtype=complex)
+    for freq in range (0,len(frequencies)):
+        b1=np.ones(N)*Req[freq]
+
+        A=np.identity(N)*Zran[freq]
+        
+        A1=np.ones((N,N))*Rpore
+        
+        for i in range(0,N):
+            
+            A1[i,:]=A1[i,:]*(i+1)
+            
+            for j in range(0,i):
+                
+                A[i][j]=-(i-j)*Rpore
+
+        A = A+A1
+        
+        b = b1
+        
+        I[freq,:] = np.linalg.solve(A, b)   
+
+    return(I)
+    
+@element(num_params=11, units=['Ohm', 'Ohm', 'F','Ohm', 's','Ohm', 'F','','1/V','', ''])
+def mTiSn(p,f):
+    """ 
+    
+    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
+    Notes
+    -----
+    
+    .. math::
+        
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
+    p8: κ,bulk
+    p9: ε,bulk
+    p10: ε,surface
+
+        
+
+    """
+    I=mTiS(p[0:8],f) # calculate the current fraction (1st harmonic)
+
+    N=int(p[7])
+    
+    frequencies = np.array(f)
+
+    Rpore=p[0]/N
+    Rct=p[1]*N
+    Cdl=p[2]/N
+    Aw=p[3]*N
+    τd=p[4]
+    Rs=p[5]*N
+    Cs=p[6]/N
+    κ = p[8]
+    eb = p[9]
+    es = p[10]
+
+    Z1b = RCS([Rct,Cdl,Aw,τd],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
+    Z2b = RCSn([Rct,Cdl,Aw,τd,κ,eb],frequencies)
+    Z2s = RCOn([Rs,Cs,es],frequencies)
+    Z1b2t = RCS([Rct,Cdl,Aw,τd],2*frequencies)
+    Z1s2t = RCO([Rs,Cs],2*frequencies)
+    
+    Z1 = Z1b+Z1s
+    Z2 = Z2b+Z2s
+    Z12t = Z1b2t+Z1s2t
+
+    if N==1:
+        return(Z2)
+    
+    if N==2:
+        sum1=Z1**2/(2*Z1+Rpore)**2
+        sum2=(Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
+        Z=(sum1+sum2)*Z2
+        return(Z)
+        
+    I2=np.zeros((len(frequencies),N),dtype=complex)
+
+    for freq in range(0,len(frequencies)):
+        Ii=I[freq]
+        
+        A = np.arange(N-1,0,-1)
+        A1 = np.arange(N-1,0,-1)
+        
+        for i in range (0,N-2):
+            for j in range(0,N-1-i):
+                A1[j]=A1[j]-1
+            A=np.vstack((A,A1))
+        A=A*Rpore 
+        A=np.append(A, np.zeros((N-1,1)), axis = 1)
+        A=np.append(A, np.zeros((1,N)), axis = 0)
+        A2=np.zeros((N-1,N))
+        for i in range(0,N-1):
+            A2[i,0]+=1
+            A2[i,N-1-i]-=1
+        A2=np.vstack((A2,np.zeros(N)))
+        A2=A2*Z12t[freq]
+        
+        A3=np.vstack((np.zeros((N-1,N)),np.ones(N)))
+        
+        Ax = A2+A+A3
+        
+        b=np.zeros((N,1),dtype = complex)
+
+        for i in range (0,N-1):
+            b[i]=Ii[-1]**2-Ii[i]**2
+        
+        I2[freq,:]=np.linalg.solve(Ax,-b*Z2[freq]).flatten()[::-1] ## reverse the order to display the correct result from small to larger N
+
+        
+
+    return(I2)
+
+
+
+@element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
+def TLMD(p,f):
+    
+    """ 
+    
+    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
+    Notes
+    -----
+    
+    .. math::
+    
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
+
+    
+    [1] Y. Ji, D.T. Schwartz, 
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
+    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    """
+    
+    N=int(p[7])
+    frequencies = np.array(f)
+
+    Rpore=p[0]/N
+    Rct=p[1]*N
+    Cdl=p[2]/N
+    Aw=p[3]*N
+    τd=p[4]
+    Rs=p[5]*N
+    Cs=p[6]/N
+
+    Z1b = RCD([Rct,Cdl,Aw,τd],frequencies)
+
+    Z1s = RCO([Rs,Cs],frequencies)
+    Zran = Z1b + Z1s
+    Req = Zran
+    for i in range(1,N):
+        
+        Req_inv=(1/(Req+Rpore))+1/Zran
+        Req=1/Req_inv
+    return (Req)
+    
+@element(num_params=11, units=['Ohm', 'Ohm', 'F','Ohm', 's','Ohm', 'F','','1/V','', ''])
+def TLMDn(p,f):
+    """ 
+    
+    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    
+    Notes
+    -----
+    
+    .. math::
+        
+    p0: Rpore
+    p1: Rct,bulk
+    p2: Cdl,bulk
+    p3: Aw,bulk
+    p4: τ,bulk
+    p5: Rct,surface
+    p6: Cdl,surface
+    p7: N (number of circuit element)
+    p8: κ,bulk
+    p9: ε,bulk
+    p10: ε,surface
+
+        
+
+    """
+
+    I=mTiD(p[0:8],f) # calculate the current fraction (1st harmonic)
+
+    N=int(p[7])
+    frequencies = np.array(f)
+    
     Rpore=p[0]/N
     Rct=p[1]*N
     Cdl=p[2]/N
@@ -1128,12 +1354,13 @@ def TLMSn(p,f):
     f=96485.3321233100184/(8.31446261815324*298) ## unit in 1/V
 
 
-    Z1b = RCS([Rct,Cdl,Aw,τd],frequency)
-    Z1s = RCO([Rs,Cs],frequency)
-    Z2b = RCSn([Rct,Cdl,Aw,τd,κ,eb],frequency)
-    Z2s = RCOn([Rs,Cs,es],frequency)
-    Z1b2t = RCS([Rct,Cdl,Aw,τd],2*frequency)
-    Z1s2t = RCO([Rs,Cs],2*frequency)
+    Z1b = RCD([Rct,Cdl,Aw,τd],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
+    Z2b = RCDn([Rct,Cdl,Aw,τd,κ,eb],frequencies)
+    Z2s = RCOn([Rs,Cs,es],frequencies)
+    Z1b2t = RCD([Rct,Cdl,Aw,τd],2*frequencies)
+    Z1s2t = RCO([Rs,Cs],2*frequencies)
+
     Z1 = Z1b+Z1s
     Z2 = Z2b+Z2s
     Z12t = Z1b2t+Z1s2t
@@ -1146,8 +1373,8 @@ def TLMSn(p,f):
         sum2=(Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
         Z=(sum1+sum2)*Z2
         return(Z)
-    Z=np.zeros((len(w)),dtype = complex)
-    for freq in range(0,len(w)):
+    Z=np.zeros((len(frequencies)),dtype = complex)
+    for freq in range(0,len(frequencies)):
         Ii=I[freq]
         
         A = np.arange(N-1,0,-1)
@@ -1181,7 +1408,7 @@ def TLMSn(p,f):
     return(Z)
 
 @element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
-def mTiS(p,f):
+def mTiD(p,f):
     
     """ 
     
@@ -1211,9 +1438,9 @@ def mTiS(p,f):
     """
 
     N=int(p[7])
-    frequency = f
+    frequencies = np.array(f)
 
-    w=np.array(f)*2*np.pi
+
     Rpore=p[0]/N
     Rct=p[1]*N
     Cdl=p[2]/N
@@ -1222,8 +1449,9 @@ def mTiS(p,f):
     Rs=p[5]*N
     Cs=p[6]/N
 
-    Z1b = RCS([Rct,Cdl,Aw,τd],frequency)
-    Z1s = RCO([Rs,Cs],frequency)
+    Z1b = RCD([Rct,Cdl,Aw,τd],frequencies)
+
+    Z1s = RCO([Rs,Cs],frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1,N):
@@ -1233,8 +1461,8 @@ def mTiS(p,f):
         
     Req=Req+Rpore
     
-    I=np.zeros((len(w),N),dtype=complex)
-    for freq in range (0,len(w)):
+    I=np.zeros((len(frequencies),N),dtype=complex)
+    for freq in range (0,len(frequencies)):
         b1=np.ones(N)*Req[freq]
 
         A=np.identity(N)*Zran[freq]
@@ -1256,18 +1484,17 @@ def mTiS(p,f):
         I[freq,:] = np.linalg.solve(A, b)   
     return(I)
 
-@element(num_params=8, units=['Ohm', 'Ohm', 'F','Ohm', 's', 'Ohm', 'F', ''])
-def TLMS(p,f):
-    
+@element(num_params=11, units=['Ohm', 'Ohm', 'F','Ohm', 's','Ohm', 'F','','1/V','', ''])
+def mTiDn(p,f):
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
     
     Notes
     -----
     
     .. math::
-    
+        
     p0: Rpore
     p1: Rct,bulk
     p2: Cdl,bulk
@@ -1276,20 +1503,19 @@ def TLMS(p,f):
     p5: Rct,surface
     p6: Cdl,surface
     p7: N (number of circuit element)
+    p8: κ,bulk
+    p9: ε,bulk
+    p10: ε,surface
 
-    
-    [1] Y. Ji, D.T. Schwartz, 
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+        
 
     """
-    
-    N=int(p[7])
-    frequency = f
 
-    # w=np.array(f)*2*np.pi
+    I=mTiD(p[0:8],f) # calculate the current fraction (1st harmonic)
+
+    N=int(p[7])
+    frequencies = np.array(f)
+    
     Rpore=p[0]/N
     Rct=p[1]*N
     Cdl=p[2]/N
@@ -1297,16 +1523,68 @@ def TLMS(p,f):
     τd=p[4]
     Rs=p[5]*N
     Cs=p[6]/N
+    κ = p[8]
+    eb = p[9]
+    es = p[10]
 
-    Z1b = RCS([Rct,Cdl,Aw,τd],frequency)
-    Z1s = RCO([Rs,Cs],frequency)
-    Zran = Z1b + Z1s
-    Req = Zran
-    for i in range(1,N):
+    f=96485.3321233100184/(8.31446261815324*298) ## unit in 1/V
+
+
+    Z1b = RCD([Rct,Cdl,Aw,τd],frequencies)
+    Z1s = RCO([Rs,Cs],frequencies)
+    Z2b = RCDn([Rct,Cdl,Aw,τd,κ,eb],frequencies)
+    Z2s = RCOn([Rs,Cs,es],frequencies)
+    Z1b2t = RCD([Rct,Cdl,Aw,τd],2*frequencies)
+    Z1s2t = RCO([Rs,Cs],2*frequencies)
+
+    Z1 = Z1b+Z1s
+    Z2 = Z2b+Z2s
+    Z12t = Z1b2t+Z1s2t
+
+    if N==1:
+        return(Z2)
+    
+    if N==2:
+        sum1=Z1**2/(2*Z1+Rpore)**2
+        sum2=(Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
+        Z=(sum1+sum2)*Z2
+        return(Z)
+
+    I2=np.zeros((len(frequencies),N),dtype=complex)
+
+    for freq in range(0,len(frequencies)):
+        Ii=I[freq]
         
-        Req_inv=(1/(Req+Rpore))+1/Zran
-        Req=1/Req_inv
-    return (Req)
+        A = np.arange(N-1,0,-1)
+        A1 = np.arange(N-1,0,-1)
+        
+        for i in range (0,N-2):
+            for j in range(0,N-1-i):
+                A1[j]=A1[j]-1
+            A=np.vstack((A,A1))
+        A=A*Rpore 
+        A=np.append(A, np.zeros((N-1,1)), axis = 1)
+        A=np.append(A, np.zeros((1,N)), axis = 0)
+        A2=np.zeros((N-1,N))
+        for i in range(0,N-1):
+            A2[i,0]+=1
+            A2[i,N-1-i]-=1
+        A2=np.vstack((A2,np.zeros(N)))
+        A2=A2*Z12t[freq]
+        
+        A3=np.vstack((np.zeros((N-1,N)),np.ones(N)))
+        
+        Ax = A2+A+A3
+        
+        b=np.zeros((N,1),dtype = complex)
+
+        for i in range (0,N-1):
+            b[i]=Ii[-1]**2-Ii[i]**2
+        
+        I2[freq,:]=np.linalg.solve(Ax,-b*Z2[freq]).flatten()[::-1] ## reverse the order to display the correct result from small to larger N
+        
+    return(Z)
+
 
 def get_element_from_name(name):
     excluded_chars = '0123456789_'
