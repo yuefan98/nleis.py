@@ -57,12 +57,16 @@ class EISandNLEIS:
             NLEIS: circuit_2 = 'd(TDSn0-TDSn1)'
 
         """
+        # if supplied, check that initial_guess is valid and store
+        initial_guess = [x for x in initial_guess if x is not None]
         for i in initial_guess:
             if not isinstance(i, (float, int, np.int32, np.float64)):
                 raise TypeError(f'value {i} in initial_guess is not a number')
 
         # initalize class attributes
-        self.initial_guess = list(initial_guess)
+        # self.initial_guess = list(initial_guess)
+        self.initial_guess = initial_guess
+
         self.circuit_1 = circuit_1
         self.circuit_2 = circuit_2
         elements_1 = extract_circuit_elements(circuit_1)
@@ -81,10 +85,10 @@ class EISandNLEIS:
             ## New code for constant separatation
             ## in the current development the differentiation between linear and nonlinear is separated by 'n'
             ## using get_element_from_name to get the raw element and adding n to the end
-            for name in self.constants:
+            for elem in self.constants:
                 
-                raw_elem = get_element_from_name(name)
-                raw_circuit_elem = name.split('_')[0]
+                raw_elem = get_element_from_name(elem)
+                raw_circuit_elem = elem.split('_')[0]
                 
                 if raw_circuit_elem not in input_elements:
                     raise ValueError(f'{raw_elem} not in ' +
@@ -93,35 +97,35 @@ class EISandNLEIS:
                 if raw_num_params<=1:
                     ## currently there is no single parameter nonlinear element,
                     ## so this can work, but might be changed in the future
-                    self.constants_1[name]=self.constants[name]
+                    self.constants_1[elem]=self.constants[elem]
                 else:
-                    param_num = int(name.split('_')[-1])
+                    param_num = int(elem.split('_')[-1])
                     if raw_elem[-1] != 'n':
                         
                         if param_num>=raw_num_params:
-                            raise ValueError(f'{name} is out of the range of the maximum allowed ' +
+                            raise ValueError(f'{elem} is out of the range of the maximum allowed ' +
                                              f'number of parameters ({raw_num_params})')
     
-                        self.constants_1[name]=self.constants[name]
+                        self.constants_1[elem]=self.constants[elem]
                         len_elem = len(raw_elem)
-                        nl_elem = name[0:len_elem]+'n'+name[len_elem:]
+                        nl_elem = elem[0:len_elem]+'n'+elem[len_elem:]
                         raw_nl_elem = get_element_from_name(nl_elem)
                         if raw_nl_elem in circuit_elements.keys():
-                            self.constants_2[nl_elem]=self.constants[name]
+                            self.constants_2[nl_elem]=self.constants[elem]
                         else:
-                            self.constants_2[name]=self.constants[name]
+                            self.constants_2[elem]=self.constants[elem]
     
                     if raw_elem[-1] == 'n':
                         
                         if param_num>=raw_num_params:
-                            raise ValueError(f'{name} is out of the range of the maximum allowed ' +
+                            raise ValueError(f'{elem} is out of the range of the maximum allowed ' +
                                              f'number of parameters ({raw_num_params})')
                         
                         num_params = check_and_eval(raw_elem[0:-1]).num_params
                         len_elem = len(raw_elem[0:-1])
                         if param_num<num_params:
-                            self.constants_1[name[0:len_elem]+name[len_elem+1:]]=self.constants[name]
-                        self.constants_2[name]=self.constants[name]
+                            self.constants_1[elem[0:len_elem]+elem[len_elem+1:]]=self.constants[elem]
+                        self.constants_2[elem]=self.constants[elem]
 
         else:
             self.constants = {}
@@ -226,9 +230,12 @@ class EISandNLEIS:
                                            bounds=bounds,
                                            opt=opt,cost = cost,max_f = max_f,
                                            **kwargs)
-            self.parameters_ = list(parameters)
+            # self.parameters_ = list(parameters)
+            self.parameters_ = parameters
+
             if conf is not None:
-                self.conf_ = list(conf)
+                # self.conf_ = list(conf)
+                self.conf_ = conf
                 self.conf1, self.conf2 = individual_parameters(self.circuit_1,self.conf_,self.constants_1,self.constants_2)
 
             self.p1, self.p2 = individual_parameters(self.circuit_1,self.parameters_,self.constants_1,self.constants_2)
@@ -378,16 +385,16 @@ class EISandNLEIS:
         dic1={}
         if self._is_fit():
             params1 = self.p1
-            for name, param in zip(names1, params1):
-                dic1[name] = param
+            for names, param in zip(names1, params1):
+                dic1[names] = param
                 
         names2, units2 = self.get_param_names(self.circuit_2,self.constants_2)
         dic2={}
         if self._is_fit():
             params2 = self.p2
             
-            for name, param in zip(names2, params2):
-                dic2[name] = param
+            for names, param in zip(names2, params2):
+                dic2[names] = param
     
         return dic1,dic2
     def plot(self, ax=None, f_data=None, Z1_data =None, Z2_data= None, kind='nyquist', max_f = 10, **kwargs):
@@ -555,7 +562,8 @@ class EISandNLEIS:
         if self._is_fit():
             parameters_ = list(self.parameters_)
             model_conf_ = list(self.conf_)
-
+            # parameters_ = self.parameters_
+            # model_conf_ = self.conf_
             data_dict = {"Name": model_name,
                          "Circuit String 1": model_string_1,
                          "Circuit String 2": model_string_2,
@@ -616,21 +624,24 @@ class EISandNLEIS:
         self.circuit_2 = model_string_2
         self.edited_circuit = json_data["Edited Circuit Str"]
 
-        print(self.circuit_1)
-        print(self.circuit_2)
-
         self.constants = model_constants
         self.constants_1 =json_data["Constants 1"]
         self.constants_2 =json_data["Constants 2"]
+        self.p1, self.p2 = individual_parameters(self.circuit_1,self.initial_guess,self.constants_1,self.constants_2)
 
         self.name = model_name
 
         if json_data["Fit"]:
             if fitted_as_initial:
-                self.initial_guess = np.array(json_data['Parameters'])
+                self.initial_guess = json_data['Parameters']
+                self.p1, self.p2 = individual_parameters(self.circuit_1,self.initial_guess,self.constants_1,self.constants_2)
+
             else:
                 self.parameters_ = np.array(json_data["Parameters"])
                 self.conf_ = np.array(json_data["Confidence"])
+                self.conf1, self.conf2 = individual_parameters(self.circuit_1,self.conf_,self.constants_1,self.constants_2)
+                self.p1, self.p2 = individual_parameters(self.circuit_1,self.parameters_,self.constants_1,self.constants_2)
+
     
 
 class NLEISCustomCircuit(BaseCircuit):

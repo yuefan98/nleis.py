@@ -148,15 +148,15 @@ def simul_fit(frequencies, Z1, Z2, circuit_1,circuit_2, edited_circuit, initial_
         ### This method does not provides converge solution at current development
         bounds = tuple(tuple((bounds[0][i], bounds[1][i])) for i in range(len(bounds[0])))
 
-        res = minimize(warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f,cost = cost), x0=initial_guess,bounds=bounds, **kwargs)
+        res = minimize(wrapNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f,cost = cost), x0=initial_guess,bounds=bounds, **kwargs)
         
         return (res.x*ub,None)
     
 
-def warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f=10,cost=0.5):
+def wrapNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,constants_2,ub,max_f=10,cost=0.5):
     ''' wraps function for negtive log likelihood optimization'''
     
-    def warppedNeg_log_likelihood(parameters):
+    def wrappedNeg_log_likelihood(parameters):
         """ returns a stacked array of real and imaginary impedance
         components
 
@@ -189,7 +189,7 @@ def warpNeg_log_likelihood(frequencies,Z1,Z2,circuit_1, constants_1,circuit_2,co
         log1 = np.log(sum(((Z1-x1))**2))
         log2 = np.log(sum(((Z2-x2))**2))
         return(cost*log1+(1-cost)*log2)
-    return warppedNeg_log_likelihood
+    return wrappedNeg_log_likelihood
         
         
 
