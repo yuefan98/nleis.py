@@ -4,9 +4,13 @@
 
 ### Installation
 
-Currently, you need to clone the repo for `nleis.py`.
+The `nleis.py` is avaliable in a standalone version now. You can install it directly with pip.
 
-See [Getting started with nleis.py](https://nleispy.readthedocs.io/en/latest/getting-started.html) for instructions on getting started from scratch.
+```bash
+pip install nleis
+```
+
+See [Getting started with nleis.py](https://nleispy.readthedocs.io/en/latest/getting-started.html) for instructions on how to get most of this toolbox.
 
 In the near future, you can directly install `impedance.py` using pip and you will be able to access all the funcationality for `nleis.py`.
 
@@ -16,13 +20,15 @@ pip install impedance
 
 #### Dependencies
 
-nleis.py requires the same dependencies as impedance.py:
+`nleis.py` requires the same dependencies as `impedance.py` puls the latest version of `impedance.py`:
 
 -   Python (>=3.7)
 -   SciPy (>=1.0)
 -   NumPy (>=1.14)
 -   Matplotlib (>=3.0)
 -   Altair (>=3.0)
+-   impedance(>=1.7.1)
+
 
 #### Examples and Documentation
 
