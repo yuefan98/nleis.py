@@ -1,4 +1,4 @@
-name: impedance
+name: nleis
 channels:
   - defaults
 dependencies:

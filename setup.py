@@ -22,6 +22,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     packages=setuptools.find_packages(include = ['nleis']),
+    package_data={
+        "nleis": ["data/*",'nleis_tests/*'],
+
+	},
     
     python_requires=">=3.6",
     install_requires=['altair>=3.0', 'matplotlib>=3.5',

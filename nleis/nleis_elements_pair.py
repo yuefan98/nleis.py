@@ -429,7 +429,7 @@ def TDP(p, f):
 def TDPn(p, f):
     """ 
     
-    NLEIS: A macrohomogeneous porous electrode model with planar diffusion
+    2nd-NLEIS: A macrohomogeneous porous electrode model with planar diffusion
     and zero solid resistivity from Ji et al. [1]
    
     Notes
@@ -714,7 +714,7 @@ def TLM(p,f):
     
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    EIS： General discrete transmission line model built  Randles circuit
     
     Notes
     -----
@@ -728,12 +728,6 @@ def TLM(p,f):
     p4: Cdl,surface
     p5: N (number of circuit element)
 
-    
-    [1] Y. Ji, D.T. Schwartz, 
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy: 
-    I. Analytical theory and equivalent circuit representations for planar and porous electrodes. 
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     """
     
@@ -762,7 +756,8 @@ def TLM(p,f):
 def TLMn(p,f):
     """ 
     
-    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    2nd-NLEIS: Second harmonic nonlinear discrete transmission line model 
+    built based on the nonlinear Randles circuit from Ji et al. [1]
     
     Notes
     -----
@@ -858,7 +853,8 @@ def mTi(p,f):
     
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    EIS: current distribution of  discrete transmission line model 
+    built based on the  Randles circuit from Ji et al. [1]
     
     Notes
     -----
@@ -931,7 +927,8 @@ def TLMS(p,f):
     
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    EIS: General discrete transmission line model 
+    built based on the Randles circuit with spherical diffusion from Ji et al.[1]
     
     Notes
     -----
@@ -983,7 +980,8 @@ def TLMS(p,f):
 def TLMSn(p,f):
     """ 
     
-    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    2nd-NLEIS: Second harmonic nonlinear discrete transmission line model 
+    built based on the Randles circuit with spherical diffusion from Ji et al. [1]
     
     Notes
     -----
@@ -1082,7 +1080,8 @@ def mTiS(p,f):
     
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    EIS: current distribution of nonlinear discrete transmission line model 
+    built based on the Randles circuit with spherical diffusion from Ji et al. [1]
     
     Notes
     -----
@@ -1157,7 +1156,8 @@ def mTiS(p,f):
 def mTiSn(p,f):
     """ 
     
-    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    2nd-NLEIS: nonlinear current distribution of nonlinear discrete transmission line model
+      built based on the Randles circuit with spherical diffusion from Ji et al. [1]
     
     Notes
     -----
@@ -1260,7 +1260,8 @@ def TLMD(p,f):
     
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    EIS: general discrete transmission line model 
+    built based on the Randles circuit with planar diffusion from Ji et al. [1]
     
     Notes
     -----
@@ -1311,7 +1312,8 @@ def TLMD(p,f):
 def TLMDn(p,f):
     """ 
     
-    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    2nd-NLEIS: Second harmonic nonlinear discrete transmission line model 
+    built based on the Randles circuit with planar diffusion from Ji et al. [1]
     
     Notes
     -----
@@ -1411,7 +1413,8 @@ def mTiD(p,f):
     
     """ 
     
-    current distribution of nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    EIS: current distribution of discrete transmission line model 
+    built based on the Randles circuit with planar diffusion from Ji et al. [1]
     
     Notes
     -----
@@ -1487,7 +1490,8 @@ def mTiD(p,f):
 def mTiDn(p,f):
     """ 
     
-    Second harmonic nonlinear discrete transmission line model built based on the Randles circuit from Ji et al. [1]
+    2nd-NLEIS: current distribution of Second harmonic nonlinear discrete transmission line model 
+    built based on the Randles circuit with planar diffusion from Ji et al. [1]
     
     Notes
     -----
