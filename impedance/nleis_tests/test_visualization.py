@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from impedance.models.nleis.visualization import plot_altair, plot_first, plot_second
+from impedance.models.nleis.visualization import plot_altair, plot_first, \
+    plot_second
 import json
 
 
@@ -14,13 +15,11 @@ def test_plot_nyquist():
     xs, ys = ax.lines[0].get_xydata().T
     assert (xs == Z.real).all() and (ys == -Z.imag).all()
 
-    
     # pass axes
     _, ax = plt.subplots()
     ax = plot_second(ax, Z, scale=10)
     xs, ys = ax.lines[0].get_xydata().T
     assert (xs == Z.real).all() and (ys == -Z.imag).all()
-
 
 
 def test_plot_altair():
@@ -34,5 +33,3 @@ def test_plot_altair():
     datasets = json.loads(chart.to_json())['datasets']
     for dataset in datasets.keys():
         assert len(datasets[dataset]) == len(Z)
-
-

@@ -3,17 +3,20 @@ import warnings
 import numpy as np
 from scipy.linalg import inv
 from scipy.optimize import curve_fit, basinhopping
-from impedance.models.circuits.elements import circuit_elements, get_element_from_name
-from impedance.models.circuits.fitting import check_and_eval,rmse
+from impedance.models.circuits.elements import circuit_elements, \
+    get_element_from_name
+from impedance.models.circuits.fitting import check_and_eval, rmse
 
-### Note: a lot of codes are directly adopted from impedance.py. Can be easily perform a full integration in the future, but now we are keep them separated to ensure the stable performance
+# Note: a lot of codes are directly adopted from impedance.py.,
+# which is designed to be enable a easy integration in the future,
+# but now we are keep them separated to ensure the stable performance
 
 ints = '0123456789'
 
 
-def mae(a,b):
-    ''' 
-   
+def mae(a, b):
+    '''
+
     Mean Absolute Error
 
     Parameters
@@ -28,11 +31,12 @@ def mae(a,b):
     The calculated Mean Absolute Error.
 
     '''
-    return(np.mean(abs(a-b)))
+    return (np.mean(abs(a-b)))
 
-def mape(a,b):
+
+def mape(a, b):
     '''
-   
+
     Mean Absolute Percentage Error
 
     Parameters
@@ -47,13 +51,14 @@ def mape(a,b):
     Mean Absolute Percentage Error.
 
     '''
-    return(np.mean(abs(a-b)/abs(a))*100)
+    return (np.mean(abs(a-b)/abs(a))*100)
 
-def seq_fit_parm(input_dic,target_arr,output_arr):
+
+def seq_fit_parm(input_dic, target_arr, output_arr):
     '''
-     
-    Convert obtained EIS result to a constant of dictionary for 2nd-NLEIS analyssis
-    for sequential optimization disscussed in [1]
+
+    Convert obtained EIS result to a constant of dictionary
+    for 2nd-NLEIS analysis using sequential optimization disscussed in [1]
 
     Parameters
     ----------
@@ -61,7 +66,7 @@ def seq_fit_parm(input_dic,target_arr,output_arr):
         DESCRIPTION.
     target_arr : list of string
         DESCRIPTION.
-    output_arr : list of string 
+    output_arr : list of string
         DESCRIPTION.
 
     Raises
@@ -77,18 +82,21 @@ def seq_fit_parm(input_dic,target_arr,output_arr):
     output_dic = {}
     n = len(target_arr)
     if n != len(output_arr):
-        raise ValueError('Target Array and Output Array Must Have the Same Length ')
+        raise ValueError(
+            'Target Array and Output Array Must Have the Same Length ')
 
-    for i in range(0,n):
+    for i in range(0, n):
         for j in range(check_and_eval(target_arr[i][0:-1]).num_params):
             if target_arr[i]+'_'+str(j) not in input_dic:
                 continue
-            output_dic[output_arr[i]+'_'+str(j)]=input_dic[target_arr[i]+'_'+str(j)]
-    return(output_dic)
-    
+            output_dic[output_arr[i]+'_' +
+                       str(j)] = input_dic[target_arr[i]+'_'+str(j)]
+    return (output_dic)
+
+
 def set_default_bounds(circuit, constants={}):
-    """ 
-    
+    """
+
     This function sets default bounds for optimization.
 
     set_default_bounds sets bounds of 0 and np.inf for all parameters,
@@ -107,7 +115,7 @@ def set_default_bounds(circuit, constants={}):
     -------
     bounds : 2-tuple of array_like
         Lower and upper bounds on parameters.
-        
+
     """
 
     # extract the elements from the circuit
@@ -115,74 +123,69 @@ def set_default_bounds(circuit, constants={}):
 
     # loop through bounds
     lower_bounds, upper_bounds = [], []
-    
+
     for elem in extracted_elements:
 
         raw_element = get_element_from_name(elem)
-        
+
         for i in range(check_and_eval(raw_element).num_params):
-            
+
             if elem in constants or elem + f'_{i}' in constants:
-                
+
                 continue
-                
+
             elif raw_element in ['CPE', 'La'] and i == 1:
                 upper_bounds.append(1)
                 lower_bounds.append(0)
-            ## The following are for nleis.py
+            # The following are for nleis.py
             elif raw_element in ['Tsn'] and i == 4:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TPn'] and i == 3:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['RCn','RCOn'] and i == 2:
+            elif raw_element in ['RCn', 'RCOn'] and i == 2:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TDSn','TDPn','TDCn'] and (i == 5 ) :
+            elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and (i == 5):
 
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
 
-            elif raw_element in ['TDSn','TDPn','TDCn'] and i == 6 :
+            elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and i == 6:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
 
-            elif raw_element in ['RCDn','RCSn'] and (i == 4) :
+            elif raw_element in ['RCDn', 'RCSn'] and (i == 4):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
 
-            elif raw_element in ['RCDn','RCSn'] and i == 5 :
+            elif raw_element in ['RCDn', 'RCSn'] and i == 5:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TLMn'] and (i == 6 or i ==7):
+            elif raw_element in ['TLMn'] and (i == 6 or i == 7):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
 
-            elif raw_element in ['TLMSn'] and (i == 9 or i ==10):
+            elif raw_element in ['TLMSn'] and (i == 9 or i == 10):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TLMSn'] and (i == 8):
                 upper_bounds.append(np.inf)
-                lower_bounds.append(-np.inf)            
+                lower_bounds.append(-np.inf)
 
             else:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(0)
-                
-
 
     bounds = ((lower_bounds), (upper_bounds))
-    
 
     return bounds
-
 
 
 def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
                 bounds=None, weight_by_modulus=False, global_opt=False,
                 **kwargs):
-
     """ Main function for fitting an equivalent circuit to data.
 
     By default, this function uses `scipy.optimize.curve_fit
@@ -244,7 +247,7 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
     Currently, an error of -1 is returned.
 
     """
-    
+
     f = np.array(frequencies, dtype=float)
     Z = np.array(impedances, dtype=complex)
 
@@ -329,6 +332,7 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
 
     return popt, perror
 
+
 def wrapCircuit(circuit, constants):
     """ wraps function so we can pass the circuit string """
     def wrappedCircuit(frequencies, *parameters):
@@ -359,7 +363,6 @@ def wrapCircuit(circuit, constants):
     return wrappedCircuit
 
 
-
 def buildCircuit(circuit, frequencies, *parameters,
                  constants=None, eval_string='', index=0):
     """ recursive function that transforms a circuit, parameters, and
@@ -378,24 +381,26 @@ def buildCircuit(circuit, frequencies, *parameters,
         Python expression for calculating the resulting fit
     index: int
         Tracks parameter index through recursive calling of the function
-    
+
     """
 
     parameters = np.array(parameters).tolist()
     frequencies = np.array(frequencies).tolist()
     circuit = circuit.replace(' ', '')
 
-    def parse_circuit(circuit, parallel=False, series=False,difference=False):
+    def parse_circuit(circuit, parallel=False, series=False, difference=False):
         """ Splits a circuit string by either dashes (series) or commas
             (parallel) outside of any paranthesis. Removes any leading 'p('
-            or trailing ')' when in parallel mode or 'd('or trailing ')' when in difference mode '' """
-
-        assert parallel != series or series != difference or difference != parallel, \
-            'Exactly one of parallel or series or difference must be True'
+            or trailing ')' when in parallel mode or 'd('or trailing ')'
+            when in difference mode '' """
+        # Exactly one of parallel or series or difference must be True
+        assert (parallel != series
+                or series != difference
+                or difference != parallel)
 
         def count_parens(string):
             return string.count('('), string.count(')')
-        
+
         if parallel:
             special = ','
             if circuit.endswith(')') and circuit.startswith('p('):
@@ -407,7 +412,6 @@ def buildCircuit(circuit, frequencies, *parameters,
 
         if series:
             special = '-'
-        
 
         split = circuit.split(special)
 
@@ -444,17 +448,17 @@ def buildCircuit(circuit, frequencies, *parameters,
     elif parallel is not None and len(parallel) > 1:
         eval_string += "p(["
         split = parallel
-        
-    ## added for nleis.py
+
+    # added for nleis.py
     elif difference is not None and len(difference) > 1:
         eval_string += "d(["
         split = difference
-        
-    elif series == parallel == difference :  # only single element
+
+    elif series == parallel == difference:  # only single element
         split = series
-        
+
     for i, elem in enumerate(split):
-        if ',' in elem or '-' in elem :
+        if ',' in elem or '-' in elem:
             eval_string, index = buildCircuit(elem, frequencies,
                                               *parameters,
                                               constants=constants,
@@ -480,7 +484,7 @@ def buildCircuit(circuit, frequencies, *parameters,
             param_string += str(param_list)
             new = raw_elem + '(' + param_string + ',' + str(frequencies) + ')'
             eval_string += new
-            
+
         if i == len(split) - 1:
             if len(split) > 1:  # do not add closing brackets if single element
                 eval_string += '])'
@@ -513,6 +517,7 @@ def calculateCircuitLength(circuit):
             length += num_params
     return length
 
+
 def extract_circuit_elements(circuit):
     """ Extracts circuit elements from a circuit string.
 
@@ -544,7 +549,3 @@ def extract_circuit_elements(circuit):
                 current_element.append(char)
     extracted_elements.append(''.join(current_element))
     return extracted_elements
-
-
-
-

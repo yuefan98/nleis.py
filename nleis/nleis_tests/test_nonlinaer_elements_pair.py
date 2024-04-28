@@ -2,31 +2,30 @@ import string
 
 import numpy as np
 
-from nleis.nleis_elements_pair import (OverwriteError,
-                                                circuit_elements, element, d,
-                                                ElementError)
+from nleis.nleis_elements_pair import (OverwriteError,  # noqa: F401
+                                       circuit_elements, element, d,
+                                       ElementError)  # noqa: F401
 from impedance.models.circuits.circuits import CustomCircuit
-from nleis.nleis import NLEISCustomCircuit
+from nleis.nleis import NLEISCustomCircuit  # noqa: F401
+
 
 def test_porous_electrode():
-   freqs = [0.001, 1.0, 1000]
-   circuit_1 = CustomCircuit('TPO',initial_guess = [1,1,1])
-   circuit_2 = CustomCircuit('TLM',initial_guess = [1,1,1,0,0,1000])
-   Z1 = circuit_1.predict(freqs)
-   Z2 = circuit_2.predict(freqs)
-   assert np.allclose (Z1,Z2,atol=1e-3)
-
+    freqs = [0.001, 1.0, 1000]
+    circuit_1 = CustomCircuit('TPO', initial_guess=[1, 1, 1])
+    circuit_2 = CustomCircuit('TLM', initial_guess=[1, 1, 1, 0, 0, 1000])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
 
 
 def test_RC():
-   freqs = [0.001, 1.0, 1000]
-   circuit_1 = CustomCircuit('RCO',initial_guess = [1,1])
-   circuit_2 = CustomCircuit('p(R1,C1)',initial_guess = [1,1])
-   Z1 = circuit_1.predict(freqs)
-   Z2 = circuit_2.predict(freqs)
+    freqs = [0.001, 1.0, 1000]
+    circuit_1 = CustomCircuit('RCO', initial_guess=[1, 1])
+    circuit_2 = CustomCircuit('p(R1,C1)', initial_guess=[1, 1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
 
-   assert np.allclose (Z1,Z2)
-
+    assert np.allclose(Z1, Z2)
 
 
 def test_d():
@@ -35,7 +34,6 @@ def test_d():
 
     answer = np.array([0, 0])
     assert np.isclose(d([a, b]), answer).all()
-
 
 
 def test_element_function_names():
@@ -51,8 +49,3 @@ def test_element_function_names():
             assert (
                 char in letters
             ), f"{char} in {elem} is not in the allowed set of {letters}"
-
-
-
-
-

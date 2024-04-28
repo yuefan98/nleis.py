@@ -1,12 +1,14 @@
 import altair as alt
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: F401
 import numpy as np
 import pandas as pd
 from matplotlib import ticker
 
-### These are all slightly modified versin of the visualization code. Can be seamlessly inegrated into impedance.py in the future.
+# These are all slightly modified versin of the visualization code.
+# Can be seamlessly inegrated into impedance.py in the future.
 
-def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
+
+def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
     """ Plots impedance as an interactive Nyquist/Bode plot using altair
 
         Parameters
@@ -35,7 +37,7 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
         df = pd.DataFrame({'f': f, 'z_real': Z.real, 'z_imag': Z.imag,
                            'kind': kind, 'fmt': fmt})
 
-        Z_df = pd.concat([Z_df,df])
+        Z_df = pd.concat([Z_df, df])
         # Z_df.append(df)
 
     range_x = max(Z_df['z_real']) - min(Z_df['z_real'])
@@ -50,7 +52,7 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
 
     nearest = alt.selection_single(on='mouseover', nearest=True,
                                    empty='none', fields=['f'])
-    ## potential future improvement
+    # potential future improvement
     # nearest = alt.selection_point(on='mouseover', nearest=True,
     #                                empty='none', fields=['f'])
 
@@ -58,14 +60,16 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
     nyquists, bode_mags, bode_phss = [], [], []
     if '-' in fmts:
         df = Z_df.groupby('fmt').get_group('-')
-        ##### These are changed to introduce harmonics and units
+        # These are changed to introduce harmonics and units
         nyquist = alt.Chart(df).mark_line().encode(
-            x=alt.X('z_real:Q', axis=alt.Axis(title="Z{}' [{}]".format(k, units)),
+            x=alt.X('z_real:Q', axis=alt.Axis(
+                title="Z{}' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_x, max_x],
-                                    nice=False, padding=5),sort=None),
-            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(title="-Z{}'' [{}]".format(k, units)),
+                                    nice=False, padding=5), sort=None),
+            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(
+                title="-Z{}'' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_y, max_y],
-                                    nice=False, padding=5),sort=None),
+                                    nice=False, padding=5), sort=None),
             color='kind:N'
         ).properties(
             height=size,
@@ -76,7 +80,7 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
 
         bode = alt.Chart(df).mark_line().encode(
             alt.X('f:Q', axis=alt.Axis(title="f [Hz]"),
-                  scale=alt.Scale(type='log', nice=False),sort=None),
+                  scale=alt.Scale(type='log', nice=False), sort=None),
             color='kind:N'
         ).properties(
             width=size,
@@ -86,10 +90,11 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
             neg_phase="-(180/PI)*atan2(datum.z_imag,datum.z_real)"
         )
 
-        bode_mag = bode.encode(y=alt.Y('mag:Q',
-                                       axis=alt.Axis(title="|Z{}|' [{}]".format(k, units)),sort=None))
-        bode_phs = bode.encode(y=alt.Y('neg_phase:Q',
-                                       axis=alt.Axis(title="-ϕ [°]"),sort=None))
+        bode_mag = bode.encode(
+            y=alt.Y('mag:Q', axis=alt.Axis(
+                title="|Z{}|' [{}]".format(k, units)), sort=None))
+        bode_phs = bode.encode(
+            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
 
         nyquists.append(nyquist)
         bode_mags.append(bode_mag)
@@ -100,12 +105,14 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
         df = Z_df.groupby('fmt').get_group('o')
 
         nyquist = alt.Chart(df).mark_circle().encode(
-            x=alt.X('z_real:Q', axis=alt.Axis(title="Z{}' [{}]".format(k, units)),
+            x=alt.X('z_real:Q', axis=alt.Axis(
+                title="Z{}' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_x, max_x],
-                                    nice=False, padding=5),sort=None),
-            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(title="-Z{}'' [{}]".format(k, units)),
+                                    nice=False, padding=5), sort=None),
+            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(
+                title="-Z{}'' [{}]".format(k, units)),
                     scale=alt.Scale(domain=[min_y, max_y],
-                                    nice=False, padding=5),sort=None),
+                                    nice=False, padding=5), sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color=alt.Color('kind:N', legend=alt.Legend(title='Legend'))
         ).add_selection(
@@ -119,7 +126,7 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
 
         bode = alt.Chart(df).mark_circle().encode(
             alt.X('f:Q', axis=alt.Axis(title="f [Hz]"),
-                  scale=alt.Scale(type='log', nice=False),sort=None),
+                  scale=alt.Scale(type='log', nice=False), sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color='kind:N'
         ).add_selection(
@@ -132,10 +139,11 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
             neg_phase="-(180/PI)*atan2(datum.z_imag,datum.z_real)"
         ).interactive()
 
-        bode_mag = bode.encode(y=alt.Y('mag:Q',
-                                       axis=alt.Axis(title="|Z{}|' [{}]".format(k, units)),sort=None))
-        bode_phs = bode.encode(y=alt.Y('neg_phase:Q',
-                                       axis=alt.Axis(title="-ϕ [°]"),sort=None))
+        bode_mag = bode.encode(
+            y=alt.Y('mag:Q', axis=alt.Axis(
+                title="|Z{}|' [{}]".format(k, units)), sort=None))
+        bode_phs = bode.encode(
+            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
 
         nyquists.append(nyquist)
         bode_mags.append(bode_mag)
@@ -144,6 +152,8 @@ def plot_altair(data_dict,k = 1, units = 'Ω', size=400, background='#FFFFFF'):
     full_bode = alt.layer(*bode_mags) & alt.layer(*bode_phss)
 
     return (full_bode | alt.layer(*nyquists)).configure(background=background)
+
+
 def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
     """ Plots impedance as a Nyquist plot using matplotlib
 
@@ -174,13 +184,13 @@ def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
     ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
 
     # Make the axes square
-    ax.set_aspect(aspect = 1 ,anchor='C',adjustable='datalim')
+    ax.set_aspect(aspect=1, anchor='C', adjustable='datalim')
 
     # Set the labels to -imaginary vs real
     ax.set_xlabel(r'$\tilde{Z}_{1}^{\prime}(\omega)$' +
-                          ' [$\Omega$]', fontsize=20)
+                  r' [$\Omega$]', fontsize=20)
     ax.set_ylabel(r'$-\tilde{Z}_{1}^{\prime\prime}(\omega)$' +
-                          ' [$\Omega$]', fontsize=20)
+                  r' [$\Omega$]', fontsize=20)
 
     # Make the tick labels larger
     ax.tick_params(axis='both', which='major', labelsize=20)
@@ -193,11 +203,11 @@ def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
     ax.grid(visible=True, which='major', axis='both', alpha=.5)
 
     # Change axis units to 10**log10(scale) and resize the offset text
-    #ax.ticklabel_format(style='sci', axis='both')
-    
+    # ax.ticklabel_format(style='sci', axis='both')
+
     formatter = ticker.ScalarFormatter(useMathText=True)
     formatter.set_scientific(True)
-    formatter.set_powerlimits((-1,1))
+    formatter.set_powerlimits((-1, 1))
     ax.yaxis.set_major_formatter(formatter)
     ax.xaxis.set_major_formatter(formatter)
     limits = -np.log10(scale)
@@ -209,8 +219,8 @@ def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
     t = ax.xaxis.get_offset_text()
     t.set_size(18)
 
-
     return ax
+
 
 def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
     """ Plots impedance as a Nyquist plot using matplotlib
@@ -242,13 +252,13 @@ def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
     ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
 
     # Make the axes square
-    ax.set_aspect(aspect = 1 ,anchor='C',adjustable='datalim')
+    ax.set_aspect(aspect=1, anchor='C', adjustable='datalim')
 
     # Set the labels to -imaginary vs real
     ax.set_xlabel(r'$\tilde{Z}_{2}^{\prime}(\omega)$' +
-                          ' [$\Omega / A$]', fontsize=20)
+                  r' [$\Omega / A$]', fontsize=20)
     ax.set_ylabel(r'$-\tilde{Z}_{2}^{\prime\prime}(\omega)$' +
-                          ' [$\Omega / A$]', fontsize=20)
+                  r' [$\Omega / A$]', fontsize=20)
     # Make the tick labels larger
     ax.tick_params(axis='both', which='major', labelsize=20)
 
@@ -260,13 +270,12 @@ def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
     ax.grid(visible=True, which='major', axis='both', alpha=.5)
 
     # Change axis units to 10**log10(scale) and resize the offset text
-    
-    formatter = ticker.ScalarFormatter(useMathText=True)
-    formatter.set_scientific(True) 
-    formatter.set_powerlimits((-1,1))
-    ax.yaxis.set_major_formatter(formatter)
-    ax.xaxis.set_major_formatter(formatter) 
 
+    formatter = ticker.ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-1, 1))
+    ax.yaxis.set_major_formatter(formatter)
+    ax.xaxis.set_major_formatter(formatter)
 
     limits = -np.log10(scale)
     if limits != 0:
@@ -278,4 +287,3 @@ def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
     t.set_size(18)
 
     return ax
-
