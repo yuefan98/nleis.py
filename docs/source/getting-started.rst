@@ -2,7 +2,7 @@
 Getting started with :code:`nleis.py`
 =========================================
 
-nleis.py is designed to be a toolbox that can be seamlessly intergrated into impedance.py to faciliate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. nleis.py also support building nonlinear equivalent circuit model. Due to the nonlinear nature, the smallest building block is nonlinear Randles circuit in nleis.py, while single resistor and capacitor is supported in impedance.py. In short, nleis.py requires a wrapper function for the pair of linear and nonlinear respsone. A much detailed documentation will be provided soon.
+:code:`nleis.py` is designed to be a toolbox that can be seamlessly intergrated into :code:`impedance.py` to faciliate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. nleis.py also supports building nonlinear equivalent circuit model. Due to the nonlinear nature, the smallest building block is nonlinear Randles circuit in nleis.py, while single resistor and capacitor is supported in impedance.py. In short, nleis.py requires a wrapper function for the pair of linear and nonlinear respsone. A much detailed documentation will be provided soon.
 
 .. hint::
   If you get stuck or believe you have found a bug, please feel free to open an
@@ -11,13 +11,13 @@ nleis.py is designed to be a toolbox that can be seamlessly intergrated into imp
 Step 1: Installation
 ====================
 
-If you are not familiar with impedance.py, please first read there documentation before explore this toolbox. This toolbox is designed to be fully integrated into the impedance.py in the future, but, for now, please first clone it from the Github repo using the following command, 
+If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before explore this toolbox. This toolbox is designed to be fully integrated into the :code:`impedance.py` in the future, but, for now, please first clone it from the Github repo using the following command, 
 
 .. code-block:: bash
 
     !git clone https://github.com/yuefan98/nleis.py.git
 
-Then, create an virtual environment using the :code: `environment.yml` file 
+Then, create an virtual environment using the :code:`environment.yml` file 
 
 .. code-block:: bash
 
@@ -28,9 +28,18 @@ install anything into it by using:
 
 .. code-block:: bash
 
-   conda activate impedance
+   conda activate nleis
 
-We've now activated our conda environment and are ready to use the :code: `nleis.py` integrated version of :code: `impedance.py`.
+We've now activated our conda environment and are ready to use the :code:`nleis.py` integrated version of :code:`impedance.py`.
+
+A standalone version of :code:`nleis.py` is avaliable now. If you only interested in the nonlinear equivalent circuit fitting feature, you can also directly install it with pip install.
+
+.. code-block:: bash
+    
+    pip install nleis
+
+Lastly, the following example is developed with :code:`impedance.py` integrated version of :code:`nleis.py`. But the standalone :code:`nleis.py` can be called without calling :code:`impedance.py`. Beside this, all features are the same now for standalone :code:`nleis.py` and integrated :code:`nleis.py`. In the future, :code:`nleis.py` will likely be updated much frequently than the :code:`impedance.py` integrated version of :code:`nleis.py` to provide more developing features. 
+
 
 Open Jupyter Lab
 ----------------
@@ -46,9 +55,9 @@ which should open a new tab in your browser.
 Step 2: Import your data
 ========================
 
-To begin, we need to first load data from our 2nd-NLEIS manuscript. The peer-review paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be from in Journal of Electrochemical Society.
+To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-review paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be from in Journal of Electrochemical Society.
 
-Since there isn't a standard for data acquisition and preparation, the :code: `nleis.py` only provides a simple :code: `data_processing` to help users to truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data.   
+Since there isn't a standard for data acquisition and preparation, the :code:`nleis.py` only provides a simple :code:`data_processing` to help users to truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data in order to use this function. A better data loading and processing function is under development.   
 
 .. code-block:: python
 
@@ -65,7 +74,8 @@ Here, we provide a simple data processing function to help you truncate your dat
 
 .. code-block:: python
 
-    from impedance.models.nleis.nleis_fitting import data_processing
+    ## from nleis.nleis_fitting import data_processing ## Import command for standalone nleis.py
+    from impedance.models.nleis.nleis_fitting import data_processing ## Import command for integrated nleis.py
     
     f,Z1,Z2,f2_trunc,Z2_trunc = data_processing(frequencies,Z1,Z2)
 
@@ -76,12 +86,13 @@ Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles 
 
 .. code-block:: python
 
-    from impedance.models.nleis import EISandNLEIS
+    ## from nleis import EISandNLEIS ##Import command for integrated nleis.py
+    from impedance.models.nleis import EISandNLEIS ##Import command for integrated nleis.py
     
     circ_str_1 = 'L0-R0-TDS0-TDS1'
     circ_str_2 = 'd(TDSn0,TDSn1)'
     
-    initial_guess_3 = [1e-7,1e-3 # L0,RO
+    initial_guess = [1e-7,1e-3 # L0,RO
                        ,5e-3,1e-3,10,1e-2,100,10,0.1 ## TDS0 + additioal nonlinear parameters
                        ,1e-3,1e-3,1e-3,1e-2,1000,0,0 ## TDS1 + additioal nonlinear parameters
                        ]
@@ -93,8 +104,8 @@ You then need to fit initialize your :code:`EISandNLEIS` class for simultaneous 
 
 .. code-block:: python
 
-    circuit_3 = EISandNLEIS(circ_str_1,circ_str_2,initial_guess=initial_guess_3)
-    circuit_3.fit(f,Z1,Z2, opt='max');
+    circuit = EISandNLEIS(circ_str_1,circ_str_2,initial_guess=initial_guess)
+    circuit.fit(f,Z1,Z2, opt='max');
 
 
 Step 5: Visualize and print the results
@@ -102,11 +113,11 @@ Step 5: Visualize and print the results
 
 .. code-block:: python
 
-    circuit_3.plot(f_data=f, Z1_data =Z1, Z2_data= Z2, kind='nyquist')
+    circuit.plot(f_data=f, Z1_data =Z1, Z2_data= Z2, kind='nyquist')
     plt.tight_layout()
     plt.show()
     
-    print(circuit_3)
+    print(circuit)
 
 .. image:: _static/example_fit.png
 
@@ -193,7 +204,8 @@ Step 5: Visualize and print the results
    - Nonlinear Randles circuit with spherical diffusion: **`[RCS,RCSn]`**
    - Nonlinear Transmission Line model with two RC branches (charge transfer only): **`[TLM,TLMn]`**
    - Nonlinear Transmission Line model with two RC branches, and spherical diffusion on one RC: **`[TLMS,TLMSn]`**
-   - Nonlinear Transmission Line model (charge transfer only; developed for validating with analytical solution): **`[Tsn]`**
+
+There are also under development verion of current distribution fucntions for linear and nonlinear TLMs. A detailed description will be included in the future. 
 
 
 
