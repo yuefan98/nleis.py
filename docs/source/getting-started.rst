@@ -2,7 +2,7 @@
 Getting started with :code:`nleis.py`
 =========================================
 
-:code:`nleis.py` is designed to be a toolbox that can be seamlessly intergrated into :code:`impedance.py` to faciliate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. nleis.py also supports building nonlinear equivalent circuit model. Due to the nonlinear nature, the smallest building block is nonlinear Randles circuit in nleis.py, while single resistor and capacitor is supported in impedance.py. In short, nleis.py requires a wrapper function for the pair of linear and nonlinear respsone. A much detailed documentation will be provided soon.
+:code:`nleis.py` is designed to be a toolbox that can be seamlessly integrated into :code:`impedance.py` to facilitate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. nleis.py also supports building nonlinear equivalent circuit models. Due to the nonlinear nature, the smallest building block is the nonlinear Randles circuit in nleis.py, while a single resistor and capacitor are supported in impedance.py. In short, nleis.py requires a wrapper function for the pair of linear and nonlinear responses.
 
 .. hint::
   If you get stuck or believe you have found a bug, please feel free to open an
@@ -11,13 +11,14 @@ Getting started with :code:`nleis.py`
 Step 1: Installation
 ====================
 
-If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before explore this toolbox. This toolbox is designed to be fully integrated into the :code:`impedance.py` in the future, but, for now, please first clone it from the Github repo using the following command, 
+If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be fully integrated into the :code:`impedance.py` in the future. If you are only interested in `nleis.py`, please skip this part and follow the pip install instruction of `nleis.py`.
+If you would like to use the impedance.py integrated version of nleis.py (which will be integrated soon), please first clone it from the GitHub repo using the following command, 
 
 .. code-block:: bash
 
     !git clone https://github.com/yuefan98/nleis.py.git
 
-Then, create an virtual environment using the :code:`environment.yml` file 
+Then, create a virtual environment using the :code:`environment.yml` file 
 
 .. code-block:: bash
 
@@ -32,13 +33,14 @@ install anything into it by using:
 
 We've now activated our conda environment and are ready to use the :code:`nleis.py` integrated version of :code:`impedance.py`.
 
-A standalone version of :code:`nleis.py` is avaliable now. If you only interested in the nonlinear equivalent circuit fitting feature, you can also directly install it with pip install.
+.. important::
+A standalone version of :code:`nleis.py` is available now. If you are only interested in the nonlinear equivalent circuit fitting feature, you can also directly install it with pip install.
 
 .. code-block:: bash
     
     pip install nleis
 
-Lastly, the following example is developed with :code:`impedance.py` integrated version of :code:`nleis.py`. But the standalone :code:`nleis.py` can be called without calling :code:`impedance.py`. Beside this, all features are the same now for standalone :code:`nleis.py` and integrated :code:`nleis.py`. In the future, :code:`nleis.py` will likely be updated much frequently than the :code:`impedance.py` integrated version of :code:`nleis.py` to provide more developing features. 
+Lastly, the following example is developed with :code:`impedance.py` integrated version of :code:`nleis.py`. But the standalone :code:`nleis.py` can be called without calling :code:`impedance.py`. Besides this, all features are the same now for standalone :code:`nleis.py` and integrated :code:`nleis.py`. In the future, :code:`nleis.py` will likely be updated more frequently than the :code:`impedance.py` integrated version of :code:`nleis.py` to provide more developing features. 
 
 
 Open Jupyter Lab
@@ -55,9 +57,9 @@ which should open a new tab in your browser.
 Step 2: Import your data
 ========================
 
-To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-review paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be from in Journal of Electrochemical Society.
+To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be from in Journal of Electrochemical Society.
 
-Since there isn't a standard for data acquisition and preparation, the :code:`nleis.py` only provides a simple :code:`data_processing` to help users to truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data in order to use this function. A better data loading and processing function is under development.   
+Since there isn't a standard for data acquisition and preparation, the :code:`nleis.py` only provides a simple :code:`data_processing` to help users truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data in order to use this function. A better data loading and processing function is under development.   
 
 .. code-block:: python
 
@@ -82,7 +84,7 @@ Here, we provide a simple data processing function to help you truncate your dat
 Step 3: Define your model
 ==========================
 
-Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit. Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you familiar to linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. See the following example.
+Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit. Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. See the following example.
 
 .. code-block:: python
 
@@ -100,7 +102,7 @@ Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles 
 Step 4: Fit to data 
 ==========================
 
-You then need to fit initialize your :code:`EISandNLEIS` class for simultaneous anlaysis of EIS and 2nd-NLEIS.
+You then need to fit initialize your :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS.
 
 .. code-block:: python
 
@@ -189,7 +191,7 @@ Step 5: Visualize and print the results
 
 
 .. important::
-  🎉 Congratulations! You're now up and running with impedance.py 🎉 For those who already acquainted with :code:`impedance.py`, I hope you'll discover the similarities with :code:`nleis.py` and appreciate how closely aligned they are at this point.
+  🎉 Congratulations! You're now up and running with impedance.py 🎉 For those who are already acquainted with :code:`impedance.py`, I hope you'll discover the similarities with :code:`nleis.py` and appreciate how closely aligned they are at this point.
 
 .. note:: 
 
@@ -205,7 +207,7 @@ Step 5: Visualize and print the results
    - Nonlinear Transmission Line model with two RC branches (charge transfer only): **`[TLM,TLMn]`**
    - Nonlinear Transmission Line model with two RC branches, and spherical diffusion on one RC: **`[TLMS,TLMSn]`**
 
-There are also under development verion of current distribution fucntions for linear and nonlinear TLMs. A detailed description will be included in the future. 
+There are also under development versions of current distribution functions for linear and nonlinear TLMs. A detailed description will be included in the future. 
 
 
 
