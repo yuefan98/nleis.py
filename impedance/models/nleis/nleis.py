@@ -201,7 +201,8 @@ class EISandNLEIS:
             raise TypeError('Comparing object is not of the same type.')
 
     def fit(self, frequencies, Z1, Z2, bounds=None,
-            opt='max', max_f=10, cost=0.5, **kwargs):
+            opt='max', max_f=10, cost=0.5, param_norm=True,
+            positive=True, **kwargs):
         """
 
         Fit the circuit model
@@ -254,7 +255,8 @@ class EISandNLEIS:
                 self.edited_circuit, self.initial_guess,
                 constants_1=self.constants_1,
                 constants_2=self.constants_2, bounds=bounds, opt=opt,
-                cost=cost, max_f=max_f,
+                cost=cost, max_f=max_f, param_norm=param_norm,
+                positive=positive,
                 **kwargs)
             # self.parameters_ = list(parameters)
             self.parameters_ = parameters

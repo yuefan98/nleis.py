@@ -10,10 +10,12 @@ from impedance.models.circuits.fitting import check_and_eval
 from .fitting import set_default_bounds, buildCircuit, extract_circuit_elements
 from scipy.optimize import minimize
 import warnings
-ints = '0123456789'
+
 # Customize warning format (here, simpler and just the message)
 warnings.formatwarning = lambda message, category, filename, lineno, \
     line=None: f'{category.__name__}: {message}\n'
+
+ints = '0123456789'
 
 
 def data_processing(f, Z1, Z2, max_f=10):
