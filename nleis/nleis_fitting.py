@@ -9,7 +9,11 @@ from impedance.models.circuits.elements import circuit_elements, \
 from impedance.models.circuits.fitting import check_and_eval
 from .fitting import set_default_bounds, buildCircuit, extract_circuit_elements
 from scipy.optimize import minimize
+import warnings
 ints = '0123456789'
+# Customize warning format (here, simpler and just the message)
+warnings.formatwarning = lambda message, category, filename, lineno, \
+    line=None: f'{category.__name__}: {message}\n'
 
 
 def data_processing(f, Z1, Z2, max_f=10):
@@ -75,6 +79,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 
     param_norm : bool, optional
          Defaults to True for better convergence
+         when customized bounds is supported
 
 
     kwargs :
@@ -90,7 +95,8 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         one standard deviation error estimates for fit parameters
 
     """
-    # Todo fix the negtive loglikelihood
+    # Todo improve the the negtive loglikelihood,
+    # the code works fine for RC but not porous electrode
 
     # set upper and lower bounds on a per-element basis
 
@@ -102,7 +108,18 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         ub = np.ones(len(bounds[1]))
     else:
         if param_norm:
-            ub = bounds[1]
+            inf_in_bounds = np.any(np.isinf(bounds[0])) \
+                or np.any(np.isinf(bounds[1]))
+            if inf_in_bounds:
+                lb = np.where(bounds[0] == -np.inf, -1e10, bounds[0])
+                ub = np.where(bounds[1] == np.inf, 1e10, bounds[1])
+                bounds = (lb, ub)
+                warnings.warn("inf is detected in the bounds, "
+                              "to enable parameter normalization, "
+                              "the bounds has been capped at 1e10. "
+                              "You can disable parameter normalization "
+                              "by set param_norm to False .")
+            # ub = bounds[1]
             bounds = bounds/ub
         else:
             ub = np.ones(len(bounds[1]))

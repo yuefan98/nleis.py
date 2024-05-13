@@ -11,7 +11,7 @@ Getting started with :code:`nleis.py`
 Step 1: Installation
 ====================
 
-If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be fully integrated into the :code:`impedance.py` in the future. If you are only interested in `nleis.py`, please skip this part and follow the pip install instruction of `nleis.py`.
+If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be fully integrated into the :code:`impedance.py` in the future. If you are only interested in :code:`nleis.py`, please skip this part and follow the pip install instruction for :code:`nleis.py`.
 If you would like to use the impedance.py integrated version of nleis.py (which will be integrated soon), please first clone it from the GitHub repo using the following command, 
 
 .. code-block:: bash
@@ -34,7 +34,9 @@ install anything into it by using:
 We've now activated our conda environment and are ready to use the :code:`nleis.py` integrated version of :code:`impedance.py`.
 
 .. important::
-A standalone version of :code:`nleis.py` is available now. If you are only interested in the nonlinear equivalent circuit fitting feature, you can also directly install it with pip install.
+  A standalone version of :code:`nleis.py` is available now. If you are only
+  interested in the nonlinear equivalent circuit fitting feature, you can
+  also directly install it with :code:`pip install`.
 
 .. code-block:: bash
     
@@ -57,7 +59,7 @@ which should open a new tab in your browser.
 Step 2: Import your data
 ========================
 
-To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be from in Journal of Electrochemical Society.
+To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be found from in Journal of Electrochemical Society.
 
 Since there isn't a standard for data acquisition and preparation, the :code:`nleis.py` only provides a simple :code:`data_processing` to help users truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data in order to use this function. A better data loading and processing function is under development.   
 

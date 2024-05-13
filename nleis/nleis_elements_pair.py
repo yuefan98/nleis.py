@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import iv
 from impedance.models.circuits.elements import circuit_elements, \
-      ElementError, OverwriteError
+    ElementError, OverwriteError
 
 
 def element(num_params, units, overwrite=False):
@@ -58,6 +58,7 @@ def d(difference):
 
     .. math::
 
+        Z = Z_1 - Z_2
 
     '''
 
@@ -83,11 +84,18 @@ def TPO(p, f):
 
     .. math::
 
+        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1)}{\\beta_1}
 
-    p0=Rpore
-    p1=Rct
-    p2=Cdl
+    where
 
+    .. math::
+
+        \\beta_1 = \\left( j \\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\\text{pore}}}{R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -120,12 +128,32 @@ def TPOn(p, f):
 
     .. math::
 
+        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
+        (\\beta_1 \\sinh(\\beta_1))^2}
+        \\left[ \\left( \\frac{\\beta_1 \\sinh(2\\beta_1)}
+        {\\beta_2(\\beta_2 - 2\\beta_1)
+        (\\beta_2 + 2\\beta_1)} \\coth(\\beta_2) \\right) - \n
+        \\left( \\frac{\\cosh(2\\beta_1)}{2(\\beta_2 - 2\\beta_1)
+        (\\beta_2 + 2\\beta_1)} + \\frac{1}{2\\beta_2^2} \\right) \\right]
 
-    p0: Rpore
-    p1: Rct
-    p2: Cdl
-    p3: ε
+    where
 
+    .. math::
+
+        \\beta_1 = \\left( j \\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}{R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        \\beta_2 = \\left( j 2\\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}{R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -187,11 +215,28 @@ def TDC(p, f):
 
     .. math::
 
-    p0=Rpore
-    p1=Rct
-    p2=Cdl
-    p3=Aw
-    p4=τd
+        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
+
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}
+        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
+        {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
+
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = Aw
+    p[4] = τd
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -232,15 +277,52 @@ def TDCn(p, f):
 
     .. math::
 
+        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
+        (\\beta_1^D \\sinh(\\beta_1^D))^2}
+        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
+        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
+        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} +
+        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
 
-    p0=Rpore
-    p1=Rct
-    p2=Cdl
-    p3=Aw
-    p4=τd
-    p5=κ
-    p6=ε
+    where
 
+    .. math::
+
+        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
+        {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = A_w \\frac{I_0\\left(\\sqrt{j 2\\omega \\tau}\\right)}
+        {\\sqrt{j 2\\omega \\tau} I_1\\left(\\sqrt{j 2\\omega \\tau}\\right)}
+
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = Aw
+    p[4] = τd
+    p[5] = κ
+    p[6] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -319,11 +401,11 @@ def TDS(p, f):
     .. math::
 
 
-    p0=Rpore
-    p1=Rct
-    p2=Cdl
-    p3=Aw
-    p4=τd
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = Aw
+    p[4] = τd
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -358,13 +440,13 @@ def TDSn(p, f):
 
     .. math::
 
-    p0=Rpore
-    p1=Rct
-    p2=Cdl
-    p3=Aw
-    p4=τd
-    p5=κ
-    p6=ε
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = Aw
+    p[4] = τd
+    p[5] = κ
+    p[6] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -427,11 +509,11 @@ def TDP(p, f):
     .. math::
 
 
-    p0 = Rpore
-    p1 = Rct
-    p2 = Cdl
-    p3 = Aw
-    p4 = τd
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = Aw
+    p[4] = τd
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -440,7 +522,6 @@ def TDP(p, f):
     for planar and porous electrodes.
     J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
 
     """
     omega = 2*np.pi*np.array(f)
@@ -466,13 +547,13 @@ def TDPn(p, f):
 
     .. math::
 
-    p0 = Rpore
-    p1 = Rct
-    p2 = Cdl
-    p3 = Aw
-    p4 = τd
-    p5 = κ
-    p6 = ε
+    p[0] = Rpore
+    p[1] = Rct
+    p[2] = Cdl
+    p[3] = Aw
+    p[4] = τd
+    p[5] = κ
+    p[6] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -531,8 +612,8 @@ def RCO(p, f):
 
     .. math::
 
-    p0 = Rct
-    p1 = Cdl
+    p[0] = Rct
+    p[1] = Cdl
 
 
     """
@@ -559,9 +640,9 @@ def RCOn(p, f):
 
     .. math::
 
-    p0 = Rct
-    p1 = Cdl
-    p2 = ε
+    p[0] = Rct
+    p[1] = Cdl
+    p[2] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -600,10 +681,10 @@ def RCD(p, f):
 
     .. math::
 
-    p0 = Rct
-    p1 = Cdl
-    p2 = Aw
-    p3 = τd
+    p[0] = Rct
+    p[1] = Cdl
+    p[2] = Aw
+    p[3] = τd
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -633,12 +714,12 @@ def RCDn(p, f):
 
     .. math::
 
-    p0 = Rct
-    p1 = Cdl
-    p2 = Aw
-    p3 = τd
-    p4 = κ
-    p5 = ε
+    p[0] = Rct
+    p[1] = Cdl
+    p[2] = Aw
+    p[3] = τd
+    p[4] = κ
+    p[5] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -680,10 +761,10 @@ def RCS(p, f):
 
     .. math::
 
-    p0 = Rct
-    p1 = Cdl
-    p2 = Aw
-    p3 = τd
+    p[0] = Rct
+    p[1] = Cdl
+    p[2] = Aw
+    p[3] = τd
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -715,12 +796,12 @@ def RCSn(p, f):
 
     .. math::
 
-    p0 = Rct
-    p1 = Cdl
-    p2 = Aw
-    p3 = τd
-    p4 = κ
-    p5 = ε
+    p[0] = Rct
+    p[1] = Cdl
+    p[2] = Aw
+    p[3] = τd
+    p[4] = κ
+    p[5] = ε
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -764,12 +845,12 @@ def TLM(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Rct,surface
-    p4: Cdl,surface
-    p5: N (number of circuit element)
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Rct,surface
+    p[4] = Cdl,surface
+    p[5] = N (number of circuit element)
 
 
     """
@@ -808,15 +889,15 @@ def TLMn(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
 
-    p3: Rct,surface
-    p4: Cdl,surface
-    p5: N (number of circuit element)
-    p6: ε,bulk
-    p7: ε,surface
+    p[3] = Rct,surface
+    p[4] = Cdl,surface
+    p[5] = N (number of circuit element)
+    p[6] = ε,bulk
+    p[7] = ε,surface
 
 
 
@@ -906,12 +987,12 @@ def mTi(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Rct,surface
-    p4: Cdl,surface
-    p5: N (number of circuit element)
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Rct,surface
+    p[4] = Cdl,surface
+    p[5] = N (number of circuit element)
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -979,14 +1060,14 @@ def TLMS(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1036,17 +1117,17 @@ def TLMSn(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
-    p8: κ,bulk
-    p9: ε,bulk
-    p10: ε,surface
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
+    p[8] = κ,bulk
+    p[9] = ε,bulk
+    p[10] = ε,surface
 
 
 
@@ -1138,14 +1219,14 @@ def mTiS(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1219,17 +1300,17 @@ def mTiSn(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
-    p8: κ,bulk
-    p9: ε,bulk
-    p10: ε,surface
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
+    p[8] = κ,bulk
+    p[9] = ε,bulk
+    p[10] = ε,surface
 
 
 
@@ -1321,14 +1402,14 @@ def TLMD(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1378,17 +1459,17 @@ def TLMDn(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
-    p8: κ,bulk
-    p9: ε,bulk
-    p10: ε,surface
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
+    p[8] = κ,bulk
+    p[9] = ε,bulk
+    p[10] = ε,surface
 
 
 
@@ -1478,14 +1559,14 @@ def mTiD(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1559,17 +1640,17 @@ def mTiDn(p, f):
 
     .. math::
 
-    p0: Rpore
-    p1: Rct,bulk
-    p2: Cdl,bulk
-    p3: Aw,bulk
-    p4: τ,bulk
-    p5: Rct,surface
-    p6: Cdl,surface
-    p7: N (number of circuit element)
-    p8: κ,bulk
-    p9: ε,bulk
-    p10: ε,surface
+    p[0] = Rpore
+    p[1] = Rct,bulk
+    p[2] = Cdl,bulk
+    p[3] = Aw,bulk
+    p[4] = τ,bulk
+    p[5] = Rct,surface
+    p[6] = Cdl,surface
+    p[7] = N (number of circuit element)
+    p[8] = κ,bulk
+    p[9] = ε,bulk
+    p[10] = ε,surface
 
 
 
