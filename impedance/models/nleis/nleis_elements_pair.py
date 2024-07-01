@@ -93,9 +93,13 @@ def TPO(p, f):
         \\beta_1 = \\left( j \\omega C_{\\text{dl}} R_{\\text{pore}} +
         \\frac{R_{\\text{pore}}}{R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -150,10 +154,13 @@ def TPOn(p, f):
         \\beta_2 = \\left( j 2\\omega C_{\\text{dl}} R_{\\text{pore}}
         + \\frac{R_{\\text{pore}}}{R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = ε
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -232,11 +239,14 @@ def TDC(p, f):
         Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
         {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = Aw
-    p[4] = τd
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = A_{w}; \\;
+        p[4] = τ; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -316,13 +326,17 @@ def TDCn(p, f):
         Z_{D,2} = A_w \\frac{I_0\\left(\\sqrt{j 2\\omega \\tau}\\right)}
         {\\sqrt{j 2\\omega \\tau} I_1\\left(\\sqrt{j 2\\omega \\tau}\\right)}
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = Aw
-    p[4] = τd
-    p[5] = κ
-    p[6] = ε
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = A_{w}; \\;
+        p[4] = τ; \\;
+        p[5] = κ; \\;
+        p[6] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -400,12 +414,34 @@ def TDS(p, f):
 
     .. math::
 
+        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = Aw
-    p[4] = τd
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}
+        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}
+        - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = Rpore; \\;
+        p[1] = Rct; \\;
+        p[2] = Cdl; \\;
+        p[3] = Aw; \\;
+        p[4] = τd; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -440,13 +476,58 @@ def TDSn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = Aw
-    p[4] = τd
-    p[5] = κ
-    p[6] = ε
+        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
+        (\\beta_1^D \\sinh(\\beta_1^D))^2}
+        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
+        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
+        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} +
+        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
+
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}
+        - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_{w} \\tanh\\left( \\sqrt{j2\\omega\\tau}
+        \\right)}{\\sqrt{j2\\omega\\tau}
+        - \\tanh\\left( \\sqrt{j2\\omega\\tau} \\right)}
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = Rpore; \\;
+        p[1] = Rct; \\;
+        p[2] = Cdl; \\;
+        p[3] = Aw; \\;
+        p[4] = τ; \\;
+        p[5] = κ; \\;
+        p[6] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -508,12 +589,33 @@ def TDP(p, f):
 
     .. math::
 
+        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = Aw
-    p[4] = τd
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}
+        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\coth\\left( \\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = A_{w}; \\;
+        p[4] = τ; \\;
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -547,13 +649,56 @@ def TDPn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct
-    p[2] = Cdl
-    p[3] = Aw
-    p[4] = τd
-    p[5] = κ
-    p[6] = ε
+        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
+        (\\beta_1^D \\sinh(\\beta_1^D))^2}
+        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
+        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
+        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} +
+        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
+
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\coth\\left( \\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_{w} \\coth\\left( \\sqrt{j2\\omega\\tau}
+        \\right)}{\\sqrt{j2\\omega\\tau}}
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = A_{w}; \\;
+        p[4] = τ; \\;
+        p[5] = κ; \\;
+        p[6] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -612,9 +757,21 @@ def RCO(p, f):
 
     .. math::
 
-    p[0] = Rct
-    p[1] = Cdl
+        \\tilde{Z_1} = \\frac{R_{ct}}{1 + \\omega^{*}  j}
 
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
 
     """
 
@@ -639,10 +796,23 @@ def RCOn(p, f):
     -----
 
     .. math::
+        \\tilde{Z_2} = \\frac{-\\varepsilon f R_{ct}^2}
+        {1 + 4\\omega^{*}  j - 5{\\omega^{*}}^2 - 2{\\omega^{*}}^3 j}
 
-    p[0] = Rct
-    p[1] = Cdl
-    p[2] = ε
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -680,11 +850,30 @@ def RCD(p, f):
     -----
 
     .. math::
+        \\tilde{Z_1} = \\frac{R_{ct}}{\\frac{R_{ct}}
+        {R_{ct} + \\tilde{Z}_{D,1}} + j\\omega^{*}}
 
-    p[0] = Rct
-    p[1] = Cdl
-    p[2] = Aw
-    p[3] = τd
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_w \\coth\\left(\\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}}
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -714,12 +903,46 @@ def RCDn(p, f):
 
     .. math::
 
-    p[0] = Rct
-    p[1] = Cdl
-    p[2] = Aw
-    p[3] = τd
-    p[4] = κ
-    p[5] = ε
+        \\tilde{Z_2} = \\frac{R_{ct}}{\\left(j2\\omega^{*}
+        + \\frac{R_{ct}}{\\tilde{Z}_{D,2} + R_{ct}}\\right)}
+        \\frac{\\left[ \\kappa
+        \\left( \\frac{\\tilde{Z}_{D,1}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 - \\varepsilon f
+        \\left( \\frac{R_{ct}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 \\right]}{\\tilde{Z}_{D,2} + R_{ct}}
+        \\left( \\frac{R_{ct}}{\\frac{R_{ct}}{R_{ct}
+        + \\tilde{Z}_{D,1}} + j\\omega^{*}} \\right)^2
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_w \\coth\\left(\\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_w \\coth\\left(\\sqrt{j2\\omega\\tau}
+        \\right)}{\\sqrt{j2\\omega\\tau}}
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
+        p[4] = κ; \\;
+        p[5] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -760,11 +983,32 @@ def RCS(p, f):
     -----
 
     .. math::
+        \\tilde{Z_1} = \\frac{R_{ct}}{\\frac{R_{ct}}
+        {R_{ct} + \\tilde{Z}_{D,1}} + j\\omega^{*}}
 
-    p[0] = Rct
-    p[1] = Cdl
-    p[2] = Aw
-    p[3] = τd
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+          \\right)}{\\sqrt{j\\omega\\tau}
+            - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -796,12 +1040,49 @@ def RCSn(p, f):
 
     .. math::
 
-    p[0] = Rct
-    p[1] = Cdl
-    p[2] = Aw
-    p[3] = τd
-    p[4] = κ
-    p[5] = ε
+        \\tilde{Z_2} = \\frac{R_{ct}}{\\left(j2\\omega^{*}
+        + \\frac{R_{ct}}{\\tilde{Z}_{D,2} + R_{ct}}\\right)}
+        \\frac{\\left[ \\kappa
+        \\left( \\frac{\\tilde{Z}_{D,1}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 - \\varepsilon f
+        \\left( \\frac{R_{ct}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 \\right]}{\\tilde{Z}_{D,2} + R_{ct}}
+        \\left( \\frac{R_{ct}}{\\frac{R_{ct}}{R_{ct}
+        + \\tilde{Z}_{D,1}} + j\\omega^{*}} \\right)^2
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+          \\right)}{\\sqrt{j\\omega\\tau}
+            - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_{w} \\tanh\\left( \\sqrt{j2\\omega\\tau}
+          \\right)}{\\sqrt{j2\\omega\\tau}
+            - \\tanh\\left( \\sqrt{j2\\omega\\tau} \\right)}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
+        p[4] = κ; \\;
+        p[5] = ε; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -833,6 +1114,8 @@ def RCSn(p, f):
 
     return (Z2)
 
+# TLM Model #
+
 
 @element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
 def TLM(p, f):
@@ -843,14 +1126,21 @@ def TLM(p, f):
     Notes
     -----
 
+
+
+    **Parameters:**
+
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Rct,surface
-    p[4] = Cdl,surface
-    p[5] = N (number of circuit element)
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct, bulk}; \\;
+        p[2] = C_{dl, bulk}; \\;
+        p[3] = R_{ct, surface}; \\;
+
+    .. math::
+
+        p[4] = C_{dl, surface}; \\;
+        p[5] = N (\\text{number of circuit element}); \\;
 
 
     """
@@ -889,15 +1179,22 @@ def TLMn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
 
-    p[3] = Rct,surface
-    p[4] = Cdl,surface
-    p[5] = N (number of circuit element)
-    p[6] = ε,bulk
-    p[7] = ε,surface
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = R_{ct,surface}; \\;
+
+    .. math::
+
+        p[4] = C_{dl,surface}; \\;
+        p[5] = N (\\text{number of circuit element}); \\;
+        p[6] = ε_{bulk}; \\;
+        p[7] = ε_{surface}; \\;
 
 
 
@@ -987,12 +1284,21 @@ def mTi(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Rct,surface
-    p[4] = Cdl,surface
-    p[5] = N (number of circuit element)
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = R_{ct,surface}; \\;
+
+    .. math::
+
+        p[4] = C_{dl,surface}; \\;
+        p[5] = N (\\text{number of circuit element}); \\;
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1060,14 +1366,22 @@ def TLMS(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+
+    .. math::
+
+        p[5] = R_{ct,surface}; \\;
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1117,17 +1431,28 @@ def TLMSn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
-    p[8] = κ,bulk
-    p[9] = ε,bulk
-    p[10] = ε,surface
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+
+    .. math::
+
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
+        p[8] = κ_{bulk}; \\;
+
+    .. math::
+        p[9] = ε_{bulk}; \\;
+        p[10] = ε_{surface}; \\;
 
 
 
@@ -1219,14 +1544,21 @@ def mTiS(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+
+    .. math::
+
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1300,17 +1632,28 @@ def mTiSn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
-    p[8] = κ,bulk
-    p[9] = ε,bulk
-    p[10] = ε,surface
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+
+    .. math::
+
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
+        p[8] = κ_{bulk}; \\;
+
+    .. math::
+        p[9] = ε_{bulk}; \\;
+        p[10] = ε_{surface}; \\;
 
 
 
@@ -1402,14 +1745,22 @@ def TLMD(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+    .. math::
+
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1459,17 +1810,27 @@ def TLMDn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
-    p[8] = κ,bulk
-    p[9] = ε,bulk
-    p[10] = ε,surface
+
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+    .. math::
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element})
+        p[8] = κ_{bulk}; \\;
+
+    .. math::
+        p[9] = ε_{bulk}; \\;
+        p[10] = ε_{surface}; \\;
 
 
 
@@ -1559,14 +1920,22 @@ def mTiD(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
+
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+    .. math::
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
 
 
     [1] Y. Ji, D.T. Schwartz,
@@ -1640,17 +2009,27 @@ def mTiDn(p, f):
 
     .. math::
 
-    p[0] = Rpore
-    p[1] = Rct,bulk
-    p[2] = Cdl,bulk
-    p[3] = Aw,bulk
-    p[4] = τ,bulk
-    p[5] = Rct,surface
-    p[6] = Cdl,surface
-    p[7] = N (number of circuit element)
-    p[8] = κ,bulk
-    p[9] = ε,bulk
-    p[10] = ε,surface
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct,bulk}; \\;
+        p[2] = C_{dl,bulk}; \\;
+        p[3] = A_{w,bulk}; \\;
+        p[4] = τ_{bulk}; \\;
+        p[5] = R_{ct,surface}; \\;
+
+
+    .. math::
+
+        p[6] = C_{dl,surface}; \\;
+        p[7] = N (\\text{number of circuit element}); \\;
+        p[8] = κ_{bulk}; \\;
+        p[9] = ε_{bulk}; \\;
+        p[10] = ε_{surface}; \\;
 
 
 
