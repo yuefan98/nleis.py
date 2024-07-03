@@ -49,7 +49,7 @@ The 2nd-harmonic nonlinear Equivalent Circuit Fitting is accomplished with `NLEI
 
 ## Simultaneous Equivalent Circuit Fitting of EIS and 2nd-NLEIS
 
-`EISandNLEIS` is the key feature of nleis.py that enables the simultaneous analysis of EIS and 2nd-NLEIS with equivalent circuit modeling. The visual representation of nonlinear equivalent circuit representation can be found in `[@ji2023]`. Everything works like impedance.py, but the users should provide the correct pair of linear and nonlinear circuit strings with a single initial guess that is consistent with both linear and nonlinear circuit features seen in the data. For EIS and 2nd-NLEIS data with known error structure or relative magnitudes, the users can also specify the optimization weighting and normalization method for the EIS and 2nd-NLEIS data parameter estimation process, as introduced in `[@kirk2023; @ji2024]`.
+`EISandNLEIS` is the key feature of nleis.py that enables the simultaneous analysis of EIS and 2nd-NLEIS with equivalent circuit modeling. The visual representation of nonlinear equivalent circuit representation can be found in `[@ji2023]`. Everything works like impedance.py, but the users should provide the correct pair of linear and nonlinear circuit strings with a single initial guess that is consistent with both linear and nonlinear circuit features seen in the data. For EIS and 2nd-NLEIS data with known error structure or relative magnitudes, the users can also specify the optimization, weighting, and normalization method for the EIS and 2nd-NLEIS data parameter estimation process, as introduced in `[@kirk2023; @ji2024]`.
 
 ## Visualization
 
