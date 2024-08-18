@@ -3,6 +3,8 @@ from scipy.special import iv
 from impedance.models.circuits.elements import circuit_elements, \
     ElementError, OverwriteError
 
+# element function adopted from impedance.py for better documentation
+
 
 def element(num_params, units, overwrite=False):
     """
@@ -51,14 +53,16 @@ def element(num_params, units, overwrite=False):
 
 def d(difference):
     '''
-    Subtract the second electrode from the first electrode in 2nd-NLEIS
+    This function calculates the impedance difference between two electrodes
+    In a two electrode cell, subtract the positive electrode 2nd-NLEIS from
+    the negative electrode 2nd-NLEIS to get the cell response.
 
     Notes
     -----
 
     .. math::
 
-        Z = Z_1 - Z_2
+        Z_2 = Z_2^{+} - Z_2^{-}
 
     '''
 
@@ -72,12 +76,386 @@ def d(difference):
 circuit_elements['d'] = d
 
 
+@element(num_params=2, units=['Ohm', 'F'])
+def RCO(p, f):
+    """
+
+    EIS: Randles circuit (charge transfer only)
+
+    Notes
+    -----
+
+    .. math::
+
+        \\tilde{Z_1} = \\frac{R_{ct}}{1 + \\omega^{*}  j}
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+
+    """
+
+    w = np.array(f)*2*np.pi
+    Rct = p[0]
+    Cdl = p[1]
+
+    Z1r = Rct/(1+(w*Rct*Cdl)**2)
+    Z1i = (-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2)
+    Z1 = Z1r+1j*Z1i
+
+    return (Z1)
+
+
+@element(num_params=3, units=['Ohm', 'F', ''])
+def RCOn(p, f):
+    '''
+
+    2nd-NLEIS: Nonlinear Randles circuit
+    (charge transfer only) from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+        \\tilde{Z_2} = \\frac{-\\varepsilon f R_{ct}^2}
+        {1 + 4\\omega^{*}  j - 5{\\omega^{*}}^2 - 2{\\omega^{*}}^3 j}
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = ε; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    '''
+    w = np.array(f)*2*np.pi
+    Rct = p[0]
+    Cdl = p[1]
+    e = p[2]
+    f = 96485.3321233100184/(8.31446261815324*298)  # unit in 1/V
+
+    Z1r = Rct/(1+(w*Rct*Cdl)**2)
+    Z1i = (-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2)
+
+    tau = w*Rct*Cdl
+
+    Z2r = -e*f*(Z1r**2-Z1i**2+4*tau*Z1r*Z1i)/(1+4*tau**2)
+    Z2i = e*f*((Z1r**2-Z1i**2)*2*tau-2*Z1r*Z1i)/(1+4*tau**2)
+
+    Z2 = Z2r+1j*Z2i
+    return (Z2)
+
+
+@element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
+def RCD(p, f):
+    '''
+
+    EIS: Randles circuit with diffusion
+    in a bounded thin film electrode from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+        \\tilde{Z_1} = \\frac{R_{ct}}{\\frac{R_{ct}}
+        {R_{ct} + \\tilde{Z}_{D,1}} + j\\omega^{*}}
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_w \\coth\\left(\\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}}
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    '''
+    omega = np.array(f)*2*np.pi
+    Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
+
+    Zd = Aw/(np.sqrt(1j*omega*τd)*np.tanh(np.sqrt(1j*omega*τd)))
+    tau = omega*Rct*Cdl
+    Z = Rct/(Rct/(Rct+Zd)+1j*tau)
+    return (Z)
+
+
+@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', ''])
+def RCDn(p, f):
+    '''
+
+    2nd-NLEIS: Nonlinear Randles circuit with diffusion
+    in a bounded thin film electrode from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+
+        \\tilde{Z_2} = \\frac{R_{ct}}{\\left(j2\\omega^{*}
+        + \\frac{R_{ct}}{\\tilde{Z}_{D,2} + R_{ct}}\\right)}
+        \\frac{\\left[ \\kappa
+        \\left( \\frac{\\tilde{Z}_{D,1}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 - \\varepsilon f
+        \\left( \\frac{R_{ct}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 \\right]}{\\tilde{Z}_{D,2} + R_{ct}}
+        \\left( \\frac{R_{ct}}{\\frac{R_{ct}}{R_{ct}
+        + \\tilde{Z}_{D,1}} + j\\omega^{*}} \\right)^2
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_w \\coth\\left(\\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_w \\coth\\left(\\sqrt{j2\\omega\\tau}
+        \\right)}{\\sqrt{j2\\omega\\tau}}
+
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
+        p[4] = κ; \\;
+        p[5] = ε; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    '''
+
+    omega = np.array(f)*2*np.pi
+    Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5]
+
+    Zd1 = Aw/(np.sqrt(1j*omega*τd)*np.tanh(np.sqrt(1j*omega*τd)))
+    Zd2 = Aw/(np.sqrt(1j*2*omega*τd)*np.tanh(np.sqrt(1j*2*omega*τd)))
+
+    f = 96485.3321233100184/(8.31446261815324*298)
+
+    tau = omega*Rct*Cdl
+    y1 = Rct/(Zd1+Rct)
+    y2 = (Zd1/(Zd1+Rct))
+
+    Z1 = Rct/(y1+1j*tau)
+    const = ((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
+
+    Z2 = (const*Z1**2)/(2*tau*1j+Rct/(Zd2+Rct))
+
+    return (Z2)
+
+
+@element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
+def RCS(p, f):
+    '''
+
+    EIS: Randles circuit with diffusion
+    diffusion into a spherical electrode from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+        \\tilde{Z_1} = \\frac{R_{ct}}{\\frac{R_{ct}}
+        {R_{ct} + \\tilde{Z}_{D,1}} + j\\omega^{*}}
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+          \\right)}{\\sqrt{j\\omega\\tau}
+            - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representation
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    '''
+    omega = np.array(f)*2*np.pi
+    Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
+
+    Zd = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
+        (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
+
+    tau = omega*Rct*Cdl
+    Z = Rct/(Rct/(Rct+Zd)+1j*tau)
+    return (Z)
+
+
+@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', ''])
+def RCSn(p, f):
+    '''
+
+    2nd-NLEIS: Nonlinear Randles circuit with diffusion
+    diffusion into a spherical electrode from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+
+        \\tilde{Z_2} = \\frac{R_{ct}}{\\left(j2\\omega^{*}
+        + \\frac{R_{ct}}{\\tilde{Z}_{D,2} + R_{ct}}\\right)}
+        \\frac{\\left[ \\kappa
+        \\left( \\frac{\\tilde{Z}_{D,1}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 - \\varepsilon f
+        \\left( \\frac{R_{ct}}{\\tilde{Z}_{D,1}
+        + R_{ct}} \\right)^2 \\right]}{\\tilde{Z}_{D,2} + R_{ct}}
+        \\left( \\frac{R_{ct}}{\\frac{R_{ct}}{R_{ct}
+        + \\tilde{Z}_{D,1}} + j\\omega^{*}} \\right)^2
+
+    and
+
+    .. math::
+
+        \\omega^{*} = \\omega R_{ct} C_{dl}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+          \\right)}{\\sqrt{j\\omega\\tau}
+            - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_{w} \\tanh\\left( \\sqrt{j2\\omega\\tau}
+          \\right)}{\\sqrt{j2\\omega\\tau}
+            - \\tanh\\left( \\sqrt{j2\\omega\\tau} \\right)}
+
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{ct}; \\;
+        p[1] = C_{dl}; \\;
+        p[2] = A_{w}; \\;
+        p[3] = τ; \\;
+        p[4] = κ; \\;
+        p[5] = ε; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    '''
+
+    omega = np.array(f)*2*np.pi
+    Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5]
+
+    Zd1 = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
+        (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
+    Zd2 = Aw*np.tanh(np.sqrt(1j*2*omega*τd)) / \
+        (np.sqrt(1j*2*omega*τd)-np.tanh(np.sqrt(1j*2*omega*τd)))
+
+    f = 96485.3321233100184/(8.31446261815324*298)
+
+    tau = omega*Rct*Cdl
+    y1 = Rct/(Zd1+Rct)
+    y2 = (Zd1/(Zd1+Rct))
+
+    Z1 = Rct/(y1+1j*tau)
+    const = ((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
+
+    Z2 = (const*Z1**2)/(2*tau*1j+Rct/(Zd2+Rct))
+
+    return (Z2)
+
+
 @element(num_params=3, units=['Ohms', 'Ohms', 'F'])
 def TPO(p, f):
     '''
 
-    EIS: A macrohomogeneous porous electrode model
-    with zero solid resistivity from Ji et al. [1]
+    EIS: Porous electrode with high conductivity matrix (charge transfer only)
+    from Ji et al. [1]
 
     Notes
     -----
@@ -124,8 +502,8 @@ def TPO(p, f):
 def TPOn(p, f):
     """
 
-    2nd-NLEIS: A macrohomogeneous porous electrode model
-    with zero solid resistivity from Ji et al. [1]
+    2nd-NLEIS: Porous electrode with high conductivity matrix
+    (charge transfer only) from Ji et al. [1]
 
     Notes
     -----
@@ -211,378 +589,11 @@ def TPOn(p, f):
 
 
 @element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
-def TDC(p, f):
-    """
-
-    EIS: A macrohomogeneous porous electrode model with cylindrical diffusion
-    and zero solid resistivity from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-
-        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
-
-    where
-
-    .. math::
-
-        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
-        + \\frac{R_{\\text{pore}}}
-        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
-        {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
-
-    **Parameters:**
-
-    .. math::
-        p[0] = R_{pore}; \\;
-        p[1] = R_{ct}; \\;
-        p[2] = C_{dl}; \\;
-        p[3] = A_{w}; \\;
-        p[4] = τ; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    """
-    omega = 2*np.pi*np.array(f)
-    Rpore, Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3], p[4]
-    i01 = []
-    i11 = []
-    for x in np.sqrt(1j*omega*τd):
-        if x < 100:
-            i01.append(iv(0, x))
-            i11.append(iv(1, x))
-        else:
-            i01.append(1e20)
-            i11.append(1e20)
-    Zd = Aw*np.array(i01)/(np.sqrt(1j*omega*τd)*np.array(i11))
-
-    beta = (1j*omega*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
-    Z = Rpore/(beta*np.tanh(beta))
-    return Z
-
-
-@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
-def TDCn(p, f):
-    """
-
-    2nd-NLEIS: A macrohomogeneous porous electrode model
-    with cylindrical diffusion
-    and zero solid resistivity from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-
-        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
-        (\\beta_1^D \\sinh(\\beta_1^D))^2}
-        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
-        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
-        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
-        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
-        (\\beta_2^D + 2\\beta_1^D)} +
-        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
-
-    where
-
-    .. math::
-
-        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
-        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
-        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
-
-    and
-
-    .. math::
-
-        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
-        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
-        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
-        {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
-
-    and
-
-    .. math::
-
-        Z_{D,2} = A_w \\frac{I_0\\left(\\sqrt{j 2\\omega \\tau}\\right)}
-        {\\sqrt{j 2\\omega \\tau} I_1\\left(\\sqrt{j 2\\omega \\tau}\\right)}
-
-    **Parameters:**
-
-    .. math::
-
-        p[0] = R_{pore}; \\;
-        p[1] = R_{ct}; \\;
-        p[2] = C_{dl}; \\;
-        p[3] = A_{w}; \\;
-        p[4] = τ; \\;
-        p[5] = κ; \\;
-        p[6] = ε; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    """
-
-    omega = 2*np.pi*np.array(f)
-    Rpore, Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
-
-    i01 = []
-    i11 = []
-    for x in np.sqrt(1j*omega*τd):
-        if x < 100:
-            i01.append(iv(0, x))
-            i11.append(iv(1, x))
-        else:
-            i01.append(1e20)
-            i11.append(1e20)
-    i02 = []
-    i12 = []
-    for x in np.sqrt(1j*2*omega*τd):
-        if x < 100:
-            i02.append(iv(0, x))
-            i12.append(iv(1, x))
-        else:
-            i02.append(1e20)
-            i12.append(1e20)
-    Zd1 = Aw*np.array(i01)/(np.sqrt(1j*omega*τd)*np.array(i11))
-    Zd2 = Aw*np.array(i02)/(np.sqrt(1j*2*omega*τd)*np.array(i12))
-
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
-
-    b1 = (1j*omega*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
-    b2 = (1j*2*omega*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
-
-    f = 96485.3321233100184/(8.31446261815324*298)
-    sinh1 = []
-    for x in b1:
-        if x < 100:
-            sinh1.append(np.sinh(x))
-        else:
-            sinh1.append(1e10)
-    sinh2 = []
-    cosh2 = []
-    for x in b1:
-        if x < 100:
-            sinh2.append(np.sinh(2*x))
-            cosh2.append(np.cosh(2*x))
-        else:
-            sinh2.append(1e10)
-            cosh2.append(1e10)
-    const = -((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
-    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
-    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
-    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
-    Z = mf*(part1+part2)
-
-    return Z
-
-
-@element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
-def TDS(p, f):
-    """
-
-    EIS: A macrohomogeneous porous electrode model with spherical diffusion
-    and zero solid resistivity from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-
-        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
-
-    where
-
-    .. math::
-
-        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
-        + \\frac{R_{\\text{pore}}}
-        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
-        \\right)}{\\sqrt{j\\omega\\tau}
-        - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
-
-
-    **Parameters:**
-
-    .. math::
-
-        p[0] = Rpore; \\;
-        p[1] = Rct; \\;
-        p[2] = Cdl; \\;
-        p[3] = Aw; \\;
-        p[4] = τd; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-
-    """
-    omega = 2*np.pi*np.array(f)
-    Rpore, Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3], p[4]
-
-    Zd = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
-        (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
-
-    beta = (1j*omega*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
-    Z = Rpore/(beta*np.tanh(beta))
-    return Z
-
-
-@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
-def TDSn(p, f):
-    """
-
-    2nd-NLEIS: A macrohomogeneous porous electrode model
-    with spherical diffusion
-    and zero solid resistivity from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-
-        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
-        (\\beta_1^D \\sinh(\\beta_1^D))^2}
-        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
-        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
-        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
-        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
-        (\\beta_2^D + 2\\beta_1^D)} +
-        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
-
-    where
-
-    .. math::
-
-        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
-        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
-        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
-
-    and
-
-    .. math::
-
-        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
-        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
-        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
-        \\right)}{\\sqrt{j\\omega\\tau}
-        - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
-
-    and
-
-    .. math::
-
-        Z_{D,2} = \\frac{A_{w} \\tanh\\left( \\sqrt{j2\\omega\\tau}
-        \\right)}{\\sqrt{j2\\omega\\tau}
-        - \\tanh\\left( \\sqrt{j2\\omega\\tau} \\right)}
-
-    **Parameters:**
-
-    .. math::
-
-        p[0] = Rpore; \\;
-        p[1] = Rct; \\;
-        p[2] = Cdl; \\;
-        p[3] = Aw; \\;
-        p[4] = τ; \\;
-        p[5] = κ; \\;
-        p[6] = ε; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-
-    """
-
-    omega = 2*np.pi*np.array(f)
-    Rpore, Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
-    Zd1 = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
-        (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
-    Zd2 = Aw*np.tanh(np.sqrt(1j*2*omega*τd)) / \
-        (np.sqrt(1j*2*omega*τd)-np.tanh(np.sqrt(1j*2*omega*τd)))
-
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
-
-    b1 = (1j*omega*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
-    b2 = (1j*2*omega*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
-
-    f = 96485.3321233100184/(8.31446261815324*298)
-    sinh1 = []
-    for x in b1:
-        if x < 100:
-            sinh1.append(np.sinh(x))
-        else:
-            sinh1.append(1e10)
-    sinh2 = []
-    cosh2 = []
-    for x in b1:
-        if x < 100:
-            sinh2.append(np.sinh(2*x))
-            cosh2.append(np.cosh(2*x))
-        else:
-            sinh2.append(1e10)
-            cosh2.append(1e10)
-    const = -((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
-    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
-    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
-    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
-    Z = mf*(part1+part2)
-
-    return Z
-
-
-@element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
 def TDP(p, f):
     """
 
-    EIS: A macrohomogeneous porous electrode model with planar diffusion
-    and zero solid resistivity from Ji et al. [1]
+    EIS: orous electrode with high conductivity matrix
+    and planar diffusion into platelet-like particles from Ji et al. [1]
 
     Notes
     -----
@@ -746,343 +757,46 @@ def TDPn(p, f):
     return Z
 
 
-@element(num_params=2, units=['Ohm', 'F'])
-def RCO(p, f):
+@element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
+def TDS(p, f):
     """
 
-    EIS: Randles circuit
+    EIS: porous electrode with high conductivity matrix and
+    diffusion into spherical particles from Ji et al. [1]
 
     Notes
     -----
 
     .. math::
 
-        \\tilde{Z_1} = \\frac{R_{ct}}{1 + \\omega^{*}  j}
+        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
 
-    and
-
-    .. math::
-
-        \\omega^{*} = \\omega R_{ct} C_{dl}
-
-
-    **Parameters:**
+    where
 
     .. math::
 
-        p[0] = R_{ct}; \\;
-        p[1] = C_{dl}; \\;
-
-    """
-
-    w = np.array(f)*2*np.pi
-    Rct = p[0]
-    Cdl = p[1]
-
-    Z1r = Rct/(1+(w*Rct*Cdl)**2)
-    Z1i = (-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2)
-    Z1 = Z1r+1j*Z1i
-
-    return (Z1)
-
-
-@element(num_params=3, units=['Ohm', 'F', ''])
-def RCOn(p, f):
-    '''
-
-    2nd-NLEIS: Randles circuit from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-        \\tilde{Z_2} = \\frac{-\\varepsilon f R_{ct}^2}
-        {1 + 4\\omega^{*}  j - 5{\\omega^{*}}^2 - 2{\\omega^{*}}^3 j}
-
-    and
-
-    .. math::
-
-        \\omega^{*} = \\omega R_{ct} C_{dl}
-
-
-    **Parameters:**
-
-    .. math::
-
-        p[0] = R_{ct}; \\;
-        p[1] = C_{dl}; \\;
-        p[2] = ε; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    '''
-    w = np.array(f)*2*np.pi
-    Rct = p[0]
-    Cdl = p[1]
-    e = p[2]
-    f = 96485.3321233100184/(8.31446261815324*298)  # unit in 1/V
-
-    Z1r = Rct/(1+(w*Rct*Cdl)**2)
-    Z1i = (-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2)
-
-    tau = w*Rct*Cdl
-
-    Z2r = -e*f*(Z1r**2-Z1i**2+4*tau*Z1r*Z1i)/(1+4*tau**2)
-    Z2i = e*f*((Z1r**2-Z1i**2)*2*tau-2*Z1r*Z1i)/(1+4*tau**2)
-
-    Z2 = Z2r+1j*Z2i
-    return (Z2)
-
-
-@element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
-def RCD(p, f):
-    '''
-
-    EIS: Randles circuit with planar diffusion from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-        \\tilde{Z_1} = \\frac{R_{ct}}{\\frac{R_{ct}}
-        {R_{ct} + \\tilde{Z}_{D,1}} + j\\omega^{*}}
-
-    and
-
-    .. math::
-
-        \\omega^{*} = \\omega R_{ct} C_{dl}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = \\frac{A_w \\coth\\left(\\sqrt{j\\omega\\tau}
-        \\right)}{\\sqrt{j\\omega\\tau}}
-
-    **Parameters:**
-
-    .. math::
-
-        p[0] = R_{ct}; \\;
-        p[1] = C_{dl}; \\;
-        p[2] = A_{w}; \\;
-        p[3] = τ; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    '''
-    omega = np.array(f)*2*np.pi
-    Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
-
-    Zd = Aw/(np.sqrt(1j*omega*τd)*np.tanh(np.sqrt(1j*omega*τd)))
-    tau = omega*Rct*Cdl
-    Z = Rct/(Rct/(Rct+Zd)+1j*tau)
-    return (Z)
-
-
-@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', ''])
-def RCDn(p, f):
-    '''
-
-    2nd-NLEIS: Randles circuit with planar diffusion from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-
-        \\tilde{Z_2} = \\frac{R_{ct}}{\\left(j2\\omega^{*}
-        + \\frac{R_{ct}}{\\tilde{Z}_{D,2} + R_{ct}}\\right)}
-        \\frac{\\left[ \\kappa
-        \\left( \\frac{\\tilde{Z}_{D,1}}{\\tilde{Z}_{D,1}
-        + R_{ct}} \\right)^2 - \\varepsilon f
-        \\left( \\frac{R_{ct}}{\\tilde{Z}_{D,1}
-        + R_{ct}} \\right)^2 \\right]}{\\tilde{Z}_{D,2} + R_{ct}}
-        \\left( \\frac{R_{ct}}{\\frac{R_{ct}}{R_{ct}
-        + \\tilde{Z}_{D,1}} + j\\omega^{*}} \\right)^2
-
-    and
-
-    .. math::
-
-        \\omega^{*} = \\omega R_{ct} C_{dl}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = \\frac{A_w \\coth\\left(\\sqrt{j\\omega\\tau}
-        \\right)}{\\sqrt{j\\omega\\tau}}
-
-    and
-
-    .. math::
-
-        Z_{D,2} = \\frac{A_w \\coth\\left(\\sqrt{j2\\omega\\tau}
-        \\right)}{\\sqrt{j2\\omega\\tau}}
-
-
-    **Parameters:**
-
-    .. math::
-        p[0] = R_{ct}; \\;
-        p[1] = C_{dl}; \\;
-        p[2] = A_{w}; \\;
-        p[3] = τ; \\;
-        p[4] = κ; \\;
-        p[5] = ε; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    '''
-
-    omega = np.array(f)*2*np.pi
-    Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5]
-
-    Zd1 = Aw/(np.sqrt(1j*omega*τd)*np.tanh(np.sqrt(1j*omega*τd)))
-    Zd2 = Aw/(np.sqrt(1j*2*omega*τd)*np.tanh(np.sqrt(1j*2*omega*τd)))
-
-    f = 96485.3321233100184/(8.31446261815324*298)
-
-    tau = omega*Rct*Cdl
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
-
-    Z1 = Rct/(y1+1j*tau)
-    const = ((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
-
-    Z2 = (const*Z1**2)/(2*tau*1j+Rct/(Zd2+Rct))
-
-    return (Z2)
-
-
-@element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
-def RCS(p, f):
-    '''
-
-    EIS: Randles circuit with spherical diffusion from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-        \\tilde{Z_1} = \\frac{R_{ct}}{\\frac{R_{ct}}
-        {R_{ct} + \\tilde{Z}_{D,1}} + j\\omega^{*}}
-
-    and
-
-    .. math::
-
-        \\omega^{*} = \\omega R_{ct} C_{dl}
+        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}
+        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
 
     and
 
     .. math::
 
         Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
-          \\right)}{\\sqrt{j\\omega\\tau}
-            - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+        \\right)}{\\sqrt{j\\omega\\tau}
+        - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
 
 
     **Parameters:**
 
     .. math::
 
-        p[0] = R{ct}; \\;
-        p[1] = C_{dl}; \\;
-        p[2] = A_{w}; \\;
-        p[3] = τ; \\;
-
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representation
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
-
-    '''
-    omega = np.array(f)*2*np.pi
-    Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
-
-    Zd = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
-        (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
-
-    tau = omega*Rct*Cdl
-    Z = Rct/(Rct/(Rct+Zd)+1j*tau)
-    return (Z)
-
-
-@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', ''])
-def RCSn(p, f):
-    '''
-
-    2nd-NLEIS: Randles circuit with spherical diffusion from Ji et al. [1]
-
-    Notes
-    -----
-
-    .. math::
-
-        \\tilde{Z_2} = \\frac{R_{ct}}{\\left(j2\\omega^{*}
-        + \\frac{R_{ct}}{\\tilde{Z}_{D,2} + R_{ct}}\\right)}
-        \\frac{\\left[ \\kappa
-        \\left( \\frac{\\tilde{Z}_{D,1}}{\\tilde{Z}_{D,1}
-        + R_{ct}} \\right)^2 - \\varepsilon f
-        \\left( \\frac{R_{ct}}{\\tilde{Z}_{D,1}
-        + R_{ct}} \\right)^2 \\right]}{\\tilde{Z}_{D,2} + R_{ct}}
-        \\left( \\frac{R_{ct}}{\\frac{R_{ct}}{R_{ct}
-        + \\tilde{Z}_{D,1}} + j\\omega^{*}} \\right)^2
-
-    and
-
-    .. math::
-
-        \\omega^{*} = \\omega R_{ct} C_{dl}
-
-    and
-
-    .. math::
-
-        Z_{D,1} = Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
-          \\right)}{\\sqrt{j\\omega\\tau}
-            - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
-
-    and
-
-    .. math::
-
-        Z_{D,2} = \\frac{A_{w} \\tanh\\left( \\sqrt{j2\\omega\\tau}
-          \\right)}{\\sqrt{j2\\omega\\tau}
-            - \\tanh\\left( \\sqrt{j2\\omega\\tau} \\right)}
-
-
-    **Parameters:**
-
-    .. math::
-
-        p[0] = R_{ct}; \\;
-        p[1] = C_{dl}; \\;
-        p[2] = A_{w}; \\;
-        p[3] = τ; \\;
-        p[4] = κ; \\;
-        p[5] = ε; \\;
+        p[0] = Rpore; \\;
+        p[1] = Rct; \\;
+        p[2] = Cdl; \\;
+        p[3] = Aw; \\;
+        p[4] = τd; \\;
 
     [1] Y. Ji, D.T. Schwartz,
     Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
@@ -1091,28 +805,321 @@ def RCSn(p, f):
     J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
-    '''
 
-    omega = np.array(f)*2*np.pi
-    Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5]
+    """
+    omega = 2*np.pi*np.array(f)
+    Rpore, Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3], p[4]
 
+    Zd = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
+        (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
+
+    beta = (1j*omega*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
+    Z = Rpore/(beta*np.tanh(beta))
+    return Z
+
+
+@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
+def TDSn(p, f):
+    """
+
+    2nd-NLEIS: porous electrode with high conductivity matrix and
+    diffusion into spherical particles from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+
+        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
+        (\\beta_1^D \\sinh(\\beta_1^D))^2}
+        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
+        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
+        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} +
+        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
+
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = \\frac{A_{w} \\tanh\\left( \\sqrt{j\\omega\\tau}
+        \\right)}{\\sqrt{j\\omega\\tau}
+        - \\tanh\\left( \\sqrt{j\\omega\\tau} \\right)}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = \\frac{A_{w} \\tanh\\left( \\sqrt{j2\\omega\\tau}
+        \\right)}{\\sqrt{j2\\omega\\tau}
+        - \\tanh\\left( \\sqrt{j2\\omega\\tau} \\right)}
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = Rpore; \\;
+        p[1] = Rct; \\;
+        p[2] = Cdl; \\;
+        p[3] = Aw; \\;
+        p[4] = τ; \\;
+        p[5] = κ; \\;
+        p[6] = ε; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+
+    """
+
+    omega = 2*np.pi*np.array(f)
+    Rpore, Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
     Zd1 = Aw*np.tanh(np.sqrt(1j*omega*τd)) / \
         (np.sqrt(1j*omega*τd)-np.tanh(np.sqrt(1j*omega*τd)))
     Zd2 = Aw*np.tanh(np.sqrt(1j*2*omega*τd)) / \
         (np.sqrt(1j*2*omega*τd)-np.tanh(np.sqrt(1j*2*omega*τd)))
 
-    f = 96485.3321233100184/(8.31446261815324*298)
-
-    tau = omega*Rct*Cdl
     y1 = Rct/(Zd1+Rct)
     y2 = (Zd1/(Zd1+Rct))
 
-    Z1 = Rct/(y1+1j*tau)
-    const = ((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
+    b1 = (1j*omega*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
+    b2 = (1j*2*omega*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
 
-    Z2 = (const*Z1**2)/(2*tau*1j+Rct/(Zd2+Rct))
+    f = 96485.3321233100184/(8.31446261815324*298)
+    sinh1 = []
+    for x in b1:
+        if x < 100:
+            sinh1.append(np.sinh(x))
+        else:
+            sinh1.append(1e10)
+    sinh2 = []
+    cosh2 = []
+    for x in b1:
+        if x < 100:
+            sinh2.append(np.sinh(2*x))
+            cosh2.append(np.cosh(2*x))
+        else:
+            sinh2.append(1e10)
+            cosh2.append(1e10)
+    const = -((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
+    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
+    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
+    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
+    Z = mf*(part1+part2)
 
-    return (Z2)
+    return Z
+
+
+@element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
+def TDC(p, f):
+    """
+
+    EIS: porous electrode with high conductivity matrix and
+    diffusion into cylindrical particles from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+
+        Z_1 = \\frac{R_{\\text{pore}} \\coth(\\beta_1^D)}{\\beta_1^D}
+
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j\\omega C_{\\text{dl}} R_{\\text{pore}}
+        + \\frac{R_{\\text{pore}}}
+        {Z_{D,1} + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
+        {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
+
+    **Parameters:**
+
+    .. math::
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = A_{w}; \\;
+        p[4] = τ; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    """
+    omega = 2*np.pi*np.array(f)
+    Rpore, Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3], p[4]
+    i01 = []
+    i11 = []
+    for x in np.sqrt(1j*omega*τd):
+        if x < 100:
+            i01.append(iv(0, x))
+            i11.append(iv(1, x))
+        else:
+            i01.append(1e20)
+            i11.append(1e20)
+    Zd = Aw*np.array(i01)/(np.sqrt(1j*omega*τd)*np.array(i11))
+
+    beta = (1j*omega*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
+    Z = Rpore/(beta*np.tanh(beta))
+    return Z
+
+
+@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
+def TDCn(p, f):
+    """
+
+    2nd-NLEIS: porous electrode with high conductivity matrix and
+    diffusion into cylindrical particles from Ji et al. [1]
+
+    Notes
+    -----
+
+    .. math::
+
+        Z_2 = \\frac{ε f R_{\\text{pore}}^3}{R_{\\text{ct}}
+        (\\beta_1^D \\sinh(\\beta_1^D))^2}
+        \\left[ \\left( \\frac{\\beta_1^D \\sinh(2\\beta_1^D)}
+        {\\beta_2^D(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} \\coth(\\beta_2^D) \\right) - \n
+        \\left( \\frac{\\cosh(2\\beta_1^D)}{2(\\beta_2^D - 2\\beta_1^D)
+        (\\beta_2^D + 2\\beta_1^D)} +
+        \\frac{1}{2{\\beta_2^D}^2} \\right) \\right]
+
+    where
+
+    .. math::
+
+        \\beta_1^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\\text{pore}}}{\\tilde{Z}_{D,1}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        \\beta_2^D = \\left( j2\\omega C_{\\text{dl}} R_{\\text{pore}} +
+        \\frac{R_{\text{pore}}}{\\tilde{Z}_{D,2}
+        + R_{\\text{ct}}} \\right)^{\\frac{1}{2}}
+
+    and
+
+    .. math::
+
+        Z_{D,1} = A_w \\frac{I_0\\left(\\sqrt{j \\omega \\tau}\\right)}
+        {\\sqrt{j \\omega \\tau} I_1\\left(\\sqrt{j \\omega \\tau}\\right)}
+
+    and
+
+    .. math::
+
+        Z_{D,2} = A_w \\frac{I_0\\left(\\sqrt{j 2\\omega \\tau}\\right)}
+        {\\sqrt{j 2\\omega \\tau} I_1\\left(\\sqrt{j 2\\omega \\tau}\\right)}
+
+    **Parameters:**
+
+    .. math::
+
+        p[0] = R_{pore}; \\;
+        p[1] = R_{ct}; \\;
+        p[2] = C_{dl}; \\;
+        p[3] = A_{w}; \\;
+        p[4] = τ; \\;
+        p[5] = κ; \\;
+        p[6] = ε; \\;
+
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+
+    """
+
+    omega = 2*np.pi*np.array(f)
+    Rpore, Rct, Cdl, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
+
+    i01 = []
+    i11 = []
+    for x in np.sqrt(1j*omega*τd):
+        if x < 100:
+            i01.append(iv(0, x))
+            i11.append(iv(1, x))
+        else:
+            i01.append(1e20)
+            i11.append(1e20)
+    i02 = []
+    i12 = []
+    for x in np.sqrt(1j*2*omega*τd):
+        if x < 100:
+            i02.append(iv(0, x))
+            i12.append(iv(1, x))
+        else:
+            i02.append(1e20)
+            i12.append(1e20)
+    Zd1 = Aw*np.array(i01)/(np.sqrt(1j*omega*τd)*np.array(i11))
+    Zd2 = Aw*np.array(i02)/(np.sqrt(1j*2*omega*τd)*np.array(i12))
+
+    y1 = Rct/(Zd1+Rct)
+    y2 = (Zd1/(Zd1+Rct))
+
+    b1 = (1j*omega*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
+    b2 = (1j*2*omega*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
+
+    f = 96485.3321233100184/(8.31446261815324*298)
+    sinh1 = []
+    for x in b1:
+        if x < 100:
+            sinh1.append(np.sinh(x))
+        else:
+            sinh1.append(1e10)
+    sinh2 = []
+    cosh2 = []
+    for x in b1:
+        if x < 100:
+            sinh2.append(np.sinh(2*x))
+            cosh2.append(np.cosh(2*x))
+        else:
+            sinh2.append(1e10)
+            cosh2.append(1e10)
+    const = -((Rct*κ*y2**2)-Rct*e*f*y1**2)/(Zd2+Rct)
+    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
+    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
+    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
+    Z = mf*(part1+part2)
+
+    return Z
 
 # TLM Model #
 

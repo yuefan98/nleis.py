@@ -78,20 +78,22 @@ Here, we provide a simple data processing function to help you truncate your dat
 
 .. code-block:: python
 
-    ## from nleis.nleis_fitting import data_processing ## Import command for standalone nleis.py
-    from impedance.models.nleis.nleis_fitting import data_processing ## Import command for integrated nleis.py
+    from nleis.nleis_fitting import data_processing ## Import command for standalone nleis.py
+    ## from impedance.models.nleis.nleis_fitting import data_processing ## Import command for integrated nleis.py
     
     f,Z1,Z2,f2_trunc,Z2_trunc = data_processing(frequencies,Z1,Z2)
 
-Step 3: Define your model
+Step 4: Define your model
 ==========================
 
-Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit. Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. See the following example.
+Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
+The following example presents a cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. 
+For EIS, the response of the two porous electrodes are in series with an ohmic resistance and an inductance (circ_str_1). The 2nd-NLEIS response is defined as the difference between the responses of the positive and negative electrodes (circ_str_2).
 
 .. code-block:: python
 
-    ## from nleis import EISandNLEIS ##Import command for integrated nleis.py
-    from impedance.models.nleis import EISandNLEIS ##Import command for integrated nleis.py
+    from nleis import EISandNLEIS ##Import command for integrated nleis.py
+    ## from impedance.models.nleis import EISandNLEIS ##Import command for integrated nleis.py
     
     circ_str_1 = 'L0-R0-TDS0-TDS1'
     circ_str_2 = 'd(TDSn0,TDSn1)'
@@ -101,7 +103,7 @@ Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles 
                        ,1e-3,1e-3,1e-3,1e-2,1000,0,0 ## TDS1 + additioal nonlinear parameters
                        ]
 
-Step 4: Fit to data 
+Step 5: Fit to data 
 ==========================
 
 You then need to fit initialize your :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS.
@@ -112,7 +114,7 @@ You then need to fit initialize your :code:`EISandNLEIS` class for simultaneous 
     circuit.fit(f,Z1,Z2, opt='max');
 
 
-Step 5: Visualize and print the results
+Step 6: Visualize and print the results
 ========================================
 
 .. code-block:: python
@@ -199,17 +201,18 @@ Step 5: Visualize and print the results
 
    In `nleis.py`, the linear and nonlinear circuit elements are defined in pairs. The nonlinear element can be distinguished by an additional `n` after the linear circuit element. For example, the currently supported linear and nonlinear element pairs are shown as the following:
 
-   - High solid conductivity porous electrode (charge transfer only): **`[TPO,TPOn]`**
-   - High solid conductivity porous electrode with planar diffusion: **`[TDP,TDPn]`**
-   - High solid conductivity porous electrode with spherical diffusion: **`[TDS,TDSn]`**
-   - High solid conductivity porous electrode with cylindrical diffusion: **`[TDC,TDCn]`**
-   - Nonlinear Randles circuit with planar diffusion: **`[RCO,RCOn]`**
-   - Nonlinear Randles circuit with cylindrical diffusion: **`[RCD,RCDn]`**
-   - Nonlinear Randles circuit with spherical diffusion: **`[RCS,RCSn]`**
-   - Nonlinear Transmission Line model with two RC branches (charge transfer only): **`[TLM,TLMn]`**
-   - Nonlinear Transmission Line model with two RC branches, and spherical diffusion on one RC: **`[TLMS,TLMSn]`**
-
-There are also under development versions of current distribution functions for linear and nonlinear TLMs. A detailed description will be included in the future. 
+   - Nonlinear Randles circuit (charge transfer only): **`[RCO,RCOn]`**
+   - Nonlinear Randles circuit with planar diffusion in a bounded thin film electrode: **`[RCD,RCDn]`**
+   - Nonlinear Randles circuit with diffusion into a spherical electrode: **`[RCS,RCSn]`**
+   - Porous electrode with high conductivity matrix (charge transfer only): **`[TPO,TPOn]`**
+   - Porous electrode with high conductivity matrix and planar diffusion into platelet-like particles: **`[TDP,TDPn]`**
+   - porous electrode with high conductivity matrix and diffusion into spherical particles: **`[TDS,TDSn]`**
+   - Porous electrode with high conductivity matrix and diffusion into cylindrical particles: **`[TDC,TDCn]`**
+  
+  The nonlinear transmission line models (TLMs) and their corresponding current distribution functions are still under development. A detailed description will be included in the future.
+   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior (charge transfer only): **`[TLM,TLMn]`**
+   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior with diffusion into spherical particles: **`[TLMS,TLMSn]`**
+   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior with diffusion into platelet-like particles: **`[TLMS,TLMSn]`**
 
 
 

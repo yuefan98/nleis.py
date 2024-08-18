@@ -59,24 +59,34 @@ def seq_fit_parm(input_dic, target_arr, output_arr):
 
     Convert obtained EIS result to a constant of dictionary
     for 2nd-NLEIS analysis using sequential optimization disscussed in [1]
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    I. Analytical theory and equivalent circuit representations
+    for planar and porous electrodes.
+    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
+    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     Parameters
     ----------
     input_dic : dictionary
-        DESCRIPTION.
+        dictionary of EIS fitting results.
     target_arr : list of string
-        DESCRIPTION.
+        a lit of EIS circuit element that need to be converted.
+        i.e. ['TDS0','TDS1']
     output_arr : list of string
-        DESCRIPTION.
+        a lit of 2nd-NLEIS circuit element that will be converted to.
+        i.e. ['TDSn0','TDSn1']
 
     Raises
     ------
     ValueError
-        DESCRIPTION.
+        Raised if the Target Array and Output Array have differnt length.
 
     Returns
     -------
-    None.
+    output_dic : dictionary
+        A dictionary of constant that can be used
+        for equential 2nd-NLEIS optimization
 
     '''
     output_dic = {}
@@ -100,7 +110,12 @@ def set_default_bounds(circuit, constants={}):
     This function sets default bounds for optimization.
 
     set_default_bounds sets bounds of 0 and np.inf for all parameters,
-    except the CPE and La alphas which have an upper bound of 1.
+    Exceptions:
+    the CPE and La alpha have an upper bound of 1,
+    symmetry parameter (ε) for 2nd-NLEIS
+    has bounds between -0.5 to 0.5
+    curvature parameter (κ) for 2nd-NLEIS
+    has bounds between -np.inf to np.inf
 
     Parameters
     ----------
@@ -181,6 +196,8 @@ def set_default_bounds(circuit, constants={}):
     bounds = ((lower_bounds), (upper_bounds))
 
     return bounds
+
+# adopt from impedance.py to support 2nd-NLEIS/NLEIS fitting
 
 
 def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
@@ -332,6 +349,8 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
 
     return popt, perror
 
+# adopt from impedance.py to support 2nd-NLEIS/NLEIS fitting
+
 
 def wrapCircuit(circuit, constants):
     """ wraps function so we can pass the circuit string """
@@ -361,6 +380,8 @@ def wrapCircuit(circuit, constants):
 
         return np.hstack([y_real, y_imag])
     return wrappedCircuit
+
+# modified to enable subtraction
 
 
 def buildCircuit(circuit, frequencies, *parameters,
@@ -493,6 +514,8 @@ def buildCircuit(circuit, frequencies, *parameters,
 
     return eval_string, index
 
+# adopt from impedance.py to support 2nd-NLEIS/NLEIS fitting
+
 
 def calculateCircuitLength(circuit):
     """ Calculates the number of elements in the circuit.
@@ -516,6 +539,8 @@ def calculateCircuitLength(circuit):
             num_params = check_and_eval(raw_element).num_params
             length += num_params
     return length
+
+# modified to enable subtraction
 
 
 def extract_circuit_elements(circuit):

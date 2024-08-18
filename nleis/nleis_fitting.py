@@ -19,6 +19,44 @@ ints = '0123456789'
 
 
 def data_processing(f, Z1, Z2, max_f=10):
+    '''
+
+    Simple data processing function for EIS and 2nd-NLEIS simultaneously.
+
+    Parameters
+    ----------
+    f : numpy array
+        Frequencies
+
+    Z1 : numpy array of dtype 'complex128'
+        EIS data
+    Z2 : numpy array of dtype 'complex128'
+        2nd NLEIS data
+
+    max_f: float
+        The the maximum frequency of interest for 2nd-NLEIS
+
+    Returns
+    -------
+    The processed EIS and 2nd-NLEIS data
+
+    f : numpy array
+        Frequencies that removes high frequency inductance
+
+    Z1 : numpy array of dtype 'complex128'
+        EIS data that removes the high frequency inductance
+
+    Z2 : numpy array of dtype 'complex128'
+        2nd-NLEIS data that has the same frequency range as Z1
+
+    f2_truncated : numpy array
+        Frequencies that removes high frequency inductance and less
+        than the maximum measurable frequency for 2nd-NLEIS
+
+    Z2_truncated : numpy array of dtype 'complex128'
+        2nd-NLEIS data that has the same frequency range as f2_truncated
+
+    '''
     mask = np.array(Z1.imag) < 0
     f = f[mask]
     Z1 = Z1[mask]
@@ -43,16 +81,15 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
     ----------
     frequencies : numpy array
         Frequencies
-
     Z1 : numpy array of dtype 'complex128'
-        EIS
-    Z1 : numpy array of dtype 'complex128'
-        NLEIS
+        EIS data
+    Z2 : numpy array of dtype 'complex128'
+        2nd-NLEIS data
 
     circuit_1 : string
         String defining the EIS equivalent circuit to be fit
     circuit_2 : string
-        String defining the NLEIS equivalent circuit to be fit
+        String defining the 2nd-NLEIS equivalent circuit to be fit
 
     initial_guess : list of floats
         Initial guesses for the fit parameters
@@ -63,45 +100,49 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on parameters. Defaults to bounds on all
-        parameters of 0 and np.inf, except the CPE alpha
-        which has an upper bound of 1
+        parameters of 0 and np.inf,
+        Exceptions:
+        the CPE alpha  has an upper bound of 1,
+        symmetry parameter (ε) for 2nd-NLEIS
+        has bounds between -0.5 to 0.5
+        curvature parameter (κ) for 2nd-NLEIS
+        has bounds between -np.inf to np.inf
 
     opt : str, optional
-        Default is max normalization. Other normalization will be supported
-        in the future
+        Default is max normalization 'max'.
+        Negative Log-Likelihood is also supported as 'neg'.
+        'max' is currently outperform 'neg'
+
     cost : float, default = 0.5
         cost function: cost > 0.5 means more weight on EIS while cost < 0.5
-        means more weight on NLEIS
+        means more weight on 2nd-NLEIS
 
     max_f: int
-        The the maximum frequency of interest for NLEIS
+        The the maximum frequency of interest for 2nd-NLEIS
 
     positive : bool, optional
-        Defaults to True for only positive nyquist plot
+        Defaults to True to eliminate high frequency inductance
 
     param_norm : bool, optional
          Defaults to True for better convergence
          when customized bounds is supported
 
-
     kwargs :
-        Keyword arguments passed to scipy.optimize.curve_fit or
-        scipy.optimize.basinhopping
+        Keyword arguments passed to scipy.optimize.curve_fit
 
     Returns
     -------
     p_values : list of floats
-        best fit parameters for EIS and NLEIS data
+        best fit parameters for EIS and 2nd-NLEIS data
 
     p_errors : list of floats
-        one standard deviation error estimates for fit parameters
+        one standard deviation error estimates for fitting parameters
 
     """
     # Todo improve the the negtive loglikelihood,
     # the code works fine for RC but not porous electrode
 
     # set upper and lower bounds on a per-element basis
-
     if bounds is None:
         combined_constant = constants_2.copy()
         combined_constant.update(constants_1)
@@ -170,7 +211,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         return popt*ub, perror
     if opt == 'neg':
         # This method does not provides converge solution
-        # for porous electrode model at current development
+        # for porous electrode model under current development
         bounds = tuple(tuple((bounds[0][i], bounds[1][i]))
                        for i in range(len(bounds[0])))
 
@@ -185,7 +226,8 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 
 def wrapNeg_log_likelihood(frequencies, Z1, Z2, circuit_1, constants_1,
                            circuit_2, constants_2, ub, max_f=10, cost=0.5):
-    ''' wraps function for negtive log likelihood optimization'''
+    ''' wraps function so we can pass the circuit string
+    for negtive log likelihood optimization'''
 
     def wrappedNeg_log_likelihood(parameters):
         """ returns a stacked array of real and imaginary impedance
@@ -229,7 +271,8 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, circuit_1, constants_1,
 
 def wrapCircuit_simul(circuit_1, constants_1, circuit_2,
                       constants_2, ub, max_f=10):
-    """ wraps function so we can pass the circuit string """
+    """ wraps function so we can pass the circuit string
+    for simultaneous fitting """
     def wrappedCircuit_simul(frequencies, *parameters):
         """ returns a stacked array of real and imaginary impedance
         components
@@ -275,17 +318,27 @@ def wrappedImpedance(circuit_1, constants_1, circuit_2, constants_2,
     Parameters
     ----------
     circuit_1 : string
+        EIS circuit string
     constants_1 : dict
+        constant for EIS string.
     circuit_2 : string
+        2nd-NLEIS circuit string
     constants_2 : dict
-    f1 : list of floats
-    f2 : list of floats
-    parameters : list of floats
+        constant for EIS string.
 
+    f1 : list of floats
+        frequency range for EIS
+    f2 : list of floats
+        frequency range for 2nd-NLEIS
+    parameters : list of floats
+        full parameters based on edited string.
 
     Returns
     -------
-    Z1 and Z2
+    x1
+        calculated EIS (Z1)
+    x2
+        calculated 2nd-NLEIS (Z2)
 
     '''
 
@@ -309,20 +362,24 @@ def individual_parameters(circuit, parameters, constants_1, constants_2):
     Parameters
     ----------
     circuit : string
-        DESCRIPTION.
+        Edited circuit string.
+        For example, if EIS string: L0-R0-TDS0-TDS1
+        2nd-NLEIS string: d(TDSn0-TDSn1).
+        Then the edited str is L0-R0-TDSn0-TDSn1
+
     parameters : list of floats
-        DESCRIPTION.
+        full parameters based on edited string.
     constants_1 : dict
-        DESCRIPTION.
+        constant for EIS string.
     constants_2 : dict
-        DESCRIPTION.
+        constants fpr 2nd-NLEIS string.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
-    TYPE
-        DESCRIPTION.
+    p1
+        parameters for EIS.
+    p2
+        parameters for 2nd-NLEIS.
 
     '''
 
@@ -333,6 +390,7 @@ def individual_parameters(circuit, parameters, constants_1, constants_2):
     p1 = []
     p2 = []
     index = 0
+    # Parse elements and store values
     for elem in elements_1:
 
         raw_elem = get_element_from_name(elem)

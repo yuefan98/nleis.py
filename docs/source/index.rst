@@ -13,6 +13,7 @@ Welcome to :code:`nleis.py`'s documentation!
    fitting
    nleis_fitting
    visualization
+   data-processing
 
 
 Indices and tables

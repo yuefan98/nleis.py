@@ -12,19 +12,20 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
 
-# sys.path.insert(0, os.path.abspath('.'))
+# using system path to extract version number
+sys.path.insert(0, os.path.abspath('../../'))
+from nleis import __version__ # noqa
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'nleis.py'
-copyright = '2024, Yuefan Ji'
-author = 'Yuefan Ji'
+copyright = '2024, Yuefan Ji and nleis.py developer'
+author = 'Yuefan Ji and nleis.py developer'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,7 +47,7 @@ extensions = [
     'nbsphinx'
 ]
 
-##addition to impedance.py
+# in addition to impedance.py original code
 autodoc_default_options = {
     'undoc-members': True,
     'show-inheritance': True,
@@ -76,7 +77,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = 'en' 
+language = 'en'
 
 
 # List of patterns, relative to source directory, that match files and
@@ -114,5 +115,3 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-
-

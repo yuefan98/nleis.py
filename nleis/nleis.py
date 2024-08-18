@@ -777,9 +777,10 @@ class NLEISCustomCircuit(BaseCircuit):
         Raises
         ------
         TypeError
-            DESCRIPTION.
+            raised if the length of the frequency data
+            does not matches with impedance data.
         ValueError
-            DESCRIPTION.
+            raised if initial_guess is not supplied.
 
         Returns
         -------
