@@ -216,12 +216,14 @@ def buildCircuit(circuit, frequencies, *parameters,
     def parse_circuit(circuit, parallel=False, series=False, difference=False):
         """ Splits a circuit string by either dashes (series) or commas
             (parallel) outside of any paranthesis. Removes any leading 'p('
-            or trailing ')' when in parallel mode or 'd('or trailing ')'
-            when in difference mode '' """
-        # Exactly one of parallel or series or difference must be True
+            or trailing ')' when in parallel mode or 'd(' or trailing ')'
+            when in difference mode. This is adapted from impedance.py to
+            support subtraction """
+
         assert (parallel != series
                 or series != difference
-                or difference != parallel)
+                or difference != parallel), \
+                'Exactly one of parallel or series or difference must be True'
 
         def count_parens(string):
             return string.count('('), string.count(')')
