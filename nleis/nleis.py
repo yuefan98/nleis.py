@@ -1,12 +1,11 @@
 from .nleis_fitting import simul_fit, \
     wrappedImpedance, individual_parameters
 from .nleis_elements_pair import *  # noqa: F401, F403
-from impedance.models.circuits.fitting import check_and_eval
+from impedance.models.circuits.fitting import check_and_eval, calculateCircuitLength
 from impedance.models.circuits.elements import circuit_elements, \
     get_element_from_name
 from impedance.models.circuits.circuits import BaseCircuit
-from .fitting import circuit_fit, buildCircuit, calculateCircuitLength, \
-    extract_circuit_elements
+from .fitting import extract_circuit_elements
 
 from impedance.visualization import plot_bode
 from .visualization import plot_altair, plot_first, plot_second
@@ -746,105 +745,6 @@ class NLEISCustomCircuit(BaseCircuit):
                              f'({len(self.constants)})' +
                              ' must be equal to ' +
                              f'the circuit length ({circuit_len})')
-
-    def fit(self, frequencies, impedance, bounds=None,
-            weight_by_modulus=False, max_f=10, **kwargs):
-        '''
-
-        Fit the circuit model
-
-        Parameters
-        ----------
-        frequencies : numpy array
-            Frequencies.
-        impedance : numpy array of dtype 'complex128'
-            Impedance values to fit.
-        bounds : 2-tuple of array_like, optional
-            Lower and upper bounds on parameters.
-        weight_by_modulus : bool, optional
-            Uses the modulus of each data (`|Z|`) as the weighting factor.
-            Standard weighting scheme when experimental variances are
-            unavailable. Only applicable when global_opt = False
-        max_f : float , 10
-            Truncation for 2nd-NLEIS based on previous experiments.
-            The default is 10.
-        **kwargs :
-            Keyword arguments passed to
-            impedance.models.circuits.fitting.circuit_fit,
-            and subsequently to scipy.optimize.curve_fit
-            or scipy.optimize.basinhopping.
-
-        Raises
-        ------
-        TypeError
-            raised if the length of the frequency data
-            does not matches with impedance data.
-        ValueError
-            raised if initial_guess is not supplied.
-
-        Returns
-        -------
-        self: returns an instance of self
-
-        '''
-
-        frequencies = np.array(frequencies, dtype=float)
-        impedance = np.array(impedance, dtype=complex)
-
-        if len(frequencies) != len(impedance):
-            raise TypeError('length of frequencies and impedance do not match')
-        mask = np.array(frequencies) < max_f
-        frequencies = frequencies[mask]
-        impedance = impedance[mask]
-
-        if self.initial_guess != []:
-            parameters, conf = circuit_fit(frequencies, impedance,
-                                           self.circuit, self.initial_guess,
-                                           constants=self.constants,
-                                           bounds=bounds,
-                                           weight_by_modulus=weight_by_modulus,
-                                           **kwargs)
-            self.parameters_ = parameters
-            if conf is not None:
-                self.conf_ = conf
-        else:
-            raise ValueError('No initial guess supplied')
-
-        return self
-
-    def predict(self, frequencies, use_initial=False):
-        """
-
-        Predict impedance using an equivalent circuit model
-
-        Parameters
-        ----------
-        frequencies: array-like of numeric type
-        use_initial: boolean
-            If true and the model was previously fit use the initial
-            parameters instead
-
-        Returns
-        -------
-        impedance: ndarray of dtype 'complex128'
-            Predicted impedance at each frequency
-
-        """
-        frequencies = np.array(frequencies, dtype=float)
-
-        if self._is_fit() and not use_initial:
-            return eval(buildCircuit(self.circuit, frequencies,
-                                     *self.parameters_,
-                                     constants=self.constants, eval_string='',
-                                     index=0)[0],
-                        circuit_elements)
-        else:
-            warnings.warn("Simulating circuit based on initial parameters")
-            return eval(buildCircuit(self.circuit, frequencies,
-                                     *self.initial_guess,
-                                     constants=self.constants, eval_string='',
-                                     index=0)[0],
-                        circuit_elements)
 
     def get_param_names(self):
         """

@@ -1,10 +1,5 @@
 import numpy as np
-from impedance.preprocessing import ignoreBelowX
-from impedance.tests.test_preprocessing import frequencies \
-    as example_frequencies
-from impedance.tests.test_preprocessing import Z_correct
-from nleis.fitting import buildCircuit, \
-    circuit_fit, mape, mae, extract_circuit_elements, \
+from nleis.fitting import buildCircuit, mape, mae, extract_circuit_elements, \
     set_default_bounds, seq_fit_parm
 from nleis.nleis_fitting import data_processing, \
     simul_fit, individual_parameters
