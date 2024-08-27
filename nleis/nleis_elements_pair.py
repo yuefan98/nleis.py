@@ -1,7 +1,12 @@
 import numpy as np
 from scipy.special import iv
+from scipy import constants
 from impedance.models.circuits.elements import circuit_elements, \
     ElementError, OverwriteError
+
+F = constants.physical_constants['Faraday constant'][0]
+R = constants.R
+T = 298.15
 
 # element function adopted from impedance.py for better documentation
 
@@ -104,16 +109,12 @@ def RCO(p, f):
         p[1] = C_{dl}; \\;
 
     """
+    ω = np.array(f)*2*np.pi
+    Rct, Cdl = p[0], p[1]
 
-    w = np.array(f)*2*np.pi
-    Rct = p[0]
-    Cdl = p[1]
+    ω_star = ω*Rct*Cdl
 
-    Z1r = Rct/(1+(w*Rct*Cdl)**2)
-    Z1i = (-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2)
-    Z1 = Z1r+1j*Z1i
-
-    return (Z1)
+    return Rct / (1 + ω_star*1j)
 
 
 @element(num_params=3, units=['Ohm', 'F', ''])
@@ -153,22 +154,12 @@ def RCOn(p, f):
     <https://doi.org/10.1149/1945-7111/ad15ca>`_.
 
     '''
-    w = np.array(f)*2*np.pi
-    Rct = p[0]
-    Cdl = p[1]
-    e = p[2]
-    f = 96485.3321233100184/(8.31446261815324*298)  # unit in 1/V
+    ω = np.array(f)*2*np.pi
+    Rct, Cdl, ε = p[0], p[1], p[2]
 
-    Z1r = Rct/(1+(w*Rct*Cdl)**2)
-    Z1i = (-w*Cdl*Rct**2)/(1+(w*Rct*Cdl)**2)
+    ω_star = ω*Rct*Cdl
 
-    tau = w*Rct*Cdl
-
-    Z2r = -e*f*(Z1r**2-Z1i**2+4*tau*Z1r*Z1i)/(1+4*tau**2)
-    Z2i = e*f*((Z1r**2-Z1i**2)*2*tau-2*Z1r*Z1i)/(1+4*tau**2)
-
-    Z2 = Z2r+1j*Z2i
-    return (Z2)
+    return -ε*F/(R*T)*Rct**2 / (1 + 4*ω_star*1j - 5*ω_star**2 - 2*ω_star**3*1j)
 
 
 @element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
