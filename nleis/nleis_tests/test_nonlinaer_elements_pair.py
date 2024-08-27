@@ -1,12 +1,7 @@
 import string
-
 import numpy as np
-
-from nleis.nleis_elements_pair import (OverwriteError,  # noqa: F401
-                                       circuit_elements, element, d,
-                                       ElementError)  # noqa: F401
+from nleis.nleis_elements_pair import circuit_elements, d
 from impedance.models.circuits.circuits import CustomCircuit
-from nleis.nleis import NLEISCustomCircuit  # noqa: F401
 
 
 def test_porous_electrode():

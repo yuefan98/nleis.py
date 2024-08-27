@@ -2,9 +2,6 @@ import numpy as np
 from nleis.nleis import EISandNLEIS
 import os
 
-import os.path
-import sys  # noqa: F401
-
 
 def test_model_io():
 

@@ -1,11 +1,8 @@
-import json  # noqa: F401
-import os
-
 import numpy as np
-import matplotlib.pyplot as plt  # noqa: F401
+import os
 import pytest
 
-from nleis.nleis import EISandNLEIS, NLEISCustomCircuit  # noqa: F401
+from nleis.nleis import EISandNLEIS  # noqa: F401
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(test_dir, '../data')
