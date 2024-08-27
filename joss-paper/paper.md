@@ -16,8 +16,9 @@ authors:
   - name: Matthew D. Murbach
     orcid: 0000-0002-6583-5995
   - name: Daniel T. Schwartz
-    corresponding: true 
-    affiliation: 0000-0003-1173-5611
+    corresponding: true
+    orcid: 0000-0003-1173-5611
+    affiliation: 1
 
 affiliations:
  - name: Department of Chemical Engineering & Clean Energy Institute, University of Washington, Seattle, WA, USA
