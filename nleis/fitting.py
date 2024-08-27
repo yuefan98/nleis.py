@@ -333,7 +333,7 @@ def extract_circuit_elements(circuit):
         list of extracted elements.
 
     """
-    p_string = [x for x in circuit if x not in 'p(),-,d()']
+    p_string = [x for x in circuit if x not in 'p(),-d']
     extracted_elements = []
     current_element = []
     length = len(p_string)
