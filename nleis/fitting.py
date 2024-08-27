@@ -159,32 +159,26 @@ def set_default_bounds(circuit, constants={}):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and (i == 5):
-
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-
             elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and i == 6:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-
             elif raw_element in ['RCDn', 'RCSn'] and (i == 4):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-
             elif raw_element in ['RCDn', 'RCSn'] and i == 5:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TLMn'] and (i == 6 or i == 7):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-
             elif raw_element in ['TLMSn'] and (i == 9 or i == 10):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TLMSn'] and (i == 8):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-
             else:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(0)
