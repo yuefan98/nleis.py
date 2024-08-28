@@ -11,14 +11,10 @@ Getting started with :code:`nleis.py`
 Step 1: Installation
 ====================
 
-If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be fully integrated into the :code:`impedance.py` in the future. If you are only interested in :code:`nleis.py`, please skip this part and follow the pip install instruction for :code:`nleis.py`.
-If you would like to use the impedance.py integrated version of nleis.py (which will be integrated soon), please first clone it from the GitHub repo using the following command, 
+If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be a toolbox for :code:`impedance.py`. Please follows the following instruction to setup an envrionment 
+and install the :code:`nleis.py` from PyPI.
 
-.. code-block:: bash
-
-    !git clone https://github.com/yuefan98/nleis.py.git
-
-Then, create a virtual environment using the :code:`environment.yml` file 
+The best way to use this toolbox is creating a virtual environment using the :code:`environment.yml` file in the GitHub repo.
 
 .. code-block:: bash
 
@@ -31,19 +27,13 @@ install anything into it by using:
 
    conda activate nleis
 
-We've now activated our conda environment and are ready to use the :code:`nleis.py` integrated version of :code:`impedance.py`.
-
-.. important::
-  A standalone version of :code:`nleis.py` is available now. If you are only
-  interested in the nonlinear equivalent circuit fitting feature, you can
-  also directly install it with :code:`pip install`.
+We've now activated our conda environment and are ready to use the install :code:`nleis.py`.
 
 .. code-block:: bash
     
     pip install nleis
 
-Lastly, the following example is developed with :code:`impedance.py` integrated version of :code:`nleis.py`. But the standalone :code:`nleis.py` can be called without calling :code:`impedance.py`. Besides this, all features are the same now for standalone :code:`nleis.py` and integrated :code:`nleis.py`. In the future, :code:`nleis.py` will likely be updated more frequently than the :code:`impedance.py` integrated version of :code:`nleis.py` to provide more developing features. 
-
+We’ve now got everything in place to start analyzing our 2nd-NLEIS data!
 
 Open Jupyter Lab
 ----------------
@@ -78,9 +68,8 @@ Here, we provide a simple data processing function to help you truncate your dat
 
 .. code-block:: python
 
-    from nleis.nleis_fitting import data_processing ## Import command for standalone nleis.py
-    ## from impedance.models.nleis.nleis_fitting import data_processing ## Import command for integrated nleis.py
-    
+    from nleis.nleis_fitting import data_processing
+
     f,Z1,Z2,f2_trunc,Z2_trunc = data_processing(frequencies,Z1,Z2)
 
 Step 4: Define your model
@@ -88,15 +77,14 @@ Step 4: Define your model
 
 Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
 The following example presents a cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. 
-For EIS, the response of the two porous electrodes are in series with an ohmic resistance and an inductance (circ_str_1). The 2nd-NLEIS response is defined as the difference between the responses of the positive and negative electrodes (circ_str_2).
+For EIS, the response of the two porous electrodes are in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response is defined as the difference between the responses of the positive and negative electrodes (NLEIS_circuit).
 
 .. code-block:: python
 
     from nleis import EISandNLEIS ##Import command for integrated nleis.py
-    ## from impedance.models.nleis import EISandNLEIS ##Import command for integrated nleis.py
     
-    circ_str_1 = 'L0-R0-TDS0-TDS1'
-    circ_str_2 = 'd(TDSn0,TDSn1)'
+    EIS_circuit  = 'L0-R0-TDS0-TDS1'
+    NLEIS_circuit  = 'd(TDSn0,TDSn1)'
     
     initial_guess = [1e-7,1e-3 # L0,RO
                        ,5e-3,1e-3,10,1e-2,100,10,0.1 ## TDS0 + additioal nonlinear parameters
@@ -106,12 +94,12 @@ For EIS, the response of the two porous electrodes are in series with an ohmic r
 Step 5: Fit to data 
 ==========================
 
-You then need to fit initialize your :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS.
+We then need to initialize a :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS.
 
 .. code-block:: python
 
-    circuit = EISandNLEIS(circ_str_1,circ_str_2,initial_guess=initial_guess)
-    circuit.fit(f,Z1,Z2, opt='max');
+    circuit = EISandNLEIS(EIS_circuit, NLEIS_circuit, initial_guess = initial_guess)
+    circuit.fit(f, Z1, Z2, opt = 'max');
 
 
 Step 6: Visualize and print the results
@@ -119,7 +107,7 @@ Step 6: Visualize and print the results
 
 .. code-block:: python
 
-    circuit.plot(f_data=f, Z1_data =Z1, Z2_data= Z2, kind='nyquist')
+    circuit.plot(f_data=f, Z1_data = Z1, Z2_data = Z2, kind = 'nyquist')
     plt.tight_layout()
     plt.show()
     
@@ -195,7 +183,7 @@ Step 6: Visualize and print the results
 
 
 .. important::
-  🎉 Congratulations! You're now up and running with impedance.py 🎉 For those who are already acquainted with :code:`impedance.py`, I hope you'll discover the similarities with :code:`nleis.py` and appreciate how closely aligned they are at this point.
+  🎉 Congratulations! You're now up and running with :code:`nleis.py` 🎉 For those who are already acquainted with :code:`impedance.py`, I hope you'll discover the similarities with :code:`nleis.py` and appreciate how closely aligned they are at this point.
 
 .. note:: 
 

@@ -87,6 +87,6 @@ In general, 2nd-NLEIS is a novel technique for electrochemical science and engin
 
 # Acknowledgments
 
-We thank An-Hung Shih, Lauren Frank, Rebecca C. Vincent for their preliminary testing and invaluable feedback. An up-to-date list of contributors can be found on GitHub.
+We thank An-Hung Shih, Lauren Frank, and Rebecca C. Vincent for their preliminary testing and invaluable feedback. An up-to-date list of contributors can be found on GitHub.
 
 # References
