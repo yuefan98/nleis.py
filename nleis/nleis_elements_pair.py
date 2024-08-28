@@ -209,9 +209,9 @@ def RCD(p, f):
     ω = np.array(f)*2*np.pi
     Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3]
 
-    Zd = Aw/(np.sqrt(1j*ω*τd)*np.tanh(np.sqrt(1j*ω*τd)))
+    Zd = Aw / (np.sqrt(1j*ω*τd) * np.tanh(np.sqrt(1j*ω*τd)))
     tau = ω*Rct*Cdl
-    Z = Rct/(Rct/(Rct+Zd)+1j*tau)
+    Z = Rct / (Rct / (Rct + Zd) + 1j*tau)
     return (Z)
 
 
@@ -280,17 +280,17 @@ def RCDn(p, f):
     ω = np.array(f)*2*np.pi
     Rct, Cdl, Aw, τd, κ, ε = p[0], p[1], p[2], p[3], p[4], p[5]
 
-    Zd1 = Aw/(np.sqrt(1j*ω*τd)*np.tanh(np.sqrt(1j*ω*τd)))
-    Zd2 = Aw/(np.sqrt(1j*2*ω*τd)*np.tanh(np.sqrt(1j*2*ω*τd)))
+    Zd1 = Aw / (np.sqrt(1j*ω*τd) * np.tanh(np.sqrt(1j*ω*τd)))
+    Zd2 = Aw / (np.sqrt(1j*2*ω*τd) * np.tanh(np.sqrt(1j*2*ω*τd)))
 
     ω_star = ω*Rct*Cdl
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
+    y1 = Rct / (Zd1 + Rct)
+    y2 = Zd1 / (Zd1 + Rct)
 
-    Z1 = Rct/(y1+1j*ω_star)
-    const = ((Rct*κ*y2**2)-Rct*ε*F/(R*T)*y1**2)/(Zd2+Rct)
+    Z1 = Rct / (y1 + 1j*ω_star)
+    const = ((Rct*κ*y2**2) - Rct*ε*F/(R*T)*y1**2) / (Zd2 + Rct)
 
-    Z2 = (const*Z1**2)/(2*ω_star*1j+Rct/(Zd2+Rct))
+    Z2 = (const*Z1**2) / (2*ω_star*1j + Rct/(Zd2+Rct))
 
     return (Z2)
 
@@ -425,13 +425,12 @@ def RCSn(p, f):
     Zd2 = Aw*np.tanh(np.sqrt(1j*2*ω*τd)) / \
         (np.sqrt(1j*2*ω*τd)-np.tanh(np.sqrt(1j*2*ω*τd)))
 
-
     ω_star = ω*Rct*Cdl
     y1 = Rct/(Zd1+Rct)
     y2 = (Zd1/(Zd1+Rct))
 
     Z1 = Rct/(y1+1j*ω_star)
-    const = ((Rct*κ*y2**2)-Rct*ε*F/(R*T)*y1**2)/(Zd2+Rct)
+    const = ((Rct*κ*y2**2) - Rct*ε*F/(R*T)*y1**2)/(Zd2 + Rct)
 
     Z2 = (const*Z1**2)/(2*ω_star*1j+Rct/(Zd2+Rct))
 
@@ -538,9 +537,9 @@ def TPOn(p, f):
     """
 
     ω = 2*np.pi*np.array(f)
-    Rpore, Rct, Cdl,ε  = p[0], p[1], p[2], p[3]
-    b1 = (1j*ω*Rpore*Cdl+Rpore/Rct)**(1/2)
-    b2 = (1j*2*ω*Rpore*Cdl+Rpore/Rct)**(1/2)
+    Rpore, Rct, Cdl, ε = p[0], p[1], p[2], p[3]
+    b1 = (1j*ω*Rpore*Cdl + Rpore/Rct)**(1/2)
+    b2 = (1j*2*ω*Rpore*Cdl + Rpore/Rct)**(1/2)
 
     sinh1 = []
     for x in b1:
@@ -567,10 +566,10 @@ def TPOn(p, f):
             sinh3.append(1e10)
             cosh3.append(1e10)
 
-    mf = ((Rpore**3)/Rct)*ε*(F/(R*T))/((b1*np.array(sinh1))**2)
-    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
-    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
-    Z = mf*(part1+part2)
+    mf = ((Rpore**3) / Rct)*ε*(F/(R*T)) / ((b1*np.array(sinh1))**2)
+    part1 = (b1/b2)*np.array(sinh2) / ((b2**2-4*b1**2)*np.tanh(b2))
+    part2 = -np.array(cosh2) / (2*(b2**2-4*b1**2)) - 1/(2*b2**2)
+    Z = mf*(part1 + part2)
 
     return Z
 
@@ -627,10 +626,10 @@ def TDP(p, f):
     ω = 2*np.pi*np.array(f)
     Rpore, Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3], p[4]
 
-    Zd = Aw/(np.sqrt(1j*ω*τd)*np.tanh(np.sqrt(1j*ω*τd)))
+    Zd = Aw / (np.sqrt(1j*ω*τd) * np.tanh(np.sqrt(1j*ω*τd)))
 
-    beta = (1j*ω*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
-    Z = Rpore/(beta*np.tanh(beta))
+    beta = (1j*ω*Rpore*Cdl + Rpore/(Zd+Rct))**(1/2)
+    Z = Rpore / (beta*np.tanh(beta))
 
     return Z
 
@@ -710,14 +709,14 @@ def TDPn(p, f):
     ω = 2*np.pi*np.array(f)
     Rpore, Rct, Cdl, Aw, τd, κ, ε = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
 
-    Zd1 = Aw/(np.sqrt(1j*ω*τd)*np.tanh(np.sqrt(1j*ω*τd)))
-    Zd2 = Aw/(np.sqrt(1j*2*ω*τd)*np.tanh(np.sqrt(1j*2*ω*τd)))
+    Zd1 = Aw / (np.sqrt(1j*ω*τd) * np.tanh(np.sqrt(1j*ω*τd)))
+    Zd2 = Aw / (np.sqrt(1j*2*ω*τd) * np.tanh(np.sqrt(1j*2*ω*τd)))
 
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
+    y1 = Rct / (Zd1 + Rct)
+    y2 = Zd1 / (Zd1 + Rct)
 
-    b1 = (1j*ω*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
-    b2 = (1j*2*ω*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
+    b1 = (1j*ω*Rpore*Cdl + Rpore/(Zd1+Rct))**(1/2)
+    b2 = (1j*2*ω*Rpore*Cdl + Rpore/(Zd2+Rct))**(1/2)
 
     sinh1 = []
     for x in b1:
@@ -734,11 +733,11 @@ def TDPn(p, f):
         else:
             sinh2.append(1e10)
             cosh2.append(1e10)
-    const = -((Rct*κ*y2**2)-Rct*ε*(F/(R*T))*y1**2)/(Zd2+Rct)
-    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
-    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
-    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
-    Z = mf*(part1+part2)
+    const = -((Rct*κ*y2**2) - Rct*ε*(F/(R*T))*y1**2) / (Zd2 + Rct)
+    mf = ((Rpore**3)*const/Rct) / ((b1*np.array(sinh1))**2)
+    part1 = (b1/b2)*np.array(sinh2) / ((b2**2-4*b1**2)*np.tanh(b2))
+    part2 = -np.array(cosh2) / (2*(b2**2-4*b1**2)) - 1/(2*b2**2)
+    Z = mf*(part1 + part2)
 
     return Z
 
@@ -797,10 +796,10 @@ def TDS(p, f):
     Rpore, Rct, Cdl, Aw, τd = p[0], p[1], p[2], p[3], p[4]
 
     Zd = Aw*np.tanh(np.sqrt(1j*ω*τd)) / \
-        (np.sqrt(1j*ω*τd)-np.tanh(np.sqrt(1j*ω*τd)))
+        (np.sqrt(1j*ω*τd) - np.tanh(np.sqrt(1j*ω*τd)))
 
-    beta = (1j*ω*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
-    Z = Rpore/(beta*np.tanh(beta))
+    beta = (1j*ω*Rpore*Cdl + Rpore/(Zd+Rct))**(1/2)
+    Z = Rpore / (beta*np.tanh(beta))
     return Z
 
 
@@ -882,15 +881,15 @@ def TDSn(p, f):
     ω = 2*np.pi*np.array(f)
     Rpore, Rct, Cdl, Aw, τd, κ, ε = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
     Zd1 = Aw*np.tanh(np.sqrt(1j*ω*τd)) / \
-        (np.sqrt(1j*ω*τd)-np.tanh(np.sqrt(1j*ω*τd)))
+        (np.sqrt(1j*ω*τd) - np.tanh(np.sqrt(1j*ω*τd)))
     Zd2 = Aw*np.tanh(np.sqrt(1j*2*ω*τd)) / \
-        (np.sqrt(1j*2*ω*τd)-np.tanh(np.sqrt(1j*2*ω*τd)))
+        (np.sqrt(1j*2*ω*τd) - np.tanh(np.sqrt(1j*2*ω*τd)))
 
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
+    y1 = Rct / (Zd1+Rct)
+    y2 = Zd1 / (Zd1+Rct)
 
-    b1 = (1j*ω*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
-    b2 = (1j*2*ω*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
+    b1 = (1j*ω*Rpore*Cdl + Rpore/(Zd1+Rct))**(1/2)
+    b2 = (1j*2*ω*Rpore*Cdl + Rpore/(Zd2+Rct))**(1/2)
 
     sinh1 = []
     for x in b1:
@@ -907,10 +906,10 @@ def TDSn(p, f):
         else:
             sinh2.append(1e10)
             cosh2.append(1e10)
-    const = -((Rct*κ*y2**2)-Rct*ε*(F/(R*T))*y1**2)/(Zd2+Rct)
-    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
-    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
-    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
+    const = -((Rct*κ*y2**2) - Rct*ε*(F/(R*T))*y1**2) / (Zd2+Rct)
+    mf = ((Rpore**3)*const/Rct) / ((b1*np.array(sinh1))**2)
+    part1 = (b1/b2)*np.array(sinh2) / ((b2**2-4*b1**2)*np.tanh(b2))
+    part2 = -np.array(cosh2) / (2*(b2**2-4*b1**2)) - 1/(2*b2**2)
     Z = mf*(part1+part2)
 
     return Z
@@ -973,10 +972,10 @@ def TDC(p, f):
         else:
             i01.append(1e20)
             i11.append(1e20)
-    Zd = Aw*np.array(i01)/(np.sqrt(1j*ω*τd)*np.array(i11))
+    Zd = Aw*np.array(i01) / (np.sqrt(1j*ω*τd)*np.array(i11))
 
-    beta = (1j*ω*Rpore*Cdl+Rpore/(Zd+Rct))**(1/2)
-    Z = Rpore/(beta*np.tanh(beta))
+    beta = (1j*ω*Rpore*Cdl + Rpore/(Zd+Rct))**(1/2)
+    Z = Rpore / (beta*np.tanh(beta))
     return Z
 
 
@@ -1073,14 +1072,14 @@ def TDCn(p, f):
         else:
             i02.append(1e20)
             i12.append(1e20)
-    Zd1 = Aw*np.array(i01)/(np.sqrt(1j*ω*τd)*np.array(i11))
-    Zd2 = Aw*np.array(i02)/(np.sqrt(1j*2*ω*τd)*np.array(i12))
+    Zd1 = Aw*np.array(i01) / (np.sqrt(1j*ω*τd)*np.array(i11))
+    Zd2 = Aw*np.array(i02) / (np.sqrt(1j*2*ω*τd)*np.array(i12))
 
-    y1 = Rct/(Zd1+Rct)
-    y2 = (Zd1/(Zd1+Rct))
+    y1 = Rct / (Zd1+Rct)
+    y2 = Zd1 / (Zd1+Rct)
 
-    b1 = (1j*ω*Rpore*Cdl+Rpore/(Zd1+Rct))**(1/2)
-    b2 = (1j*2*ω*Rpore*Cdl+Rpore/(Zd2+Rct))**(1/2)
+    b1 = (1j*ω*Rpore*Cdl + Rpore/(Zd1+Rct))**(1/2)
+    b2 = (1j*2*ω*Rpore*Cdl + Rpore/(Zd2+Rct))**(1/2)
 
     sinh1 = []
     for x in b1:
@@ -1097,10 +1096,10 @@ def TDCn(p, f):
         else:
             sinh2.append(1e10)
             cosh2.append(1e10)
-    const = -((Rct*κ*y2**2)-Rct*ε*(F/(R*T))*y1**2)/(Zd2+Rct)
-    mf = ((Rpore**3)*const/Rct)/((b1*np.array(sinh1))**2)
-    part1 = (b1/b2)*np.array(sinh2)/((b2**2-4*b1**2)*np.tanh(b2))
-    part2 = -np.array(cosh2)/(2*(b2**2-4*b1**2))-1/(2*b2**2)
+    const = -((Rct*κ*y2**2) - Rct*ε*(F/(R*T))*y1**2) / (Zd2+Rct)
+    mf = ((Rpore**3)*const/Rct) / ((b1*np.array(sinh1))**2)
+    part1 = (b1/b2)*np.array(sinh2) / ((b2**2-4*b1**2)*np.tanh(b2))
+    part2 = -np.array(cosh2) / (2*(b2**2-4*b1**2)) - 1/(2*b2**2)
     Z = mf*(part1+part2)
 
     return Z
@@ -1151,8 +1150,8 @@ def TLM(p, f):
     Req = Zran
     for i in range(1, N):
 
-        Req_inv = (1/(Req+Rpore))+1/Zran
-        Req = 1/Req_inv
+        Req_inv = (1/(Req+Rpore)) + 1/Zran
+        Req = 1 / Req_inv
 
     return (Req)
 ###
@@ -1217,15 +1216,15 @@ def TLMn(p, f):
     Z2s = RCOn([Rs, Cs, εs], frequencies)
     Z1b2t = RCO([Rct, Cdl], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
-    Z1 = Z1b+Z1s
-    Z2 = Z2b+Z2s
-    Z12t = Z1b2t+Z1s2t
+    Z1 = Z1b + Z1s
+    Z2 = Z2b + Z2s
+    Z12t = Z1b2t + Z1s2t
     if N == 1:
         return (Z2)
 
     if N == 2:
-        sum1 = Z1**2/(2*Z1+Rpore)**2
-        sum2 = (Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
+        sum1 = Z1**2 / (2*Z1+Rpore)**2
+        sum2 = (Z12t*Rpore+Rpore**2) / ((2*Z12t+Rpore)*(2*Z1+Rpore))
         Z = (sum1+sum2)*Z2
         return (Z)
     Z = np.zeros((len(frequencies)), dtype=complex)
@@ -1256,10 +1255,10 @@ def TLMn(p, f):
         b = np.zeros((N, 1), dtype=complex)
 
         for i in range(0, N-1):
-            b[i] = Ii[-1]**2-Ii[i]**2
+            b[i] = Ii[-1]**2 - Ii[i]**2
 
         I2 = np.linalg.solve(Ax, -b*Z2[freq])
-        Z[freq] = Z2[freq]*Ii[0]**2+I2[-1]*Z12t[freq]
+        Z[freq] = Z2[freq]*Ii[0]**2 + I2[-1]*Z12t[freq]
     return (Z)
 
 
@@ -1402,7 +1401,7 @@ def TLMS(p, f):
     Req = Zran
     for i in range(1, N):
 
-        Req_inv = (1/(Req+Rpore))+1/Zran
+        Req_inv = (1/(Req+Rpore)) + 1/Zran
         Req = 1/Req_inv
 
     return (Req)
@@ -1472,16 +1471,16 @@ def TLMSn(p, f):
     Z1b2t = RCS([Rct, Cdl, Aw, τd], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b+Z1s
-    Z2 = Z2b+Z2s
-    Z12t = Z1b2t+Z1s2t
+    Z1 = Z1b + Z1s
+    Z2 = Z2b + Z2s
+    Z12t = Z1b2t + Z1s2t
 
     if N == 1:
         return (Z2)
 
     if N == 2:
-        sum1 = Z1**2/(2*Z1+Rpore)**2
-        sum2 = (Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
+        sum1 = Z1**2 / (2*Z1+Rpore)**2
+        sum2 = (Z12t*Rpore+Rpore**2) / ((2*Z12t+Rpore)*(2*Z1+Rpore))
         Z = (sum1+sum2)*Z2
         return (Z)
 
@@ -1513,10 +1512,10 @@ def TLMSn(p, f):
         b = np.zeros((N, 1), dtype=complex)
 
         for i in range(0, N-1):
-            b[i] = Ii[-1]**2-Ii[i]**2
+            b[i] = Ii[-1]**2 - Ii[i]**2
 
         I2 = np.linalg.solve(Ax, -b*Z2[freq])
-        Z[freq] = Z2[freq]*Ii[0]**2+I2[-1]*Z12t[freq]
+        Z[freq] = Z2[freq]*Ii[0]**2 + I2[-1]*Z12t[freq]
 
     return (Z)
 
@@ -1672,18 +1671,20 @@ def mTiSn(p, f):
     Z1b2t = RCS([Rct, Cdl, Aw, τd], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b+Z1s
-    Z2 = Z2b+Z2s
-    Z12t = Z1b2t+Z1s2t
+    Z1 = Z1b + Z1s
+    Z2 = Z2b + Z2s
+    Z12t = Z1b2t + Z1s2t
 
     if N == 1:
-        return (Z2)
+        return (0)
 
     if N == 2:
-        sum1 = Z1**2/(2*Z1+Rpore)**2
-        sum2 = (Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
-        Z = (sum1+sum2)*Z2
-        return (Z)
+        
+        I2 = np.zeros((len(frequencies), N), dtype=complex)
+        I2[0] = Z2*Rpore / (2*Z12t+Rpore)**2
+        I2[1] = -Z2*Rpore / (2*Z12t+Rpore)**2
+
+        return (I2)
 
     I2 = np.zeros((len(frequencies), N), dtype=complex)
 
@@ -1849,16 +1850,16 @@ def TLMDn(p, f):
     Z1b2t = RCD([Rct, Cdl, Aw, τd], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b+Z1s
-    Z2 = Z2b+Z2s
-    Z12t = Z1b2t+Z1s2t
+    Z1 = Z1b + Z1s
+    Z2 = Z2b + Z2s
+    Z12t = Z1b2t + Z1s2t
 
     if N == 1:
         return (Z2)
 
     if N == 2:
-        sum1 = Z1**2/(2*Z1+Rpore)**2
-        sum2 = (Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
+        sum1 = Z1**2 / (2*Z1+Rpore)**2
+        sum2 = (Z12t*Rpore+Rpore**2) / ((2*Z12t+Rpore)*(2*Z1+Rpore))
         Z = (sum1+sum2)*Z2
         return (Z)
     Z = np.zeros((len(frequencies)), dtype=complex)
@@ -1892,7 +1893,7 @@ def TLMDn(p, f):
             b[i] = Ii[-1]**2-Ii[i]**2
 
         I2 = np.linalg.solve(Ax, -b*Z2[freq])
-        Z[freq] = Z2[freq]*Ii[0]**2+I2[-1]*Z12t[freq]
+        Z[freq] = Z2[freq]*Ii[0]**2 + I2[-1]*Z12t[freq]
     return (Z)
 
 
@@ -2046,18 +2047,20 @@ def mTiDn(p, f):
     Z1b2t = RCD([Rct, Cdl, Aw, τd], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b+Z1s
-    Z2 = Z2b+Z2s
-    Z12t = Z1b2t+Z1s2t
+    Z1 = Z1b + Z1s
+    Z2 = Z2b + Z2s
+    Z12t = Z1b2t + Z1s2t
 
     if N == 1:
-        return (Z2)
+        return (0)
 
     if N == 2:
-        sum1 = Z1**2/(2*Z1+Rpore)**2
-        sum2 = (Z12t*Rpore+Rpore**2)/((2*Z12t+Rpore)*(2*Z1+Rpore))
-        Z = (sum1+sum2)*Z2
-        return (Z)
+
+        I2 = np.zeros((len(frequencies), N), dtype=complex)
+        I2[0] = Z2*Rpore / (2*Z12t+Rpore)**2
+        I2[1] = -Z2*Rpore / (2*Z12t+Rpore)**2
+
+        return (I2)
 
     I2 = np.zeros((len(frequencies), N), dtype=complex)
 
@@ -2094,7 +2097,7 @@ def mTiDn(p, f):
         # the correct result from small to larger N
         I2[freq, :] = np.linalg.solve(Ax, -b*Z2[freq]).flatten()[::-1]
 
-    return (Z)
+    return (I2)
 
 
 def get_element_from_name(name):
