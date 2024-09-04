@@ -318,7 +318,32 @@ def buildCircuit(circuit, frequencies, *parameters,
 
     return eval_string, index
 
-# modified to ignore d (difference) for NLEIS circuits
+# duplicate of impedance.py calculateCircuitLength to allow for 
+# updated extract_circuit_elements function
+def calculateCircuitLength(circuit):
+    """ Calculates the number of elements in the circuit.
+
+    Parameters
+    ----------
+    circuit : str
+        Circuit string.
+
+    Returns
+    -------
+    length : int
+        Length of circuit.
+
+    """
+    length = 0
+    if circuit:
+        extracted_elements = extract_circuit_elements(circuit)
+        for elem in extracted_elements:
+            raw_element = get_element_from_name(elem)
+            num_params = check_and_eval(raw_element).num_params
+            length += num_params
+    return length
+
+# modified from impedance.py to ignore d (difference) for NLEIS circuits
 def extract_circuit_elements(circuit):
     """ Extracts circuit elements from a circuit string.
 
