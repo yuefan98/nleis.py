@@ -413,7 +413,7 @@ def buildCircuit(circuit, frequencies, *parameters,
         assert (parallel != series
                 or series != difference
                 or difference != parallel), \
-                'Exactly one of parallel or series or difference must be True'
+            'Exactly one of parallel or series or difference must be True'
 
         def count_parens(string):
             return string.count('('), string.count(')')
