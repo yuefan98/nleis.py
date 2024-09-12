@@ -163,32 +163,26 @@ def set_default_bounds(circuit, constants={}):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and (i == 5):
-
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-
             elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and i == 6:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-
             elif raw_element in ['RCDn', 'RCSn'] and (i == 4):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-
             elif raw_element in ['RCDn', 'RCSn'] and i == 5:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TLMn'] and (i == 6 or i == 7):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-
             elif raw_element in ['TLMSn'] and (i == 9 or i == 10):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TLMSn'] and (i == 8):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-
             else:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(0)
@@ -412,12 +406,14 @@ def buildCircuit(circuit, frequencies, *parameters,
     def parse_circuit(circuit, parallel=False, series=False, difference=False):
         """ Splits a circuit string by either dashes (series) or commas
             (parallel) outside of any paranthesis. Removes any leading 'p('
-            or trailing ')' when in parallel mode or 'd('or trailing ')'
-            when in difference mode '' """
-        # Exactly one of parallel or series or difference must be True
+            or trailing ')' when in parallel mode or 'd(' or trailing ')'
+            when in difference mode. This is adapted from impedance.py to
+            support subtraction """
+
         assert (parallel != series
                 or series != difference
-                or difference != parallel)
+                or difference != parallel), \
+            'Exactly one of parallel or series or difference must be True'
 
         def count_parens(string):
             return string.count('('), string.count(')')
@@ -557,7 +553,7 @@ def extract_circuit_elements(circuit):
         list of extracted elements.
 
     """
-    p_string = [x for x in circuit if x not in 'p(),-,d()']
+    p_string = [x for x in circuit if x not in 'p(),-d']
     extracted_elements = []
     current_element = []
     length = len(p_string)
