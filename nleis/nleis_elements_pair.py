@@ -1664,14 +1664,11 @@ def mTiSn(p, f):
     eb = p[9]
     es = p[10]
 
-    Z1b = RCS([Rct, Cdl, Aw, τd], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
     Z2b = RCSn([Rct, Cdl, Aw, τd, κ, eb], frequencies)
     Z2s = RCOn([Rs, Cs, es], frequencies)
     Z1b2t = RCS([Rct, Cdl, Aw, τd], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
     Z12t = Z1b2t + Z1s2t
 
@@ -1679,7 +1676,7 @@ def mTiSn(p, f):
         return (0)
 
     if N == 2:
-        
+
         I2 = np.zeros((len(frequencies), N), dtype=complex)
         I2[0] = Z2*Rpore / (2*Z12t+Rpore)**2
         I2[1] = -Z2*Rpore / (2*Z12t+Rpore)**2
@@ -2040,14 +2037,11 @@ def mTiDn(p, f):
     εb = p[9]
     εs = p[10]
 
-    Z1b = RCD([Rct, Cdl, Aw, τd], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
     Z2b = RCDn([Rct, Cdl, Aw, τd, κ, εb], frequencies)
     Z2s = RCOn([Rs, Cs, εs], frequencies)
     Z1b2t = RCD([Rct, Cdl, Aw, τd], 2*frequencies)
     Z1s2t = RCO([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
     Z12t = Z1b2t + Z1s2t
 
