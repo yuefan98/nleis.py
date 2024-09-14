@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="nleis",
-    version= __version__ ,
+    version=__version__,
     author="Yuefan Ji and nleis.py developers",
     author_email="yuefan@uw.edu",
     description="A NLEIS toolbox for impedance.py that provides RC level nonlinear equivalent modeling and analysis",
@@ -21,13 +21,14 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(include = ['nleis']),
+    packages=setuptools.find_packages(include=['nleis']),
     package_data={
-        "nleis": ["data/*",'nleis_tests/*'],
+        "nleis": ["data/*", 'nleis_tests/*'],
 
-	},
-    
-    python_requires=">=3.6",
+    },
+
+    python_requires=">=3.8",
     install_requires=['altair>=3.0', 'matplotlib>=3.5',
-                  'numpy>=1.14', 'scipy>=1.0','impedance>=1.7.1','pandas >= 2.0.2'],
+                      'numpy>=1.14', 'scipy>=1.0',
+                      'impedance>=1.7.1', 'pandas >= 2.0.2'],
 )
