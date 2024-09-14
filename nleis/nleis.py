@@ -42,6 +42,8 @@ class EISandNLEIS:
         constants : dict, optional
             Parameters and values to hold constant during fitting
             (e.g. {"R0": 0.1})
+            can be either EIS or 2nd-NLEIS elements.
+            Note: one should remove initial guess for constant
 
         name: str, optional
             Name for the model
@@ -99,6 +101,11 @@ class EISandNLEIS:
             # between linear and nonlinear is separated by 'n'
             # using get_element_from_name to get the raw element
             # and adding n to the end
+
+            # The constant for EIS circuit will present in
+            # both constants_1 and constants_2
+            # The constants for 2nd-NLEIS will only present in
+            # constants_2
             for elem in self.constants:
 
                 raw_elem = get_element_from_name(elem)
