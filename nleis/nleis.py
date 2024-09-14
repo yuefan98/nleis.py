@@ -186,7 +186,7 @@ class EISandNLEIS:
         self.conf_ = None
 
         self.p1, self.p2 = individual_parameters(
-            self.circuit_1, self.initial_guess,
+            self.edited_circuit, self.initial_guess,
             self.constants_1, self.constants_2)
 
     def __eq__(self, other):
@@ -266,11 +266,11 @@ class EISandNLEIS:
                 # self.conf_ = list(conf)
                 self.conf_ = conf
                 self.conf1, self.conf2 = individual_parameters(
-                    self.circuit_1, self.conf_, self.constants_1,
+                    self.edited_circuit, self.conf_, self.constants_1,
                     self.constants_2)
 
             self.p1, self.p2 = individual_parameters(
-                self.circuit_1, self.parameters_, self.constants_1,
+                self.edited_circuit, self.parameters_, self.constants_1,
                 self.constants_2)
         else:
             raise ValueError('no initial guess supplied')
@@ -395,7 +395,7 @@ class EISandNLEIS:
 
         to_print += '\nEIS Initial guesses:\n'
         p1, p2 = individual_parameters(
-            self.circuit_1, self.initial_guess, self.constants_1,
+            self.edited_circuit, self.initial_guess, self.constants_1,
             self.constants_2)
         for name, unit, param in zip(names1, units1, p1):
             to_print += '  {:>5} = {:.2e} [{}]\n'.format(name, param, unit)
@@ -682,7 +682,7 @@ class EISandNLEIS:
         self.constants_1 = json_data["Constants 1"]
         self.constants_2 = json_data["Constants 2"]
         self.p1, self.p2 = individual_parameters(
-            self.circuit_1, self.initial_guess,
+            self.edited_circuit, self.initial_guess,
             self.constants_1, self.constants_2)
 
         self.name = model_name
@@ -691,17 +691,17 @@ class EISandNLEIS:
             if fitted_as_initial:
                 self.initial_guess = json_data['Parameters']
                 self.p1, self.p2 = individual_parameters(
-                    self.circuit_1, self.initial_guess,
+                    self.edited_circuit, self.initial_guess,
                     self.constants_1, self.constants_2)
 
             else:
                 self.parameters_ = np.array(json_data["Parameters"])
                 self.conf_ = np.array(json_data["Confidence"])
                 self.conf1, self.conf2 = individual_parameters(
-                    self.circuit_1, self.conf_,
+                    self.edited_circuit, self.conf_,
                     self.constants_1, self.constants_2)
                 self.p1, self.p2 = individual_parameters(
-                    self.circuit_1, self.parameters_,
+                    self.edited_circuit, self.parameters_,
                     self.constants_1, self.constants_2)
 
 
