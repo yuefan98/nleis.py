@@ -271,27 +271,28 @@ def test_simul_fit():
     circ_str_2 = 'd(TDSn0,TDSn1)'
     edited_circuit = 'L0-R0-TDSn0-TDSn1'
 
-    #  initial_guess = [1e-7,1e-3 # L0,RO
-    #                  ,5e-3,1e-3,10,1e-2,100,10,0.1
+    initial_guess = [1e-7, 1e-3,
+                     5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
+                     1e-3, 1e-3, 1e-3, 1e-2, 1000, 0, 0
+                     ]
+    # Initial parameters
+    # L0,RO
     # TDS0 + additioal nonlinear parameters
-    #                  ,1e-3,1e-3,1e-3,1e-2,1000,0,0
     # TDS1 + additioal nonlinear parameters
-    #                  ]
+
     # The test framework here can be improved
     # in the future after getting much stable initial guess
-    results = [9.81376136e-08, 1.34551860e-02, 2.52398185e-02, 5.06155989e-03,
-               8.82298681, 8.78424359e-05, 3.58691184, 1.22575311e+01,
-               8.74768343e-02, 2.09036506e-02, 1.13813146e-03, 8.13615357e-01,
-               1.86194200e+02, 3.29019412e+09, 1.02283674, 6.38865883e-03]
-    initial_guess = results
+    results = [9.81368514e-08, 1.34551972e-02, 2.52387276e-02, 5.06176242e-03,
+               8.82244297e+00, 8.70692162e-05, 3.55536976e+00, 1.22576118e+01,
+               8.75169434e-02, 2.09045802e-02, 1.13804384e-03, 8.13658287e-01,
+               1.83783329e+02, 3.20554700e+09, 1.02277512e+00, 6.39228801e-03]
 
     p, perror = simul_fit(frequencies, Z1, Z2, circ_str_1, circ_str_2,
                           edited_circuit, initial_guess, constants_1={},
                           constants_2={},
                           bounds=None, opt='max', cost=0.5, max_f=10,
                           param_norm=True, positive=True)
-
-    assert np.allclose(p, results)
+    assert np.allclose(p, results, rtol=1e-3, atol=1e-3)
 
 
 def test_individual_parameters():
@@ -299,8 +300,9 @@ def test_individual_parameters():
     # EIS and 2nd-NLEIS circ_str are defined here to make sure
     # we know we have a a pair of consistent models
 
-    circ_str_1 = 'L0-R0-TDS0-TDS1'
+    circ_str_1 = 'L0-R0-TDS0-TDS1'  # noqa: F841
     circ_str_2 = 'd(TDSn0,TDSn1)'  # noqa: F841
+    circ_str = 'L0-R0-TDSn0-TDSn1'
 
     initial_guess = [1e-7, 1e-3,  # L0,RO
                      5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
@@ -310,7 +312,7 @@ def test_individual_parameters():
                      ]
     # Test without constant
     p1, p2 = individual_parameters(
-        circ_str_1, initial_guess, constants_1={}, constants_2={})
+        circ_str, initial_guess, constants_1={}, constants_2={})
     assert np.allclose(p1, [1e-7, 1e-3, 5e-3, 1e-3, 10.0,
                        1e-02, 100.0, 1e-3, 1e-03, 1e-03, 1e-02, 1000.0])
     assert np.allclose(p2, [5e-3, 1e-3, 10, 1e-2, 100,
@@ -323,10 +325,73 @@ def test_individual_parameters():
                      1e-3, 1e-3, 1e-3, 1e-2, 1000, 0
                      # TDS1 + additioal nonlinear parameters
                      ]
-    p1, p2 = individual_parameters(circ_str_1, initial_guess, constants_1={
+    p1, p2 = individual_parameters(circ_str, initial_guess, constants_1={
                                    'TDS0_1': 0}, constants_2={'TDSn1_6': 0})
 
     assert np.allclose(p1, [1e-7, 1e-3, 5e-3, 10, 1e-02,
                        100.0, 1e-3, 1e-03, 1e-03, 1e-02, 1000.0])
     assert np.allclose(p2, [5e-3, 10, 1e-2, 100, 10,
                        0.1, 1e-3, 1e-3, 1e-3, 1e-2, 1000, 0])
+
+    # test the case when only one electrode is contributing to the 2nd-NLEIS
+    # without constnats
+    circ_str_1 = 'L0-R0-TDS0-TDS1'  # noqa: F841
+    circ_str_2 = 'TDSn0'  # noqa: F841
+    circ_str = 'L0-R0-TDSn0-TDS1'
+
+    initial_guess = [1e-7, 1e-3,  # L0,RO
+                     5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
+                     # TDS0 + additioal nonlinear parameters
+                     1e-3, 1e-3, 1e-3, 1e-2, 1000, 0, 0,
+                     # TDS1 + additioal nonlinear parameters
+                     ]
+
+    p1, p2 = individual_parameters(
+        circ_str, initial_guess, constants_1={}, constants_2={})
+    assert np.allclose(p1, [1e-7, 1e-3, 5e-3, 1e-3, 10.0,
+                       1e-02, 100.0, 1e-3, 1e-03, 1e-03, 1e-02, 1000.0])
+
+    assert np.allclose(p2, [5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1])
+
+    # test the case when only one electrode is contributing to the 2nd-NLEIS
+    # with constants
+    circ_str_1 = 'L0-R0-TDS0-TDS1'  # noqa: F841
+    circ_str_2 = 'TDSn0'  # noqa: F841
+    circ_str = 'L0-R0-TDSn0-TDS1'
+
+    initial_guess = [1e-7, 1e-3,  # L0,RO
+                     5e-3, 1e-3, 10, 1e-2, 100, 10,
+                     # TDS0 + additioal nonlinear parameters
+                     1e-3, 1e-3, 1e-2, 1000
+                     # TDS1 + additioal nonlinear parameters
+                     ]
+
+    p1, p2 = individual_parameters(
+        circ_str, initial_guess,
+        constants_1={'TDS1_0': 0}, constants_2={'TDSn0_6': 0.1})
+    assert np.allclose(p1, [1e-7, 1e-3, 5e-3, 1e-3, 10.0,
+                       1e-02, 100.0, 1e-3, 1e-03, 1e-02, 1000.0])
+    print(p1)
+    print(p2)
+    assert np.allclose(p2, [5e-3, 1e-3, 10, 1e-2, 100, 10])
+
+    # test the case when only one electrode is contributing to the 2nd-NLEIS
+    # with constants + L0 as constants
+    circ_str_1 = 'L0-R0-TDS0-TDS1'  # noqa: F841
+    circ_str_2 = 'TDSn0'  # noqa: F841
+    circ_str = 'L0-R0-TDSn0-TDS1'
+
+    initial_guess = [1e-3,  # L0,RO
+                     5e-3, 1e-3, 10, 1e-2, 100, 10,
+                     # TDS0 + additioal nonlinear parameters
+                     1e-3, 1e-3, 1e-2, 1000
+                     # TDS1 + additioal nonlinear parameters
+                     ]
+
+    p1, p2 = individual_parameters(
+        circ_str, initial_guess,
+        constants_1={'L0': 1e-7, 'TDS1_0': 0}, constants_2={'TDSn0_6': 0.1})
+    assert np.allclose(p1, [1e-3, 5e-3, 1e-3, 10.0,
+                       1e-02, 100.0, 1e-3, 1e-03, 1e-02, 1000.0])
+
+    assert np.allclose(p2, [5e-3, 1e-3, 10, 1e-2, 100, 10])

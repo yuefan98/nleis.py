@@ -82,7 +82,7 @@ circuit_elements['d'] = d
 
 
 @element(num_params=2, units=['Ohm', 'F'])
-def RCO(p, f):
+def RC(p, f):
     """
 
     EIS: Randles circuit (charge transfer only)
@@ -118,7 +118,7 @@ def RCO(p, f):
 
 
 @element(num_params=3, units=['Ohm', 'F', ''])
-def RCOn(p, f):
+def RCn(p, f):
     '''
 
     2nd-NLEIS: Nonlinear Randles circuit
@@ -438,7 +438,7 @@ def RCSn(p, f):
 
 
 @element(num_params=3, units=['Ohms', 'Ohms', 'F'])
-def TPO(p, f):
+def TP(p, f):
     '''
 
     EIS: Porous electrode with high conductivity matrix (charge transfer only)
@@ -486,7 +486,7 @@ def TPO(p, f):
 
 
 @element(num_params=4, units=['Ohms', 'Ohms', 'F', ''])
-def TPOn(p, f):
+def TPn(p, f):
     """
 
     2nd-NLEIS: Porous electrode with high conductivity matrix
@@ -1144,8 +1144,8 @@ def TLM(p, f):
     Rs = p[3]*N
     Cs = p[4]/N
 
-    Z1b = RCO([Rct, Cdl], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1b = RC([Rct, Cdl], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1, N):
@@ -1210,12 +1210,12 @@ def TLMn(p, f):
     εb = p[6]
     εs = p[7]
 
-    Z1b = RCO([Rct, Cdl], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
-    Z2b = RCOn([Rct, Cdl, εb], frequencies)
-    Z2s = RCOn([Rs, Cs, εs], frequencies)
-    Z1b2t = RCO([Rct, Cdl], 2*frequencies)
-    Z1s2t = RCO([Rs, Cs], 2*frequencies)
+    Z1b = RC([Rct, Cdl], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
+    Z2b = RCn([Rct, Cdl, εb], frequencies)
+    Z2s = RCn([Rs, Cs, εs], frequencies)
+    Z1b2t = RC([Rct, Cdl], 2*frequencies)
+    Z1s2t = RC([Rs, Cs], 2*frequencies)
     Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
     Z12t = Z1b2t + Z1s2t
@@ -1308,8 +1308,8 @@ def mTi(p, f):
     Rpore = p[0]/N
     Rs = p[3]*N
     Cs = p[4]/N
-    Z1b = RCO([Rct, Cdl], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1b = RC([Rct, Cdl], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1, N):
@@ -1396,7 +1396,7 @@ def TLMS(p, f):
 
     Z1b = RCS([Rct, Cdl, Aw, τd], frequencies)
 
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1, N):
@@ -1465,11 +1465,11 @@ def TLMSn(p, f):
     εs = p[10]
 
     Z1b = RCS([Rct, Cdl, Aw, τd], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Z2b = RCSn([Rct, Cdl, Aw, τd, κ, εb], frequencies)
-    Z2s = RCOn([Rs, Cs, εs], frequencies)
+    Z2s = RCn([Rs, Cs, εs], frequencies)
     Z1b2t = RCS([Rct, Cdl, Aw, τd], 2*frequencies)
-    Z1s2t = RCO([Rs, Cs], 2*frequencies)
+    Z1s2t = RC([Rs, Cs], 2*frequencies)
 
     Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
@@ -1571,7 +1571,7 @@ def mTiS(p, f):
 
     Z1b = RCS([Rct, Cdl, Aw, τd], frequencies)
 
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1, N):
@@ -1664,14 +1664,11 @@ def mTiSn(p, f):
     eb = p[9]
     es = p[10]
 
-    Z1b = RCS([Rct, Cdl, Aw, τd], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
     Z2b = RCSn([Rct, Cdl, Aw, τd, κ, eb], frequencies)
-    Z2s = RCOn([Rs, Cs, es], frequencies)
+    Z2s = RCn([Rs, Cs, es], frequencies)
     Z1b2t = RCS([Rct, Cdl, Aw, τd], 2*frequencies)
-    Z1s2t = RCO([Rs, Cs], 2*frequencies)
+    Z1s2t = RC([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
     Z12t = Z1b2t + Z1s2t
 
@@ -1679,7 +1676,7 @@ def mTiSn(p, f):
         return (0)
 
     if N == 2:
-        
+
         I2 = np.zeros((len(frequencies), N), dtype=complex)
         I2[0] = Z2*Rpore / (2*Z12t+Rpore)**2
         I2[1] = -Z2*Rpore / (2*Z12t+Rpore)**2
@@ -1776,7 +1773,7 @@ def TLMD(p, f):
 
     Z1b = RCD([Rct, Cdl, Aw, τd], frequencies)
 
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1, N):
@@ -1844,11 +1841,11 @@ def TLMDn(p, f):
     εs = p[10]
 
     Z1b = RCD([Rct, Cdl, Aw, τd], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Z2b = RCDn([Rct, Cdl, Aw, τd, κ, εb], frequencies)
-    Z2s = RCOn([Rs, Cs, εs], frequencies)
+    Z2s = RCn([Rs, Cs, εs], frequencies)
     Z1b2t = RCD([Rct, Cdl, Aw, τd], 2*frequencies)
-    Z1s2t = RCO([Rs, Cs], 2*frequencies)
+    Z1s2t = RC([Rs, Cs], 2*frequencies)
 
     Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
@@ -1949,7 +1946,7 @@ def mTiD(p, f):
 
     Z1b = RCD([Rct, Cdl, Aw, τd], frequencies)
 
-    Z1s = RCO([Rs, Cs], frequencies)
+    Z1s = RC([Rs, Cs], frequencies)
     Zran = Z1b + Z1s
     Req = Zran
     for i in range(1, N):
@@ -2040,14 +2037,11 @@ def mTiDn(p, f):
     εb = p[9]
     εs = p[10]
 
-    Z1b = RCD([Rct, Cdl, Aw, τd], frequencies)
-    Z1s = RCO([Rs, Cs], frequencies)
     Z2b = RCDn([Rct, Cdl, Aw, τd, κ, εb], frequencies)
-    Z2s = RCOn([Rs, Cs, εs], frequencies)
+    Z2s = RCn([Rs, Cs, εs], frequencies)
     Z1b2t = RCD([Rct, Cdl, Aw, τd], 2*frequencies)
-    Z1s2t = RCO([Rs, Cs], 2*frequencies)
+    Z1s2t = RC([Rs, Cs], 2*frequencies)
 
-    Z1 = Z1b + Z1s
     Z2 = Z2b + Z2s
     Z12t = Z1b2t + Z1s2t
 

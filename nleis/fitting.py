@@ -159,7 +159,7 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['TPn'] and i == 3:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['RCn', 'RCOn'] and i == 2:
+            elif raw_element in ['RCn'] and i == 2:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and (i == 5):

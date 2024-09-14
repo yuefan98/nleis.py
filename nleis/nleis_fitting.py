@@ -197,8 +197,9 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         kwargs['sigma'] = np.hstack([sigma1, sigma2])
 
         popt, pcov = curve_fit(
-            wrapCircuit_simul(circuit_1, constants_1, circuit_2,
-                              constants_2, ub, max_f), frequencies, Zstack,
+            wrapCircuit_simul(edited_circuit, circuit_1, constants_1,
+                              circuit_2, constants_2,
+                              ub, max_f), frequencies, Zstack,
             p0=initial_guess, bounds=bounds, **kwargs)
 
     # Calculate one standard deviation error estimates for fit parameters,
@@ -216,15 +217,17 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
                        for i in range(len(bounds[0])))
 
         res = minimize(
-            wrapNeg_log_likelihood(frequencies, Z1, Z2, circuit_1,
-                                   constants_1, circuit_2, constants_2,
+            wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
+                                   circuit_1, constants_1,
+                                   circuit_2, constants_2,
                                    ub, max_f, cost=cost),
             x0=initial_guess, bounds=bounds, **kwargs)
 
         return (res.x*ub, None)
 
 
-def wrapNeg_log_likelihood(frequencies, Z1, Z2, circuit_1, constants_1,
+def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
+                           circuit_1, constants_1,
                            circuit_2, constants_2, ub, max_f=10, cost=0.5):
     ''' wraps function so we can pass the circuit string
     for negtive log likelihood optimization'''
@@ -254,9 +257,9 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, circuit_1, constants_1,
         f1 = frequencies
         mask = np.array(frequencies) < max_f
         f2 = frequencies[mask]
-        x1, x2 = wrappedImpedance(
-            circuit_1, constants_1, circuit_2,
-            constants_2, f1, f2, parameters*ub)
+        x1, x2 = wrappedImpedance(edited_circuit,
+                                  circuit_1, constants_1, circuit_2,
+                                  constants_2, f1, f2, parameters*ub)
         # Z1max = max(np.abs(Z1))
         # Z2max = max(np.abs(Z2))
         # log1 = np.log(sum(((Z1.real-x1.real)/Z1max)**2))
@@ -269,7 +272,7 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, circuit_1, constants_1,
     return wrappedNeg_log_likelihood
 
 
-def wrapCircuit_simul(circuit_1, constants_1, circuit_2,
+def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
                       constants_2, ub, max_f=10):
     """ wraps function so we can pass the circuit string
     for simultaneous fitting """
@@ -296,9 +299,10 @@ def wrapCircuit_simul(circuit_1, constants_1, circuit_2,
         f1 = frequencies
         mask = np.array(frequencies) < max_f
         f2 = frequencies[mask]
-        x1, x2 = wrappedImpedance(
-            circuit_1, constants_1, circuit_2, constants_2,
-            f1, f2, parameters*ub)
+        x1, x2 = wrappedImpedance(edited_circuit,
+                                  circuit_1, constants_1,
+                                  circuit_2, constants_2,
+                                  f1, f2, parameters*ub)
 
         y1_real = np.real(x1)
         y1_imag = np.imag(x1)
@@ -311,8 +315,8 @@ def wrapCircuit_simul(circuit_1, constants_1, circuit_2,
     return wrappedCircuit_simul
 
 
-def wrappedImpedance(circuit_1, constants_1, circuit_2, constants_2,
-                     f1, f2, parameters):
+def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
+                     constants_2, f1, f2, parameters):
     '''
 
     Parameters
@@ -343,7 +347,7 @@ def wrappedImpedance(circuit_1, constants_1, circuit_2, constants_2,
     '''
 
     p1, p2 = individual_parameters(
-        circuit_1, parameters, constants_1, constants_2)
+        edited_circuit, parameters, constants_1, constants_2)
 
     x1 = eval(buildCircuit(circuit_1, f1, *p1,
                            constants=constants_1, eval_string='',
@@ -356,12 +360,13 @@ def wrappedImpedance(circuit_1, constants_1, circuit_2, constants_2,
     return (x1, x2)
 
 
-def individual_parameters(circuit, parameters, constants_1, constants_2):
+def individual_parameters(edited_circuit,
+                          parameters, constants_1, constants_2):
     '''
 
     Parameters
     ----------
-    circuit : string
+    edited_circuit : string
         Edited circuit string.
         For example, if EIS string: L0-R0-TDS0-TDS1
         2nd-NLEIS string: d(TDSn0-TDSn1).
@@ -372,7 +377,7 @@ def individual_parameters(circuit, parameters, constants_1, constants_2):
     constants_1 : dict
         constant for EIS string.
     constants_2 : dict
-        constants fpr 2nd-NLEIS string.
+        constants for 2nd-NLEIS string.
 
     Returns
     -------
@@ -383,10 +388,10 @@ def individual_parameters(circuit, parameters, constants_1, constants_2):
 
     '''
 
-    if circuit == '':
+    if edited_circuit == '':
         return [], []
     parameters = list(parameters)
-    elements_1 = extract_circuit_elements(circuit)
+    elements_1 = extract_circuit_elements(edited_circuit)
     p1 = []
     p2 = []
     index = 0
@@ -394,40 +399,40 @@ def individual_parameters(circuit, parameters, constants_1, constants_2):
     for elem in elements_1:
 
         raw_elem = get_element_from_name(elem)
-        elem_number_1 = check_and_eval(raw_elem).num_params
+        nleis_elem_number = check_and_eval(raw_elem).num_params
         # this might be improvable, but depends on
         # how we want to define the name
-        if elem[0] == 'T' or elem[0:2] == 'RC':
+        if (elem[0] == 'T' or elem[0:2] == 'RC') and 'n' in elem:
             # check for nonlinear element
-            elem_number_2 = check_and_eval(raw_elem+'n').num_params
+            eis_elem_number = check_and_eval(raw_elem[0:-1]).num_params
 
         else:
-            elem_number_2 = elem_number_1
+            eis_elem_number = nleis_elem_number
 
-        for j in range(elem_number_2):
-            if elem_number_1 > 1:
-                if j < elem_number_1:
-                    current_elem_1 = elem + '_{}'.format(j)
+        for j in range(nleis_elem_number):
+            if eis_elem_number > 1:
+                if j < eis_elem_number:
+                    eis_current_elem = elem.replace("n", "") + '_{}'.format(j)
                 else:
-                    current_elem_1 = None
-                len_elem = len(raw_elem)
-                current_elem_2 = elem[0:len_elem]+'n' + \
-                    elem[len_elem:] + '_{}'.format(j)
+                    eis_current_elem = None
+                nleis_current_elem = elem + '_{}'.format(j)
+
             else:
-                current_elem_1 = elem
-                current_elem_2 = elem
-            if current_elem_1 in constants_1.keys():
+                eis_current_elem = elem
+                nleis_current_elem = elem
+            if eis_current_elem in constants_1.keys():
                 continue
-            elif (current_elem_2 in constants_2.keys() and
-                  current_elem_1 not in constants_1.keys()):
+            elif (nleis_current_elem in constants_2.keys() and
+                  eis_current_elem not in constants_1.keys()):
                 continue
             else:
-                if elem_number_1 == 1:
+                if eis_elem_number == 1:
                     p1.append(parameters[index])
 
-                elif elem_number_1 > 1 and j < elem_number_1:
+                elif eis_elem_number > 1 and j < eis_elem_number:
                     p1.append(parameters[index])
-                    p2.append(parameters[index])
+                    if nleis_elem_number > eis_elem_number:
+                        p2.append(parameters[index])
                 else:
                     p2.append(parameters[index])
 

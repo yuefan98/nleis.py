@@ -11,7 +11,7 @@ from nleis.nleis import NLEISCustomCircuit  # noqa: F401
 
 def test_porous_electrode():
     freqs = [0.001, 1.0, 1000]
-    circuit_1 = CustomCircuit('TPO', initial_guess=[1, 1, 1])
+    circuit_1 = CustomCircuit('TP', initial_guess=[1, 1, 1])
     circuit_2 = CustomCircuit('TLM', initial_guess=[1, 1, 1, 0, 0, 1000])
     Z1 = circuit_1.predict(freqs)
     Z2 = circuit_2.predict(freqs)
@@ -20,7 +20,7 @@ def test_porous_electrode():
 
 def test_RC():
     freqs = [0.001, 1.0, 1000]
-    circuit_1 = CustomCircuit('RCO', initial_guess=[1, 1])
+    circuit_1 = CustomCircuit('RC', initial_guess=[1, 1])
     circuit_2 = CustomCircuit('p(R1,C1)', initial_guess=[1, 1])
     Z1 = circuit_1.predict(freqs)
     Z2 = circuit_2.predict(freqs)

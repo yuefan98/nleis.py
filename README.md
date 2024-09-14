@@ -18,7 +18,7 @@ In the near future, you will be able to access all the funcationality for `nleis
 
 `nleis.py` requires the same dependencies as `impedance.py` puls the latest version of `impedance.py`:
 
--   Python (>=3.7)
+-   Python (>=3.8)
 -   SciPy (>=1.0)
 -   NumPy (>=1.14)
 -   Matplotlib (>=3.0)
