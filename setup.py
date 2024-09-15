@@ -9,7 +9,8 @@ setuptools.setup(
     version=__version__,
     author="Yuefan Ji and nleis.py developers",
     author_email="yuefan@uw.edu",
-    description="A NLEIS toolbox for impedance.py that provides RC level nonlinear equivalent modeling and analysis",
+    description=("A NLEIS toolbox for impedance.py that provides RC level "
+                 "nonlinear equivalent circuit modeling (nECM) and analysis"),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://nleispy.readthedocs.io/en/latest/",

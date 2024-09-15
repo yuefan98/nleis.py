@@ -10,9 +10,67 @@ from nleis.nleis import NLEISCustomCircuit  # noqa: F401
 
 
 def test_porous_electrode():
+
+    # Test the convergence between
+    # Porous electrode with high conductivity matrix model
+    # with it corresponding TLM (charge transfer only)
+
+    # EIS
     freqs = [0.001, 1.0, 1000]
     circuit_1 = CustomCircuit('TP', initial_guess=[1, 1, 1])
     circuit_2 = CustomCircuit('TLM', initial_guess=[1, 1, 1, 0, 0, 1000])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # 2nd-NLEIS
+    circuit_1 = NLEISCustomCircuit('TPn', initial_guess=[1, 1, 1, 0.1])
+    circuit_2 = NLEISCustomCircuit('TLMn',
+                                   initial_guess=[1, 1, 1, 0, 0, 1000, .1, 0])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # Test the convergence between
+    # Porous electrode with high conductivity matrix
+    # and diffusion into spherical particles
+    # with it corresponding TLM
+
+    # EIS
+    circuit_1 = CustomCircuit('TDS', initial_guess=[1, 1, 1, 1, 1])
+    circuit_2 = CustomCircuit('TLMS',
+                              initial_guess=[1, 1, 1, 1, 1, 0, 0, 1000])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # 2nd-NLEIS
+    circuit_1 = NLEISCustomCircuit('TDSn',
+                                   initial_guess=[1, 1, 1, 1, 1, 1, 0.1])
+    circuit_2 = NLEISCustomCircuit('TLMSn',
+                                   initial_guess=[1, 1, 1, 1, 1, 0, 0, 1000,
+                                                  1, .1, 0])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # Test the convergence between
+    # Porous electrode with high conductivity matrix
+    # and planar diffusion into platelet-like particles
+    # with it corresponding TLM
+    circuit_1 = CustomCircuit('TDP', initial_guess=[1, 1, 1, 1, 1])
+    circuit_2 = CustomCircuit('TLMD',
+                              initial_guess=[1, 1, 1, 1, 1, 0, 0, 1000])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # 2nd-NLEIS
+    circuit_1 = NLEISCustomCircuit('TDPn',
+                                   initial_guess=[1, 1, 1, 1, 1, 1, 0.1])
+    circuit_2 = NLEISCustomCircuit('TLMDn',
+                                   initial_guess=[1, 1, 1, 1, 1, 0, 0, 1000,
+                                                  1, .1, 0])
     Z1 = circuit_1.predict(freqs)
     Z2 = circuit_2.predict(freqs)
     assert np.allclose(Z1, Z2, atol=1e-3)

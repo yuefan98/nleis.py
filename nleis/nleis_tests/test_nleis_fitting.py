@@ -260,38 +260,42 @@ def test_seq_fit_parm():
 
 
 def test_simul_fit():
-    # get example data
-    # The example is shown in "Getting Started" page
+
+    # Test example shown in  "Getting Started" page
+    # Note: solution to the solid state diffuion might
+    # converge to different value given the exact
+    # envrionment used (i.e. large confidence interval)
 
     frequencies = np.loadtxt(os.path.join(data_dir, 'freq_30a.txt'))
     Z1 = np.loadtxt(os.path.join(data_dir, 'Z1s_30a.txt')).view(complex)[1]
     Z2 = np.loadtxt(os.path.join(data_dir, 'Z2s_30a.txt')).view(complex)[1]
 
+    f, Z1, Z2, f2_trunc, Z2_trunc = data_processing(frequencies, Z1, Z2)
+
     circ_str_1 = 'L0-R0-TDS0-TDS1'
     circ_str_2 = 'd(TDSn0,TDSn1)'
     edited_circuit = 'L0-R0-TDSn0-TDSn1'
 
-    initial_guess = [1e-7, 1e-3,
-                     5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
-                     1e-3, 1e-3, 1e-3, 1e-2, 1000, 0, 0
-                     ]
-    # Initial parameters
-    # L0,RO
-    # TDS0 + additioal nonlinear parameters
-    # TDS1 + additioal nonlinear parameters
-
-    # The test framework here can be improved
-    # in the future after getting much stable initial guess
+    # The test framework here can be improved in the future
+    # with better and stable initial guess
     results = [9.81368514e-08, 1.34551972e-02, 2.52387276e-02, 5.06176242e-03,
                8.82244297e+00, 8.70692162e-05, 3.55536976e+00, 1.22576118e+01,
                8.75169434e-02, 2.09045802e-02, 1.13804384e-03, 8.13658287e-01,
                1.83783329e+02, 3.20554700e+09, 1.02277512e+00, 6.39228801e-03]
 
-    p, perror = simul_fit(frequencies, Z1, Z2, circ_str_1, circ_str_2,
+    initial_guess = results
+
+    # initial_guess
+    # L0,RO
+    # TDS0 + additioal nonlinear parameters
+    # TDS1 + additioal nonlinear parameters
+
+    p, perror = simul_fit(f, Z1, Z2, circ_str_1, circ_str_2,
                           edited_circuit, initial_guess, constants_1={},
                           constants_2={},
                           bounds=None, opt='max', cost=0.5, max_f=10,
                           param_norm=True, positive=True)
+
     assert np.allclose(p, results, rtol=1e-3, atol=1e-3)
 
 
