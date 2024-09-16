@@ -31,6 +31,16 @@
         "code",
         "review"
       ]
+    },
+    {
+      "login": "dt-schwartz",
+      "name": "Dan Schwartz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32350188?v=4",
+      "profile": "https://github.com/dt-schwartz",
+      "contributions": [
+        "doc",
+        "review"
+      ]
     }
   ],
   "contributorsPerLine": 7,
