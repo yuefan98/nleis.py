@@ -329,13 +329,15 @@ class EISandNLEIS:
         f2 = frequencies[mask]
 
         if self._is_fit() and not use_initial:
-            x1, x2 = wrappedImpedance(self.circuit_1, self.constants_1,
+            x1, x2 = wrappedImpedance(self.edited_circuit,
+                                      self.circuit_1, self.constants_1,
                                       self.circuit_2, self.constants_2, f1, f2,
                                       self.parameters_)
             return x1, x2
         else:
             warnings.warn("Simulating circuit based on initial parameters")
-            x1, x2 = wrappedImpedance(self.circuit_1, self.constants_1,
+            x1, x2 = wrappedImpedance(self.edited_circuit,
+                                      self.circuit_1, self.constants_1,
                                       self.circuit_2, self.constants_2, f1, f2,
                                       self.initial_guess)
             return (x1, x2)
@@ -427,27 +429,37 @@ class EISandNLEIS:
 
     def extract(self):
         """
+        Extracts the parameters of ESI and 2nd-NLEIS circuits
+        into dictionaries.
 
-        extract the printing of the circuit in a dictionary
+        This method retrieves the parameter names from circuit_1 and circuit_2.
+        It maps the fitted parameters to the respective names.
 
+        Returns
+        -------
+        dict1 : dict
+            A dictionary containing the parameters for circuit_1 (EIS circuit).
+        dict2 : dict
+            A dictionary containing the parameters for
+            circuit_2 (NLEIS circuit).
         """
 
         names1, units1 = self.get_param_names(self.circuit_1, self.constants_1)
-        dic1 = {}
+        dict1 = {}
         if self._is_fit():
             params1 = self.p1
             for names, param in zip(names1, params1):
-                dic1[names] = param
+                dict1[names] = param
 
         names2, units2 = self.get_param_names(self.circuit_2, self.constants_2)
-        dic2 = {}
+        dict2 = {}
         if self._is_fit():
             params2 = self.p2
 
             for names, param in zip(names2, params2):
-                dic2[names] = param
+                dict2[names] = param
 
-        return dic1, dic2
+        return dict1, dict2
 
     def plot(self, ax=None, f_data=None, Z1_data=None, Z2_data=None,
              kind='nyquist', max_f=10, **kwargs):
@@ -497,9 +509,13 @@ class EISandNLEIS:
                 # impedance.py style
                 # plot_nyquist(Z1_data, ls='', marker='s', ax=ax[0], **kwargs)
             if Z2_data is not None:
-                mask = mask = np.array(f_pred) < max_f
-                ax[1] = plot_second(ax[1], Z2_data[mask],
-                                    scale=1, fmt='s', **kwargs)
+                if f_data is not None:
+                    mask = np.array(f_data) < max_f
+                    ax[1] = plot_second(ax[1], Z2_data[mask],
+                                        scale=1, fmt='s', **kwargs)
+                else:
+                    ax[1] = plot_second(ax[1], Z2_data,
+                                        scale=1, fmt='s', **kwargs)
                 # impedance.py style
                 # plot_nyquist(Z2_data, units='Ohms/A', ls='',
                 # marker='s', ax=ax[1], **kwargs)
@@ -893,11 +909,11 @@ class NLEISCustomCircuit(BaseCircuit):
         """
 
         names, units = self.get_param_names()
-        dic = {}
+        dict = {}
         if self._is_fit():
             params, confs = self.parameters_, self.conf_
 
             for name, unit, param, conf in zip(names, units, params, confs):
-                dic[name] = param
+                dict[name] = param
 
-        return dic
+        return dict

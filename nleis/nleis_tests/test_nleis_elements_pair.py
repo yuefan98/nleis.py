@@ -75,6 +75,35 @@ def test_porous_electrode():
     Z2 = circuit_2.predict(freqs)
     assert np.allclose(Z1, Z2, atol=1e-3)
 
+    # TDC should converge to TP when Aw is zero
+    circuit_1 = CustomCircuit('TP', initial_guess=[1, 1, 1])
+    circuit_2 = CustomCircuit('TDC',
+                              initial_guess=[1, 1, 1, 0, 10])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # TDCn should converge to TPn when Aw and k is zero
+    circuit_1 = CustomCircuit('TPn', initial_guess=[1, 1, 1, 0.1])
+    circuit_2 = CustomCircuit('TDCn',
+                              initial_guess=[1, 1, 1, 0, 10, 0, 0.1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # The second harmonic current distribution function should converge
+    # to each other given the same charge transfer parameters while
+    # ignoring the solid state diffusion
+    circuit_1 = CustomCircuit('mTiDn',
+                              initial_guess=[1, 1, 1, 0, 1, 1, 1,
+                                             100, 0, .1, .1])
+    circuit_2 = CustomCircuit('mTiSn',
+                              initial_guess=[1, 1, 1, 0, 1, 1, 1,
+                                             100, 0, .1, .1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
 
 def test_RC():
     freqs = [0.001, 1.0, 1000]
