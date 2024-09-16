@@ -9,3 +9,4 @@ pytest-cov
 scipy>=1.0
 pandas >= 2.0.2
 sphinx_rtd_theme
+impedance >= 1.7.1
