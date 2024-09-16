@@ -81,6 +81,54 @@ def test_EISandNLEIS():
     with pytest.raises(TypeError):
         NLEIS_circuit.predict([0.42, 42 + 42j])
 
+    initial_guess = [1e-3,  # RO
+                     5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
+                     # TDS0 + additioal nonlinear parameters
+                     1e-3, 1e-3, 1e-3, 1e-2, 1000, 0,
+                     # TDS1 + additioal nonlinear parameters
+                     ]
+
+    NLEIS_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess,
+        constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+    assert {'L0': 1e-7} == NLEIS_circuit.constants_1
+    assert {'TDSn1_6': 0} == NLEIS_circuit.constants_2
+
+    # check non-number initial guess raise TypeError
+    with pytest.raises(TypeError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=['a'],
+            constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+    # check mismatched EIS and 2nd-NLEIS circuit
+    # raise TypeError
+    with pytest.raises(TypeError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, 'd(TDS0,TDSn2)', initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+    # check wrong constants raise
+    # raise ValueError
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn2_6': 0})
+
+    # check that constants number beyond the range
+    # of allowed number of parameters
+    # raise ValueError
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn1_7': 0})
+
+    # check missing circuit_2 raise TypeError
+    with pytest.raises(TypeError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn1_7': 0})
+
 
 def test_NLEISCustomCircuit():
     circ_str = 'd(TDSn0,TDSn1)'
@@ -93,6 +141,8 @@ def test_NLEISCustomCircuit():
 
     NLEIS_circuit = NLEISCustomCircuit(
         circ_str, initial_guess=initial_guess)
+
+    assert not NLEIS_circuit._is_fit()
 
     # check get_param_names()
     full_names_NLEIS, all_units_NLEIS = NLEIS_circuit.get_param_names()
@@ -110,6 +160,9 @@ def test_NLEISCustomCircuit():
     # check complex frequencies raise TypeError
     with pytest.raises(TypeError):
         NLEIS_circuit.predict([0.42, 42 + 42j])
+
+    NLEIS_circuit.fit(f, Z2)
+    assert NLEIS_circuit._is_fit()
 
 
 def test_fitting():
@@ -141,3 +194,53 @@ def test_fitting():
     p = NLEIS_circuit.parameters_
 
     assert np.allclose(p, results)
+
+    # test plotting
+    # kind = {'nyquist', 'bode'} should return a plt.Axes() object
+    _, ax = plt.subplots(1, 2)
+    assert isinstance(NLEIS_circuit.plot(
+        ax, None, Z1, Z2, kind='nyquist'), type(ax))
+    assert isinstance(NLEIS_circuit.plot(
+        None, f, Z1, Z2, kind='nyquist'), type(ax))
+    _, axes = plt.subplots(2, 2)
+    assert isinstance(NLEIS_circuit.plot(
+        axes, f, Z1, Z2, kind='bode')[0], type(ax))
+    assert isinstance(NLEIS_circuit.plot(
+        None, f, Z1, Z2, kind='bode')[0], type(ax))
+
+    # check altair plotting with a fit circuit
+    chart1, chart2 = NLEIS_circuit.plot(f_data=f, Z1_data=Z1, Z2_data=Z2,
+                                        kind='altair')
+
+    datasets = json.loads(chart1.to_json())['datasets']
+    for dataset in datasets.keys():
+        assert len(datasets[dataset]) == len(Z1)
+
+    datasets = json.loads(chart2.to_json())['datasets']
+    for dataset in datasets.keys():
+        assert len(datasets[dataset]) == len(Z2_trunc)
+
+    # incorrect kind raises a ValueError
+    with pytest.raises(ValueError):
+        NLEIS_circuit.plot(None, f, Z1, Z2, kind='SomethingElse')
+
+    # test optimization with negative log-likelihood
+    initial_guess = [9.81387341e-08, 1.34551661e-02, 2.52404567e-02,
+                     5.06142381e-03,
+                     8.82333612e+00, 8.80981845e-05, 3.59757749e+00,
+                     1.22590097e+01,
+                     8.74790184e-02, 2.09035936e-02, 1.13816141e-03,
+                     8.13599509e-01,
+                     1.71140213e+02, 2.77968560e+09, 1.02284630e+00,
+                     6.38829808e-03]
+    NLEIS_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess)
+
+    NLEIS_circuit.fit(f, Z1, Z2, opt='neg')
+    p2 = NLEIS_circuit.parameters_
+    results2 = [9.81387329e-08, 1.34551659e-02, 2.52509590e-02, 5.14440732e-03,
+                8.82333612e+00, 8.80981835e-05, 3.59757749e+00, 1.22590097e+01,
+                8.74790233e-02, 2.09083711e-02, 1.13829972e-03, 8.13599522e-01,
+                1.71140213e+02, 2.77968560e+09, 1.02284629e+00, 6.38830393e-03]
+
+    assert np.allclose(p2, results2, rtol=1e-3, atol=1e-3)

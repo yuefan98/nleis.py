@@ -329,13 +329,15 @@ class EISandNLEIS:
         f2 = frequencies[mask]
 
         if self._is_fit() and not use_initial:
-            x1, x2 = wrappedImpedance(self.circuit_1, self.constants_1,
+            x1, x2 = wrappedImpedance(self.edited_circuit,
+                                      self.circuit_1, self.constants_1,
                                       self.circuit_2, self.constants_2, f1, f2,
                                       self.parameters_)
             return x1, x2
         else:
             warnings.warn("Simulating circuit based on initial parameters")
-            x1, x2 = wrappedImpedance(self.circuit_1, self.constants_1,
+            x1, x2 = wrappedImpedance(self.edited_circuit,
+                                      self.circuit_1, self.constants_1,
                                       self.circuit_2, self.constants_2, f1, f2,
                                       self.initial_guess)
             return (x1, x2)
@@ -497,9 +499,13 @@ class EISandNLEIS:
                 # impedance.py style
                 # plot_nyquist(Z1_data, ls='', marker='s', ax=ax[0], **kwargs)
             if Z2_data is not None:
-                mask = mask = np.array(f_pred) < max_f
-                ax[1] = plot_second(ax[1], Z2_data[mask],
-                                    scale=1, fmt='s', **kwargs)
+                if f_data is not None:
+                    mask = np.array(f_data) < max_f
+                    ax[1] = plot_second(ax[1], Z2_data[mask],
+                                        scale=1, fmt='s', **kwargs)
+                else:
+                    ax[1] = plot_second(ax[1], Z2_data,
+                                        scale=1, fmt='s', **kwargs)
                 # impedance.py style
                 # plot_nyquist(Z2_data, units='Ohms/A', ls='',
                 # marker='s', ax=ax[1], **kwargs)

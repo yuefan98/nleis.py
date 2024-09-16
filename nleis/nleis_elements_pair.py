@@ -39,9 +39,9 @@ def element(num_params, units, overwrite=False):
         wrapper.__doc__ = func.__doc__
 
         global circuit_elements
-        if func.__name__ in ["s", "p"]:
+        if func.__name__ in ["s", "p", "d"]:
             raise ElementError("cannot redefine elements 's' (series)" +
-                               "or 'p' (parallel)")
+                               "or 'p' (parallel)" + " or 'd' (difference)")
         elif func.__name__ in circuit_elements and not overwrite:
             raise OverwriteError(
                 f"element {func.__name__} already exists. " +
