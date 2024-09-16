@@ -429,9 +429,19 @@ class EISandNLEIS:
 
     def extract(self):
         """
+        Extracts the parameters of ESI and 2nd-NLEIS circuits
+        into dictionaries.
 
-        extract the printing of the circuit in a dictionary
+        This method retrieves the parameter names from circuit_1 and circuit_2.
+        It maps the fitted parameters to the respective names.
 
+        Returns
+        -------
+        dict1 : dict
+            A dictionary containing the parameters for circuit_1 (EIS circuit).
+        dict2 : dict
+            A dictionary containing the parameters for
+            circuit_2 (NLEIS circuit).
         """
 
         names1, units1 = self.get_param_names(self.circuit_1, self.constants_1)
