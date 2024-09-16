@@ -10,6 +10,18 @@
   "commit": false,
   "contributors": [
     {
+      "login": "yuefan98",
+      "name": "Yuefan Ji",
+      "avatar_url": "https://avatars.githubusercontent.com/u/97193085?v=4",
+      "profile": "https://github.com/yuefan98",
+      "contributions": [
+        "design",
+        "code",
+        "doc",
+        "test",
+        "review"
+    },
+    {
       "login": "mdmurbach",
       "name": "Matt Murbach",
       "avatar_url": "https://avatars.githubusercontent.com/u/9369020?v=4",
