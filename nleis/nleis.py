@@ -435,21 +435,21 @@ class EISandNLEIS:
         """
 
         names1, units1 = self.get_param_names(self.circuit_1, self.constants_1)
-        dic1 = {}
+        dict1 = {}
         if self._is_fit():
             params1 = self.p1
             for names, param in zip(names1, params1):
-                dic1[names] = param
+                dict1[names] = param
 
         names2, units2 = self.get_param_names(self.circuit_2, self.constants_2)
-        dic2 = {}
+        dict2 = {}
         if self._is_fit():
             params2 = self.p2
 
             for names, param in zip(names2, params2):
-                dic2[names] = param
+                dict2[names] = param
 
-        return dic1, dic2
+        return dict1, dict2
 
     def plot(self, ax=None, f_data=None, Z1_data=None, Z2_data=None,
              kind='nyquist', max_f=10, **kwargs):
@@ -899,11 +899,11 @@ class NLEISCustomCircuit(BaseCircuit):
         """
 
         names, units = self.get_param_names()
-        dic = {}
+        dict = {}
         if self._is_fit():
             params, confs = self.parameters_, self.conf_
 
             for name, unit, param, conf in zip(names, units, params, confs):
-                dic[name] = param
+                dict[name] = param
 
-        return dic
+        return dict

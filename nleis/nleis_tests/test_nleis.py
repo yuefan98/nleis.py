@@ -161,11 +161,19 @@ def test_NLEISCustomCircuit():
     with pytest.raises(TypeError):
         NLEIS_circuit.predict([0.42, 42 + 42j])
 
+    # test is_fit method
     NLEIS_circuit.fit(f, Z2)
     assert NLEIS_circuit._is_fit()
 
+    # test extract method
+    dict = NLEIS_circuit.extract()
+    assert list(dict.keys()) == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
+                                 'TDSn0_4', 'TDSn0_5',
+                                 'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
+                                 'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
 
-def test_fitting():
+
+def test_EISandNLEIS_fitting():
     circ_str_1 = 'L0-R0-TDS0-TDS1'
     circ_str_2 = 'd(TDSn0,TDSn1)'
 
@@ -190,10 +198,28 @@ def test_fitting():
     NLEIS_circuit = EISandNLEIS(
         circ_str_1, circ_str_2, initial_guess=initial_guess)
 
+    # test predict with initial_guess
+    Z1_fit, Z2_fit = NLEIS_circuit.predict(f)
+    assert np.allclose(Z1, Z1_fit, rtol=1e-2, atol=1e-2)
+    assert np.allclose(Z2_trunc, Z2_fit, rtol=1e-2, atol=1e-2)
+
+    # test fitting
     NLEIS_circuit.fit(f, Z1, Z2)
     p = NLEIS_circuit.parameters_
 
     assert np.allclose(p, results)
+
+    # test the extract method
+    dict1, dict2 = NLEIS_circuit.extract()
+    assert list(dict1.keys()) == ['L0', 'R0',
+                                  'TDS0_0', 'TDS0_1', 'TDS0_2', 'TDS0_3',
+                                  'TDS0_4',
+                                  'TDS1_0', 'TDS1_1', 'TDS1_2',
+                                  'TDS1_3', 'TDS1_4']
+    assert list(dict2.keys()) == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
+                                  'TDSn0_4', 'TDSn0_5',
+                                  'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
+                                  'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
 
     # test plotting
     # kind = {'nyquist', 'bode'} should return a plt.Axes() object
