@@ -81,7 +81,7 @@ For EIS, the response of the two porous electrodes are in series with an ohmic r
 
 .. code-block:: python
 
-    from nleis import EISandNLEIS ##Import command for integrated nleis.py
+    from nleis import EISandNLEIS
     
     EIS_circuit  = 'L0-R0-TDS0-TDS1'
     NLEIS_circuit  = 'd(TDSn0,TDSn1)'
@@ -106,7 +106,8 @@ Step 6: Visualize and print the results
 ========================================
 
 .. code-block:: python
-
+  
+    import matplotlib.pyplot as plt
     circuit.plot(f_data=f, Z1_data = Z1, Z2_data = Z2, kind = 'nyquist')
     plt.tight_layout()
     plt.show()
