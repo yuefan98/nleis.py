@@ -43,6 +43,13 @@ This work adopted and built the `nleis.py` based on [impedance.py](https://githu
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dt-schwartz"><img src="https://avatars.githubusercontent.com/u/32350188?v=4?s=100" width="100px;" alt="Dan Schwartz"/><br /><sub><b>Dan Schwartz</b></sub></a><br /><a href="https://github.com/yuefan98/nleis.py/commits?author=dt-schwartz" title="Documentation">📖</a> <a href="https://github.com/yuefan98/nleis.py/pulls?q=is%3Apr+reviewed-by%3Adt-schwartz" title="Reviewed Pull Requests">👀</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
