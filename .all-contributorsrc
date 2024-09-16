@@ -1,13 +1,26 @@
 {
-    "projectName": "nleis.py",
-    "projectOwner": "Yuefan Ji",
-    "repoType": "github",
-    "repoHost": "https://github.com",
-    "files": [
-      "README.md"
-    ],
-    "imageSize": 100,
-    "commit": false,
-    "contributors": [],
-    "contributorsPerLine": 7
-  }
+  "projectName": "nleis.py",
+  "projectOwner": "yuefan98",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "mdmurbach",
+      "name": "Matt Murbach",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9369020?v=4",
+      "profile": "http://mattmurbach.com",
+      "contributions": [
+        "code",
+        "review"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "commitType": "docs",
+  "commitConvention": "angular"
+}
