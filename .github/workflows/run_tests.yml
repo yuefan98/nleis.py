@@ -62,7 +62,7 @@ jobs:
           pytest --cov=nleis .
 
       - name: Upload coverage to coveralls
-        if: matrix.python-version == '3.10' && github.repository == 'nleis.py'
+        if: matrix.python-version == 3.10 && github.repository == 'yuefan98/nleis.py'
         run: coveralls --service=github
         env:
-          GITHUB_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
