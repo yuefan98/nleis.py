@@ -43,6 +43,13 @@ This work adopted and built the `nleis.py` based on [impedance.py](https://githu
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/yuefan98"><img src="https://avatars.githubusercontent.com/u/97193085?v=4?s=100" width="100px;" alt="Yuefan Ji"/><br /><sub><b>Yuefan Ji</b></sub></a><br /><a href="#design-yuefan98" title="Design">🎨</a> <a href="https://github.com/yuefan98/nleis.py/commits?author=yuefan98" title="Code">💻</a> <a href="https://github.com/yuefan98/nleis.py/commits?author=yuefan98" title="Documentation">📖</a> <a href="https://github.com/yuefan98/nleis.py/commits?author=yuefan98" title="Tests">⚠️</a> <a href="https://github.com/yuefan98/nleis.py/pulls?q=is%3Apr+reviewed-by%3Ayuefan98" title="Reviewed Pull Requests">👀</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
