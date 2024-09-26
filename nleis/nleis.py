@@ -559,7 +559,7 @@ class EISandNLEIS:
             - 'bode': Bode plot showing magnitude and phase.
 
             - 'altair': Altair plot for interactive visualizations.
-            
+
             Default is 'nyquist'.
 
         max_f : float, optional

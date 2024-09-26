@@ -106,7 +106,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 
     edited_circuit : str
         Edited circuit string that is applied to both EIS and NLEIS fitting.
-       
+
         Example:
 
         circuit_1 = L0-R0-TDP0-TDS1
