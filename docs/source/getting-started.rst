@@ -27,7 +27,7 @@ install anything into it by using:
 
    conda activate nleis
 
-We've now activated our conda environment and are ready to use the install :code:`nleis.py`.
+We've now activated our conda environment and are ready to install :code:`nleis.py`.
 
 .. code-block:: bash
     
@@ -190,10 +190,10 @@ Step 6: Visualize and print the results
 
    In `nleis.py`, the linear and nonlinear circuit elements are defined in pairs. The nonlinear element can be distinguished by an additional `n` after the linear circuit element. For example, the currently supported linear and nonlinear element pairs are shown as the following:
 
-   - Nonlinear Randles circuit (charge transfer only): **`[RCO,RCOn]`**
+   - Nonlinear Randles circuit (charge transfer only): **`[RC,RCn]`**
    - Nonlinear Randles circuit with planar diffusion in a bounded thin film electrode: **`[RCD,RCDn]`**
    - Nonlinear Randles circuit with diffusion into a spherical electrode: **`[RCS,RCSn]`**
-   - Porous electrode with high conductivity matrix (charge transfer only): **`[TPO,TPOn]`**
+   - Porous electrode with high conductivity matrix (charge transfer only): **`[TP,TPn]`**
    - Porous electrode with high conductivity matrix and planar diffusion into platelet-like particles: **`[TDP,TDPn]`**
    - porous electrode with high conductivity matrix and diffusion into spherical particles: **`[TDS,TDSn]`**
    - Porous electrode with high conductivity matrix and diffusion into cylindrical particles: **`[TDC,TDCn]`**
