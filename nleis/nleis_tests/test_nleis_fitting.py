@@ -5,10 +5,12 @@ from impedance.tests.test_preprocessing import frequencies \
 from impedance.tests.test_preprocessing import Z_correct
 from nleis.fitting import buildCircuit, \
     circuit_fit, mape, mae, extract_circuit_elements, \
-    set_default_bounds, seq_fit_parm
+    set_default_bounds, seq_fit_param
 from nleis.nleis_fitting import data_processing, \
     simul_fit, individual_parameters
 import os
+import pytest
+
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(test_dir, '../data')
@@ -65,6 +67,71 @@ def test_set_default_bounds():
 
     assert np.allclose(default_bounds, bounds_from_func)
 
+    circuit = 'CPE0'
+    default_bounds = (np.zeros(2), np.inf*np.ones(2))
+    default_bounds[1][1] = 1
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'La0'
+    default_bounds = (np.zeros(2), np.inf*np.ones(2))
+    default_bounds[1][1] = 1
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'TPn0'
+    default_bounds = (np.zeros(4), np.inf*np.ones(4))
+    default_bounds[0][3] = -0.5
+    default_bounds[1][3] = 0.5
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'RCn0'
+    default_bounds = (np.zeros(3), np.inf*np.ones(3))
+    default_bounds[0][2] = -0.5
+    default_bounds[1][2] = 0.5
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'RCDn0'
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+    default_bounds = (np.zeros(6), np.inf*np.ones(6))
+    default_bounds[0][5] = -0.5
+    default_bounds[1][5] = 0.5
+    default_bounds[0][4] = -np.inf
+
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'RCSn0'
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'TLMSn'
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+    default_bounds = (np.zeros(11), np.inf*np.ones(11))
+    default_bounds[0][9] = -0.5
+    default_bounds[0][10] = -0.5
+    default_bounds[1][9] = 0.5
+    default_bounds[1][10] = 0.5
+    default_bounds[0][8] = -np.inf
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'TLMDn'
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+    assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'TLMn'
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+    default_bounds = (np.zeros(8), np.inf*np.ones(8))
+    default_bounds[0][6] = -0.5
+    default_bounds[0][7] = -0.5
+    default_bounds[1][6] = 0.5
+    default_bounds[1][7] = 0.5
+    assert np.allclose(default_bounds, bounds_from_func)
 # This test remain unchanged as we are adopting it from impedance.py
 
 
@@ -251,12 +318,16 @@ def test_element_extraction():
     assert extracted_elements == ['TDSn0', 'TDPn1']
 
 
-def test_seq_fit_parm():
-    input_dic = {'TDS0_1': 0, 'TDS1_3': 0}
+def test_seq_fit_param():
+    input_dict = {'TDS0_1': 0, 'TDS1_3': 0}
     target_arr = ['TDS0', 'TDS1']
     output_arr = ['TDSn0', 'TDSn1']
-    output_dic = seq_fit_parm(input_dic, target_arr, output_arr)
-    assert output_dic == {'TDSn0_1': 0, 'TDSn1_3': 0}
+    output_dict = seq_fit_param(input_dict, target_arr, output_arr)
+    assert output_dict == {'TDSn0_1': 0, 'TDSn1_3': 0}
+
+    with pytest.raises(ValueError):
+        output_arr = ['TDSn0', 'TDSn1', 'TDSn2']
+        output_dict = seq_fit_param(input_dict, target_arr, output_arr)
 
 
 def test_simul_fit():

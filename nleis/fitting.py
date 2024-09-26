@@ -15,78 +15,83 @@ ints = '0123456789'
 
 
 def mae(a, b):
-    '''
-
-    Mean Absolute Error
+    """
+    Calculate the Mean Absolute Error (MAE) between two arrays.
 
     Parameters
     ----------
-    a : numpy array
-        experimental data.
-    b : numpy array
-        model fit.
+    a : numpy.ndarray
+        Array of experimental data.
+
+    b : numpy.ndarray
+        Array of model fit data.
 
     Returns
     -------
-    The calculated Mean Absolute Error.
-
-    '''
+    float
+        The calculated Mean Absolute Error between `a` and `b`.
+    """
     return (np.mean(abs(a-b)))
 
 
 def mape(a, b):
-    '''
-
-    Mean Absolute Percentage Error
+    """
+    Calculate the Mean Absolute Percentage Error (MAPE) between two arrays.
 
     Parameters
     ----------
-    a : numpy array
-        experimental data.
-    b : numpy array
-        model fit.
+    a : numpy.ndarray
+        Array of experimental data.
+
+    b : numpy.ndarray
+        Array of model fit data.
 
     Returns
     -------
-    Mean Absolute Percentage Error.
+    float
+        The calculated Mean Absolute Percentage Error (MAPE)
+        between `a` and `b`, expressed as a percentage.
+    """
 
-    '''
     return (np.mean(abs(a-b)/abs(a))*100)
 
 
-def seq_fit_parm(input_dic, target_arr, output_arr):
+def seq_fit_param(input_dic, target_arr, output_arr):
     '''
-
-    Convert obtained EIS result to a constant of dictionary
-    for 2nd-NLEIS analysis using sequential optimization disscussed in [1]
-    [1] Y. Ji, D.T. Schwartz,
-    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
-    I. Analytical theory and equivalent circuit representations
-    for planar and porous electrodes.
-    J. Electrochem. Soc. (2023). `doi: 10.1149/1945-7111/ad15ca
-    <https://doi.org/10.1149/1945-7111/ad15ca>`_.
+    Convert obtained EIS results to a constant dictionary for
+    2nd-NLEIS analysis using sequential optimization as discussed in [1].
 
     Parameters
     ----------
-    input_dic : dictionary
-        dictionary of EIS fitting results.
-    target_arr : list of string
-        a lit of EIS circuit element that need to be converted.
-        i.e. ['TDS0','TDS1']
-    output_arr : list of string
-        a lit of 2nd-NLEIS circuit element that will be converted to.
-        i.e. ['TDSn0','TDSn1']
+    input_dic : dict
+        Dictionary of EIS fitting results.
+
+    target_arr : list of str
+        A list of EIS circuit elements that need to be converted.
+        Example: ['TDS0', 'TDS1'].
+
+    output_arr : list of str
+        A list of 2nd-NLEIS circuit elements that will be converted to.
+        Example: ['TDSn0', 'TDSn1'].
 
     Raises
     ------
     ValueError
-        Raised if the Target Array and Output Array have differnt length.
+        Raised if the `target_arr` and `output_arr` have different lengths.
 
     Returns
     -------
-    output_dic : dictionary
-        A dictionary of constant that can be used
-        for equential 2nd-NLEIS optimization
+    output_dic : dict
+        A dictionary of constants that can be used for sequential 2nd-NLEIS
+        optimization.
+
+    References
+    ----------
+    [1] Y. Ji, D.T. Schwartz,
+    Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy:
+    II.Model-Based Analysis of Lithium-Ion Battery Experiments.
+    J. Electrochem. Soc., 2024. `doi:10.1149/1945-7111/ad2596
+    <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_.
 
     '''
     output_dic = {}
@@ -105,31 +110,36 @@ def seq_fit_parm(input_dic, target_arr, output_arr):
 
 
 def set_default_bounds(circuit, constants={}):
+
     """
+    Set default bounds for optimization.
 
-    This function sets default bounds for optimization.
+    This function assigns default bounds for all parameters in the given
+    circuit. The default lower bound is 0, and the upper bound is `np.inf`.
 
-    set_default_bounds sets bounds of 0 and np.inf for all parameters,
     Exceptions:
-    the CPE and La alpha have an upper bound of 1,
-    symmetry parameter (ε) for 2nd-NLEIS
-    has bounds between -0.5 to 0.5
-    curvature parameter (κ) for 2nd-NLEIS
-    has bounds between -np.inf to np.inf
+
+    - CPE and La alpha have an upper bound of 1.
+
+    - Symmetry parameter (ε) for 2nd-NLEIS has bounds between -0.5 and 0.5.
+
+    - Curvature parameter (κ) for 2nd-NLEIS has bounds
+      between -np.inf and np.inf.
 
     Parameters
     ----------
-    circuit : string
-        String defining the equivalent circuit to be fit
+    circuit : str
+        String defining the equivalent circuit to be fit.
 
-    constants : dictionary, optional
-        Parameters and their values to hold constant during fitting
-        (e.g. {"RO": 0.1}). Defaults to {}
+    constants : dict, optional
+        Dictionary of parameters and their values to be held constant during
+        fitting (e.g., {"R0": 0.1}). Defaults to an empty dictionary.
 
     Returns
     -------
-    bounds : 2-tuple of array_like
-        Lower and upper bounds on parameters.
+    bounds : tuple of list
+        A 2-tuple containing lists of lower and
+        upper bounds for the parameters.
 
     """
 
@@ -153,9 +163,7 @@ def set_default_bounds(circuit, constants={}):
                 upper_bounds.append(1)
                 lower_bounds.append(0)
             # The following are for nleis.py
-            elif raw_element in ['Tsn'] and i == 4:
-                upper_bounds.append(0.5)
-                lower_bounds.append(-0.5)
+
             elif raw_element in ['TPn'] and i == 3:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
@@ -177,10 +185,10 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['TLMn'] and (i == 6 or i == 7):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TLMSn'] and (i == 9 or i == 10):
+            elif raw_element in ['TLMSn', 'TLMDn'] and (i == 9 or i == 10):
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TLMSn'] and (i == 8):
+            elif raw_element in ['TLMSn', 'TLMDn'] and (i == 8):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
             else:

@@ -19,44 +19,50 @@ ints = '0123456789'
 
 
 def data_processing(f, Z1, Z2, max_f=10):
-    '''
-
+    """
     Simple data processing function for EIS and 2nd-NLEIS simultaneously.
+
+    This function processes frequency (`f`), EIS data (`Z1`), and 2nd-NLEIS
+    data (`Z2`), removing high-frequency inductance effects and truncating the
+    data for 2nd-NLEIS analysis based on the specified maximum frequency.
 
     Parameters
     ----------
-    f : numpy array
-        Frequencies
+    f : numpy.ndarray
+        Array of frequency values.
 
-    Z1 : numpy array of dtype 'complex128'
-        EIS data
-    Z2 : numpy array of dtype 'complex128'
-        2nd NLEIS data
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data (complex impedance values).
 
-    max_f: float
-        The the maximum frequency of interest for 2nd-NLEIS
+    Z2 : numpy.ndarray of dtype complex128
+        2nd-NLEIS data (complex impedance values).
+
+    max_f : float, optional
+        The maximum frequency of interest for 2nd-NLEIS. Frequencies higher
+        than `max_f` will be truncated for 2nd-NLEIS data. Default is 10.
 
     Returns
     -------
-    The processed EIS and 2nd-NLEIS data
+    f : numpy.ndarray
+        Frequencies after removing high-frequency inductance effects.
 
-    f : numpy array
-        Frequencies that removes high frequency inductance
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data with high-frequency inductance removed.
 
-    Z1 : numpy array of dtype 'complex128'
-        EIS data that removes the high frequency inductance
+    Z2 : numpy.ndarray of dtype complex128
+        2nd-NLEIS data that matches the length of
+        high-frequency inductance removed EIS.
 
-    Z2 : numpy array of dtype 'complex128'
-        2nd-NLEIS data that has the same frequency range as Z1
+    f2_truncated : numpy.ndarray
+        Frequencies that are less than
+        the specified maximum frequency (`max_f`)
+        for 2nd-NLEIS, while removes high frequency inductance
 
-    f2_truncated : numpy array
-        Frequencies that removes high frequency inductance and less
-        than the maximum measurable frequency for 2nd-NLEIS
+    Z2_truncated : numpy.ndarray of dtype complex128
+        2nd-NLEIS data corresponding to the truncated frequency range.
 
-    Z2_truncated : numpy array of dtype 'complex128'
-        2nd-NLEIS data that has the same frequency range as f2_truncated
+    """
 
-    '''
     mask = np.array(Z1.imag) < 0
     f = f[mask]
     Z1 = Z1[mask]
@@ -71,72 +77,99 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
               initial_guess, constants_1={}, constants_2={},
               bounds=None, opt='max', cost=0.5, max_f=10, param_norm=True,
               positive=True, **kwargs):
-    """ Main function for the simultaneous fitting of EIS and NLEIS edata.
+    """
+    Main function for the simultaneous fitting of EIS and 2nd-NLEIS data.
 
-    By default, this function uses `scipy.optimize.curve_fit
+    This function fits the equivalent circuits for both EIS and 2nd-NLEIS data
+    simultaneously using `scipy.optimize.curve_fit
     <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html>`_
-    to fit the equivalent circuit.
+    by default. It supports
+    parameter normalization, bounds customization, and two optimization methods
+    (`'max'` for maximum normalization and `'neg'` for negative log-likelihood)
 
     Parameters
     ----------
-    frequencies : numpy array
-        Frequencies
-    Z1 : numpy array of dtype 'complex128'
-        EIS data
-    Z2 : numpy array of dtype 'complex128'
-        2nd-NLEIS data
+    frequencies : numpy.ndarray
+        Array of frequency values.
 
-    circuit_1 : string
-        String defining the EIS equivalent circuit to be fit
-    circuit_2 : string
-        String defining the 2nd-NLEIS equivalent circuit to be fit
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data (complex impedance values).
 
-    initial_guess : list of floats
-        Initial guesses for the fit parameters
+    Z2 : numpy.ndarray of dtype complex128
+        2nd-NLEIS data (complex impedance values).
 
-    constants : dictionary, optional
-        Parameters and their values to hold constant during fitting
-        (e.g. {"RO": 0.1}). Defaults to {}
+    circuit_1 : str
+        String defining the EIS equivalent circuit to be fit.
+
+    circuit_2 : str
+        String defining the 2nd-NLEIS equivalent circuit to be fit.
+
+    edited_circuit : str
+        Edited circuit string that is applied to both EIS and NLEIS fitting.
+
+        Example:
+
+        circuit_1 = L0-R0-TDP0-TDS1
+
+        circuit_2 = TDPn0-TDSn1
+
+        edited_circuit = L0-R0-TDPn0-TDSn1
+
+    initial_guess : list of float
+        Initial guesses for the fit parameters.
+
+    constants_1 : dict, optional
+        Parameters and their values to hold constant during EIS fitting.
+        Defaults to an empty dictionary.
+
+    constants_2 : dict, optional
+        Parameters and their values to hold constant during 2nd-NLEIS fitting.
+        Defaults to an empty dictionary.
 
     bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on parameters. Defaults to bounds on all
-        parameters of 0 and np.inf,
-        Exceptions:
-        the CPE alpha  has an upper bound of 1,
-        symmetry parameter (ε) for 2nd-NLEIS
-        has bounds between -0.5 to 0.5
-        curvature parameter (κ) for 2nd-NLEIS
-        has bounds between -np.inf to np.inf
+        Lower and upper bounds on parameters. If not provided, default bounds
+        will be set based on the circuit elements.
+
+        Special bounds:
+
+        - CPE alpha has an upper bound of 1.
+
+        - Symmetry parameter (ε) for 2nd-NLEIS has bounds between -0.5 and 0.5.
+
+        - Curvature parameter (κ) for 2nd-NLEIS has bounds
+          between -np.inf and np.inf.
 
     opt : str, optional
-        Default is max normalization 'max'.
-        Negative Log-Likelihood is also supported as 'neg'.
-        'max' is currently outperform 'neg'
+        Optimization method. Default is `'max'` for maximum normalization.
+        Negative log-likelihood is also supported as `'neg'`.
 
-    cost : float, default = 0.5
-        cost function: cost > 0.5 means more weight on EIS while cost < 0.5
-        means more weight on 2nd-NLEIS
+    cost : float, optional
+        Weighting between EIS and 2nd-NLEIS data. A value greater than 0.5
+        puts more weight on EIS,
+        while a value less than 0.5 puts more weight on 2nd-NLEIS.
+        Default is 0.5.
 
-    max_f: int
-        The the maximum frequency of interest for 2nd-NLEIS
-
-    positive : bool, optional
-        Defaults to True to eliminate high frequency inductance
+    max_f : int, optional
+        Maximum frequency of interest for 2nd-NLEIS. Default is 10.
 
     param_norm : bool, optional
-         Defaults to True for better convergence
-         when customized bounds is supported
+        If True, parameter normalization is applied to improve convergence.
+        Defaults to True.
+
+    positive : bool, optional
+        If True, high-frequency inductance is eliminated. Defaults to True.
 
     kwargs :
-        Keyword arguments passed to scipy.optimize.curve_fit
+        Additional keyword arguments passed to `scipy.optimize.curve_fit`.
 
     Returns
     -------
-    p_values : list of floats
-        best fit parameters for EIS and 2nd-NLEIS data
+    p_values : list of float
+        Best-fit parameters for EIS and 2nd-NLEIS data.
 
-    p_errors : list of floats
-        one standard deviation error estimates for fitting parameters
+    p_errors : list of float
+        One standard deviation error estimates for fitting parameters.
+        If using `'neg'` optimization, this value will be None.
 
     """
     # Todo improve the the negtive loglikelihood,
@@ -213,6 +246,10 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
     if opt == 'neg':
         # This method does not provides converge solution
         # for porous electrode model under current development
+        # The method is introduced by Kirk et al, J. Electrochem. Soc. (2023)
+        # doi: 10.1149/1945-7111/acada7
+        # to support analysis for single particle model
+
         bounds = tuple(tuple((bounds[0][i], bounds[1][i]))
                        for i in range(len(bounds[0])))
 
@@ -317,34 +354,47 @@ def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
 
 def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
                      constants_2, f1, f2, parameters):
-    '''
+    """
+    Calculate EIS and 2nd-NLEIS impedances using the provided circuits.
+
+    This function evaluates the equivalent circuit models for both EIS and
+    2nd-NLEIS using the provided frequencies and parameters.
 
     Parameters
     ----------
-    circuit_1 : string
-        EIS circuit string
-    constants_1 : dict
-        constant for EIS string.
-    circuit_2 : string
-        2nd-NLEIS circuit string
-    constants_2 : dict
-        constant for EIS string.
+    edited_circuit : str
+        The edited circuit string which contains
+        the combined elements of EIS and 2nd-NLEIS.
 
-    f1 : list of floats
-        frequency range for EIS
-    f2 : list of floats
-        frequency range for 2nd-NLEIS
-    parameters : list of floats
-        full parameters based on edited string.
+    circuit_1 : str
+        The equivalent circuit string for EIS.
+
+    constants_1 : dict
+        Constants used in the EIS circuit model.
+
+    circuit_2 : str
+        The equivalent circuit string for 2nd-NLEIS.
+
+    constants_2 : dict
+        Constants used in the 2nd-NLEIS circuit model.
+
+    f1 : list of float
+        frequencies  for EIS.
+
+    f2 : list of float
+        frequencies for 2nd-NLEIS.
+
+    parameters : list of float
+        Full set of parameters derived from the edited circuit string.
 
     Returns
     -------
-    x1
-        calculated EIS (Z1)
-    x2
-        calculated 2nd-NLEIS (Z2)
+    x1 : numpy.ndarray
+        Calculated impedance for EIS (Z1).
 
-    '''
+    x2 : numpy.ndarray
+        Calculated impedance for 2nd-NLEIS (Z2).
+    """
 
     p1, p2 = individual_parameters(
         edited_circuit, parameters, constants_1, constants_2)
@@ -362,31 +412,37 @@ def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
 
 def individual_parameters(edited_circuit,
                           parameters, constants_1, constants_2):
-    '''
+    """
+    Separate parameters for EIS and 2nd-NLEIS based on the edited circuit.
+
+    This function parses the edited circuit string and assigns the parameters
+    to either EIS or 2nd-NLEIS depending on the element type.
 
     Parameters
     ----------
-    edited_circuit : string
-        Edited circuit string.
-        For example, if EIS string: L0-R0-TDS0-TDS1
-        2nd-NLEIS string: d(TDSn0-TDSn1).
-        Then the edited str is L0-R0-TDSn0-TDSn1
+    edited_circuit : str
+        Edited circuit string combining both EIS and 2nd-NLEIS elements.
+        For example, if the EIS string is 'L0-R0-TDS0-TDS1' and the 2nd-NLEIS
+        string is 'd(TDSn0-TDSn1)',
+        the edited string becomes 'L0-R0-TDSn0-TDSn1'.
 
-    parameters : list of floats
-        full parameters based on edited string.
+    parameters : list of float
+        Full set of parameters corresponding to the edited circuit string.
+
     constants_1 : dict
-        constant for EIS string.
+        Constants for the EIS circuit elements.
+
     constants_2 : dict
-        constants for 2nd-NLEIS string.
+        Constants for the 2nd-NLEIS circuit elements.
 
     Returns
     -------
-    p1
-        parameters for EIS.
-    p2
-        parameters for 2nd-NLEIS.
+    p1 : list of float
+        Parameters for EIS.
 
-    '''
+    p2 : list of float
+        Parameters for 2nd-NLEIS.
+    """
 
     if edited_circuit == '':
         return [], []
