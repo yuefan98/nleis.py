@@ -95,6 +95,18 @@ def test_EISandNLEIS():
     assert {'L0': 1e-7} == NLEIS_circuit.constants_1
     assert {'TDSn1_6': 0} == NLEIS_circuit.constants_2
 
+    # raise ValueError if the length of the frequency
+    # does not matches with the length of the impedance for EIS
+    with pytest.raises(ValueError):
+        NLEIS_circuit.fit(f[f < 1], Z1, Z2)
+
+    # raise ValueError if no initial_guess is supplied
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn1_6': 0})
+        NLEIS_circuit.fit(f[f < 1], Z1, Z2)
+
     # check non-number initial guess raise TypeError
     with pytest.raises(TypeError):
         NLEIS_circuit = EISandNLEIS(
@@ -122,12 +134,43 @@ def test_EISandNLEIS():
         NLEIS_circuit = EISandNLEIS(
             circ_str_1, circ_str_2, initial_guess=initial_guess,
             constants={'L0': 1e-7, 'TDSn1_7': 0})
+    # check that constants number beyond the range
+    # of allowed number of parameters
+    # raise ValueError
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=initial_guess,
+            constants={'L2': 1e-7, 'TDSn1_6': 0})
 
-    # check missing circuit_2 raise TypeError
+    # check incorrect element pair raise TypeError
     with pytest.raises(TypeError):
         NLEIS_circuit = EISandNLEIS(
-            circ_str_1, initial_guess=initial_guess,
-            constants={'L0': 1e-7, 'TDSn1_7': 0})
+            circ_str_1, circ_str_1, initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+    # check that constants either circ_str_1 or circ_str_2
+    # cannot be empty/ raise ValueError if empty
+    # check missing circuit_2 raise ValueError
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2='', initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+    # check that wrong length of initial_guess
+    # with respect to the length of the circuit raise ValueError
+
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2='', initial_guess=[1],
+            constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+
+def test_eq():
+    NLEIS_circuit = NLEISCustomCircuit()
+    simul_circuit = EISandNLEIS()
+
+    with pytest.raises(TypeError):
+        simul_circuit == NLEIS_circuit
 
 
 def test_NLEISCustomCircuit():

@@ -64,12 +64,12 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
         nyquist = alt.Chart(df).mark_line().encode(
             x=alt.X('z_real:Q', axis=alt.Axis(
                 title="Z{}' [{}]".format(k, units)),
-                    scale=alt.Scale(domain=[min_x, max_x],
-                                    nice=False, padding=5), sort=None),
+                scale=alt.Scale(domain=[min_x, max_x],
+                                nice=False, padding=5), sort=None),
             y=alt.Y('neg_z_imag:Q', axis=alt.Axis(
                 title="-Z{}'' [{}]".format(k, units)),
-                    scale=alt.Scale(domain=[min_y, max_y],
-                                    nice=False, padding=5), sort=None),
+                scale=alt.Scale(domain=[min_y, max_y],
+                                nice=False, padding=5), sort=None),
             color='kind:N'
         ).properties(
             height=size,
@@ -107,12 +107,12 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
         nyquist = alt.Chart(df).mark_circle().encode(
             x=alt.X('z_real:Q', axis=alt.Axis(
                 title="Z{}' [{}]".format(k, units)),
-                    scale=alt.Scale(domain=[min_x, max_x],
-                                    nice=False, padding=5), sort=None),
+                scale=alt.Scale(domain=[min_x, max_x],
+                                nice=False, padding=5), sort=None),
             y=alt.Y('neg_z_imag:Q', axis=alt.Axis(
                 title="-Z{}'' [{}]".format(k, units)),
-                    scale=alt.Scale(domain=[min_y, max_y],
-                                    nice=False, padding=5), sort=None),
+                scale=alt.Scale(domain=[min_y, max_y],
+                                nice=False, padding=5), sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
             color=alt.Color('kind:N', legend=alt.Legend(title='Legend'))
         ).add_selection(
@@ -154,31 +154,43 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
     return (full_bode | alt.layer(*nyquists)).configure(background=background)
 
 
-def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
-    """ Plots impedance as a Nyquist plot using matplotlib
+def plot_first(ax, Z, scale=1, fmt='.-', labelsize=20,
+               ticksize=14, **kwargs):
+    """
+    Plots EIS impedance as a Nyquist plot using matplotlib.
 
-        Parameters
-        ----------
-        ax: matplotlib.axes.Axes
-            axes on which to plot the nyquist plot
-        Z: np.array of complex numbers
-            impedance data
-        scale: float
-            the scale for the axes
-        units: string
-            units for :math:`Z(\\omega)`
-        fmt: string
-            format string passed to matplotlib (e.g. '.-' or 'o')
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes on which to plot the Nyquist plot.
 
-        Other Parameters
-        ----------------
-        **kwargs : `matplotlib.pyplot.Line2D` properties, optional
-            Used to specify line properties like linewidth, line color,
-            marker color, and line labels.
+    Z : numpy.ndarray of complex
+        EIS data to be plotted. The real part is plotted on the x-axis,
+        and the negative imaginary part on the y-axis.
 
-        Returns
-        -------
-        ax: matplotlib.axes.Axes
+    scale : float, optional
+        Scaling factor for the axes. The default is 1.
+
+    fmt : str, optional
+        Format string passed to matplotlib (e.g., '.-' for line style, 'o' for
+        markers). The default is '.-'.
+
+    labelsize : int, optional
+        Font size for axis labels. The default is 20.
+
+    ticksize : int, optional
+        Font size for axis tick labels. The default is 14.
+
+    Other Parameters
+    ----------------
+    **kwargs : `matplotlib.pyplot.Line2D` properties, optional
+        Used to specify line properties like linewidth, line color, marker
+        color, and line labels.
+
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+        The axes with the Nyquist plot for EIS.
     """
 
     ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
@@ -188,12 +200,12 @@ def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
 
     # Set the labels to -imaginary vs real
     ax.set_xlabel(r'$\tilde{Z}_{1}^{\prime}(\omega)$' +
-                  r' [$\Omega$]', fontsize=20)
+                  r' [$\Omega$]', fontsize=labelsize)
     ax.set_ylabel(r'$-\tilde{Z}_{1}^{\prime\prime}(\omega)$' +
-                  r' [$\Omega$]', fontsize=20)
+                  r' [$\Omega$]', fontsize=labelsize)
 
     # Make the tick labels larger
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=ticksize)
 
     # Change the number of labels on each axis to five
     ax.locator_params(axis='x', nbins=5, tight=True)
@@ -222,31 +234,43 @@ def plot_first(ax, Z, scale=1, fmt='.-', **kwargs):
     return ax
 
 
-def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
-    """ Plots impedance as a Nyquist plot using matplotlib
+def plot_second(ax, Z, scale=1, fmt='.-', labelsize=20,
+                ticksize=14, **kwargs):
+    """
+    Plots 2nd-NLEIS impedance as a Nyquist plot using matplotlib.
 
-        Parameters
-        ----------
-        ax: matplotlib.axes.Axes
-            axes on which to plot the nyquist plot
-        Z: np.array of complex numbers
-            impedance data
-        scale: float
-            the scale for the axes
-        units: string
-            units for :math:`Z(\\omega)`
-        fmt: string
-            format string passed to matplotlib (e.g. '.-' or 'o')
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes on which to plot the Nyquist plot.
 
-        Other Parameters
-        ----------------
-        **kwargs : `matplotlib.pyplot.Line2D` properties, optional
-            Used to specify line properties like linewidth, line color,
-            marker color, and line labels.
+    Z : numpy.ndarray of complex
+        2nd-NLEIS data to be plotted. The real part is plotted on the x-axis,
+        and the negative imaginary part on the y-axis.
 
-        Returns
-        -------
-        ax: matplotlib.axes.Axes
+    scale : float, optional
+        Scaling factor for the axes. The default is 1.
+
+    fmt : str, optional
+        Format string passed to matplotlib (e.g., '.-' for line style, 'o' for
+        markers). The default is '.-'.
+
+    labelsize : int, optional
+        Font size for axis labels. The default is 20.
+
+    ticksize : int, optional
+        Font size for axis tick labels. The default is 14.
+
+    Other Parameters
+    ----------------
+    **kwargs : `matplotlib.pyplot.Line2D` properties, optional
+        Used to specify line properties like linewidth, line color, marker
+        color, and line labels.
+
+    Returns
+    -------
+    ax : matplotlib.axes.Axes
+        The axes with the Nyquist plot for 2nd-NLEIS.
     """
 
     ax.plot(np.real(Z), -np.imag(Z), fmt, **kwargs)
@@ -256,11 +280,11 @@ def plot_second(ax, Z, scale=1, fmt='.-', **kwargs):
 
     # Set the labels to -imaginary vs real
     ax.set_xlabel(r'$\tilde{Z}_{2}^{\prime}(\omega)$' +
-                  r' [$\Omega / A$]', fontsize=20)
+                  r' [$\Omega / A$]', fontsize=labelsize)
     ax.set_ylabel(r'$-\tilde{Z}_{2}^{\prime\prime}(\omega)$' +
-                  r' [$\Omega / A$]', fontsize=20)
+                  r' [$\Omega / A$]', fontsize=labelsize)
     # Make the tick labels larger
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=ticksize)
 
     # Change the number of labels on each axis to five
     ax.locator_params(axis='x', nbins=5, tight=True)

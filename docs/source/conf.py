@@ -51,6 +51,7 @@ extensions = [
 autodoc_default_options = {
     'undoc-members': True,
     'show-inheritance': True,
+    'special-members': '__init__',  # To include __init__
 }
 
 
