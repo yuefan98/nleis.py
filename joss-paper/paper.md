@@ -25,7 +25,7 @@ authors:
 affiliations:
  - name: Department of Chemical Engineering & Clean Energy Institute, University of Washington, Seattle, WA, USA
    index: 1
- - name: Independent Researcher
+ - name: Independent Researcher, USA
    index: 2
 date: 27 Sept 2024
 bibliography: paper.bib
