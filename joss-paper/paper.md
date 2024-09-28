@@ -17,6 +17,7 @@ authors:
     affiliation: 1
   - name: Matthew D. Murbach
     orcid: 0000-0002-6583-5995
+    affiliation: 2
   - name: Daniel T. Schwartz
     orcid: 0000-0003-1173-5611
     affiliation: 1
@@ -24,16 +25,17 @@ authors:
 affiliations:
  - name: Department of Chemical Engineering & Clean Energy Institute, University of Washington, Seattle, WA, USA
    index: 1
-
-date: 27 Aug 2024
+ - name: Independent Researcher
+   index: 2
+date: 27 Sept 2024
 bibliography: paper.bib
 ---
 
-Building on the growing adoption of impedance.py `[@Murbach2020]` as an open-source software tool within the electrochemical impedance spectroscopy (EIS) community, nleis.py is a toolbox for impedance.py that aims to provide an easily accessible tool to perform second harmonic nonlinear EIS (2nd-NLEIS analysis), with the ability to extend to higher harmonic analysis in the future. The toolbox is designed with impedance.py in mind to minimize the learning curve for users. It inherits the basic functionality of impedance.py, introduces paired linear and 2nd-harmonic nonlinear circuit elements, and enables the simultaneous analysis of EIS and 2nd-NLEIS. With this toolbox, one can choose to individually analyze an EIS or 2nd-NLEIS spectra or perform simultaneous parameter estimation of linear and nonlinear impedance data using an impedance.py workflow. Ultimately, the nleis.py toolbox will be integrated into impedance.py as adoption grows, while maintaining the standalone version of nleis.py as a platform to develop advanced features as the field matures.
+Building on the growing adoption of impedance.py `[@Murbach2020]` as an open-source software tool within the electrochemical impedance spectroscopy (EIS) community, nleis.py is a toolbox for impedance.py that aims to provide an easily accessible tool to perform second harmonic nonlinear EIS (2nd-NLEIS) analysis, with the ability to extend to higher harmonic analysis in the future. The toolbox is designed with impedance.py in mind to minimize the learning curve for users. It inherits the basic functionality of impedance.py, introduces paired linear and 2nd-harmonic nonlinear circuit elements, and enables the simultaneous analysis of EIS and 2nd-NLEIS. With this toolbox, one can choose to individually analyze an EIS or 2nd-NLEIS spectra or perform simultaneous parameter estimation of linear and nonlinear impedance data using an impedance.py workflow. Ultimately, the nleis.py toolbox will be integrated into impedance.py as adoption grows, while maintaining the standalone version of nleis.py as a platform to develop advanced features as the field matures.
 
 # Background
 
-Electrochemical impedance spectroscopy (EIS) is a widely accepted electroanalytical method that is often used to characterize engineered electrochemical systems like fuel cells `[@Yuan2007]` and lithium-ion batteries (LIBs) `[@Meddings2020]`. EIS experiments and modeling require linearization of system response, leading to unavoidable information loss and model degeneracy challenges in real-world nonlinear electrochemical processes `[@orazem_eis_2008; @Fletcher1994]`. Second-harmonic nonlinear electrochemical impedance spectroscopy (2nd-NLEIS) is emerging as a powerful and complementary tool to EIS in lithium-ion battery (LIB) research. 2nd-NLEIS uses a moderately larger input modulation than conventional EIS to drive the electrochemical system into the weakly nonlinear regime where the fundamental frequency continues to represent the linear system response, and a small additional 2nd-harmonic signal adds key new information about the nonlinear dynamics of the interfaces under study `[@murbach_nleis_2018]`. Analyzing a 2nd-NLEIS signal unavoidably complicates the mathematical modeling compared to linear system theory, but it also provides a sensible way to break EIS degeneracy and generate key new insights into charge transfer, transport, and thermodynamic parameters that are inaccessible to linear EIS alone. Early work with the pseudo-two-dimensional (P2D) LIB model provided the first physical insights into the potential value of 2nd-NLEIS signals for battery research `[@murbach_p2d_2017]`, whereas quantitative parameter estimation of 2nd-NLEIS experiments has required adoption of physically-insightful reduced order models, such as Kirk et al.’s work developing a nonlinear single particle model (SPM) `[@kirk2023]`, and our work defining nonlinear Randles circuit (RC) and porous electrode models (PEM) `[@ji2023]`. 
+Electrochemical impedance spectroscopy (EIS) is a widely accepted electroanalytical method that is often used to characterize engineered electrochemical systems like fuel cells `[@Yuan2007]` and lithium-ion batteries (LIBs) `[@Meddings2020]`. EIS experiments and modeling require linearization of system response, leading to unavoidable information loss and model degeneracy challenges in real-world nonlinear electrochemical processes `[@orazem_eis_2008; @Fletcher1994]`. Second-harmonic nonlinear electrochemical impedance spectroscopy (2nd-NLEIS) is emerging as a powerful and complementary tool to EIS in lithium-ion battery research. 2nd-NLEIS uses a moderately larger input modulation than conventional EIS to drive the electrochemical system into the weakly nonlinear regime where the fundamental frequency continues to represent the linear system response, and a small additional 2nd-harmonic signal adds key new information about the nonlinear dynamics of the interfaces under study `[@murbach_nleis_2018]`. Analyzing a 2nd-NLEIS signal unavoidably complicates the mathematical modeling compared to linear system theory, but it also provides a sensible way to break EIS degeneracy and generate key new insights into charge transfer, transport, and thermodynamic parameters that are inaccessible to linear EIS alone. Early work with the pseudo-two-dimensional (P2D) LIB model provided the first physical insights into the potential value of 2nd-NLEIS signals for battery research `[@murbach_p2d_2017]`, whereas quantitative parameter estimation of 2nd-NLEIS experiments has required adoption of physically-insightful reduced order models, such as Kirk et al.’s work developing a nonlinear single particle model (SPM) `[@kirk2023]`, and our work defining nonlinear Randles circuit (RC) and porous electrode models (PEM) `[@ji2023]`. 
 
 # Statement of Need
 
@@ -41,7 +43,7 @@ As an emerging technique requiring nonlinear dynamic modeling to analyze experim
 
 # Naming Conventions and Parameter Assignments 
 
-The linear and second harmonic nonlinear circuit elements are defined in a pair with an addition of ‘n’ after the nonlinear circuit element to facilitate the simultaneous analysis of linear and nonlinear impedance response. Additionally, because of the nature of the nonlinear response, the simplest possible circuit element is a wrapper Randles circuit (RC) rather than the Resistor (R) and capacitor (C) element defined in impedance.py. For example, the linear and nonlinear Randles circuits are defined in pairs as RC and RCn respectively. Lastly, parameter assignments should follow a convention that first defines the linear parameters of a model (p_1) then the nonlinear parameters (p_2). For the RC circuit as an example, RC should only take [p_1] as parameter inputs, while RCn should take [p_1, p_2] as parameter inputs, as described in `[@ji2023]`.
+The linear and second harmonic nonlinear circuit elements are defined in a pair with an addition of ‘n’ after the nonlinear circuit element to facilitate the simultaneous analysis of linear and nonlinear impedance response. Additionally, because of the nature of the nonlinear response, the simplest possible circuit element is a wrapper Randles circuit (RC) rather than the Resistor (R) and capacitor (C) element defined in impedance.py. For example, the linear and nonlinear Randles circuits are defined in pairs as RC and RCn respectively. Lastly, parameter assignments should follow a convention that first defines the linear parameters of a model ($p_1$) then the nonlinear parameters ($p_2$). For the RC circuit as an example, RC should only take [$p_1$] as parameter inputs, while RCn should take [$p_1$, $p_2$] as parameter inputs, as described in `[@ji2023]`.
 
 # Current nleis.py Functionalities
 
@@ -87,6 +89,6 @@ In general, 2nd-NLEIS is a novel technique for electrochemical science and engin
 
 # Acknowledgments
 
-This work has been supported by funding from State of Washington proviso funding for Clean Energy Institute Graduate Fellowships and the Boeing-Sutter endowment for excellence in engineering. We thank An-Hung Shih, Lauren Frank, and Rebecca C. Vincent for their preliminary testing and invaluable feedback. An up-to-date list of contributors can be found on GitHub.
+This work has been supported by funding from State of Washington proviso funding for Clean Energy Institute Graduate Fellowships and the Boeing-Sutter endowment for excellence in engineering. We thank An-Hung Shih, Lauren Frank, and Rebecca C. Vincent for their preliminary testing and invaluable feedback. An up-to-date list of contributors can be found on [GitHub](https://github.com/yuefan98/nleis.py#contributors-battery).
 
 # References
