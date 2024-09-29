@@ -2,7 +2,7 @@
 Getting started with :code:`nleis.py`
 =========================================
 
-:code:`nleis.py` is designed to be a toolbox that can be seamlessly integrated into :code:`impedance.py` to facilitate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. nleis.py also supports building nonlinear equivalent circuit models. Due to the nonlinear nature, the smallest building block is the nonlinear Randles circuit in nleis.py, while a single resistor and capacitor are supported in impedance.py. In short, nleis.py requires a wrapper function for the pair of linear and nonlinear responses.
+:code:`nleis.py` is designed to be a toolbox that can be seamlessly integrated into :code:`impedance.py` to facilitate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. :code:`nleis.py` also supports building nonlinear equivalent circuit models. Due to the nonlinear nature, the smallest building block is the nonlinear Randles circuit in :code:`nleis.py`, while a single resistor and capacitor are supported in :code:`impedance.py`. In short, :code:`nleis.py` requires a wrapper function for the pair of linear and nonlinear responses.
 
 .. hint::
   If you get stuck or believe you have found a bug, please feel free to open an
@@ -11,7 +11,7 @@ Getting started with :code:`nleis.py`
 Step 1: Installation
 ====================
 
-If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be a toolbox for :code:`impedance.py`. Please follows the following instruction to setup an envrionment 
+If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This software is designed to be a toolbox for :code:`impedance.py`. Please follows the following instruction to setup an envrionment 
 and install the :code:`nleis.py` from PyPI.
 
 The best way to use this toolbox is creating a virtual environment using the :code:`environment.yml` file in the GitHub repo.
@@ -49,9 +49,9 @@ which should open a new tab in your browser.
 Step 2: Import your data
 ========================
 
-To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be found from in Journal of Electrochemical Society.
+To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be found as open access articles in Journal of Electrochemical Society.
 
-Since there isn't a standard for data acquisition and preparation, the :code:`nleis.py` only provides a simple :code:`data_processing` to help users truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data in order to use this function. A better data loading and processing function is under development.   
+Since there isn't an instrumentation standard for acquisition and processing of second harmonic NLEIS data, :code:`nleis.py` only provides simple :code:`data_processing` to help users truncate their own data. For now, users will need to obtain their own frequencies, Z1, and Z2 data in order to use this function. An alternative data loading and processing function is under development for EIS instruments that provide frequency-domain harmonic data or time-domain data suitable for signal processing.   
 
 .. code-block:: python
 
@@ -75,9 +75,9 @@ Here, we provide a simple data processing function to help you truncate your dat
 Step 4: Define your model
 ==========================
 
-Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
-The following example presents a cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. 
-For EIS, the response of the two porous electrodes are in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response is defined as the difference between the responses of the positive and negative electrodes (NLEIS_circuit).
+Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear equivalent circuit models (ECM), you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
+The following example presents a two-electrode cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. Methodolological details are given in our peer reviewed paper `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_.
+For EIS of a two electrode cell, the individual impedances of each electrode are added in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response arises from the difference between the individual electrode responses, with the negtive electrode 2nd-NLEIS signal subtracted from positive electrode (NLEIS_circuit).
 
 .. code-block:: python
 
@@ -94,7 +94,7 @@ For EIS, the response of the two porous electrodes are in series with an ohmic r
 Step 5: Fit to data 
 ==========================
 
-We then need to initialize a :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS.
+We then need to initialize the :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS data.
 
 .. code-block:: python
 
@@ -184,7 +184,7 @@ Step 6: Visualize and print the results
 
 
 .. important::
-  🎉 Congratulations! You're now up and running with :code:`nleis.py` 🎉 For those who are already acquainted with :code:`impedance.py`, I hope you'll discover the similarities with :code:`nleis.py` and appreciate how closely aligned they are at this point.
+  🎉 Congratulations! You're now up and running with :code:`nleis.py` 🎉 For those who are already acquainted with :code:`impedance.py`, we expect you will quickly discover the similarities with :code:`nleis.py` and appreciate their close alignment at this point.
 
 .. note:: 
 
@@ -192,16 +192,16 @@ Step 6: Visualize and print the results
 
    - Nonlinear Randles circuit (charge transfer only): **`[RC,RCn]`**
    - Nonlinear Randles circuit with planar diffusion in a bounded thin film electrode: **`[RCD,RCDn]`**
-   - Nonlinear Randles circuit with diffusion into a spherical electrode: **`[RCS,RCSn]`**
-   - Porous electrode with high conductivity matrix (charge transfer only): **`[TP,TPn]`**
-   - Porous electrode with high conductivity matrix and planar diffusion into platelet-like particles: **`[TDP,TDPn]`**
-   - porous electrode with high conductivity matrix and diffusion into spherical particles: **`[TDS,TDSn]`**
-   - Porous electrode with high conductivity matrix and diffusion into cylindrical particles: **`[TDC,TDCn]`**
+   - Nonlinear Randles circuit with diffusion into spherical electrode particles (effectively a single particle model): **`[RCS,RCSn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer at the interface: **`[TP,TPn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer and diffusion into platelet-like electrode particles: **`[TDP,TDPn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer and diffusion into spherical electrode particles: **`[TDS,TDSn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer and diffusion into cylindrical electrode particles: **`[TDC,TDCn]`**
   
-  The nonlinear transmission line models (TLMs) and their corresponding current distribution functions are still under development. A detailed description will be included in the future.
-   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior (charge transfer only): **`[TLM,TLMn]`**
-   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior with diffusion into spherical particles: **`[TLMS,TLMSn]`**
-   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior with diffusion into platelet-like particles: **`[TLMS,TLMSn]`**
+  Nonlinear transmission line models (TLMs) and their corresponding current distribution functions are still under development. A detailed description will be included in the future.
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, representing an ultrathin surface film covering the bulk solid electrode : **`[TLM,TLMn]`**
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk spherical particles with both charge transfer and diffusion impedances: **`[TLMS,TLMSn]`**
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk platelet-like particles with both charge transfer and diffusion impedances: **`[TLMS,TLMSn]`**
 
 
 
