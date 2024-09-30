@@ -76,8 +76,8 @@ Step 4: Define your model
 ==========================
 
 Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear equivalent circuit models (ECM), you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
-The following example presents a cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. 
-For EIS, the response of the two porous electrodes are in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response is defined as the difference between the responses of the positive and negative electrodes (NLEIS_circuit).
+The following example presents a two-electrode cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. Methodolological details are given in our peer reviewed paper `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_.
+For EIS of a two electrode cell, the individual impedances of each electrode are added in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response arises from the difference between the individual electrode responses, with the negative electrode 2nd-NLEIS signal subtracted from positive electrode (NLEIS_circuit).
 
 .. code-block:: python
 
@@ -94,7 +94,7 @@ For EIS, the response of the two porous electrodes are in series with an ohmic r
 Step 5: Fit to data 
 ==========================
 
-We then need to initialize a :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS.
+We then need to initialize the :code:`EISandNLEIS` class for simultaneous analysis of EIS and 2nd-NLEIS data.
 
 .. code-block:: python
 
@@ -184,7 +184,7 @@ Step 6: Visualize and print the results
 
 
 .. important::
-  🎉 Congratulations! You're now up and running with :code:`nleis.py` 🎉 For those who are already acquainted with :code:`impedance.py`, I hope you'll discover the similarities with :code:`nleis.py` and appreciate how closely aligned they are at this point.
+  🎉 Congratulations! You're now up and running with :code:`nleis.py` 🎉 For those who are already acquainted with :code:`impedance.py`, we expect you will quickly discover the similarities with :code:`nleis.py` and appreciate their close alignment at this point.
 
 .. note:: 
 
@@ -192,16 +192,16 @@ Step 6: Visualize and print the results
 
    - Nonlinear Randles circuit (charge transfer only): **`[RC,RCn]`**
    - Nonlinear Randles circuit with planar diffusion in a bounded thin film electrode: **`[RCD,RCDn]`**
-   - Nonlinear Randles circuit with diffusion into a spherical electrode: **`[RCS,RCSn]`**
-   - Porous electrode with high conductivity matrix (charge transfer only): **`[TP,TPn]`**
-   - Porous electrode with high conductivity matrix and planar diffusion into platelet-like particles: **`[TDP,TDPn]`**
-   - porous electrode with high conductivity matrix and diffusion into spherical particles: **`[TDS,TDSn]`**
-   - Porous electrode with high conductivity matrix and diffusion into cylindrical particles: **`[TDC,TDCn]`**
+   - Nonlinear Randles circuit with diffusion into spherical electrode particles (effectively a single particle model): **`[RCS,RCSn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer at the interface: **`[TP,TPn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer and diffusion into platelet-like electrode particles: **`[TDP,TDPn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer and diffusion into spherical electrode particles: **`[TDS,TDSn]`**
+   - High conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing charge transfer and diffusion into cylindrical electrode particles: **`[TDC,TDCn]`**
   
-  The nonlinear transmission line models (TLMs) and their corresponding current distribution functions are still under development. A detailed description will be included in the future.
-   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior (charge transfer only): **`[TLM,TLMn]`**
-   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior with diffusion into spherical particles: **`[TLMS,TLMSn]`**
-   - Nonlinear Transmission Line model with two RC branches that describe surface and bulk behavior with diffusion into platelet-like particles: **`[TLMS,TLMSn]`**
+  Nonlinear transmission line models (TLMs) and their corresponding current distribution functions are still under development. A detailed description will be included in the future.
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, representing an ultrathin surface film covering the bulk solid electrode : **`[TLM,TLMn]`**
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk spherical particles with both charge transfer and diffusion impedances: **`[TLMS,TLMSn]`**
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk platelet-like particles with both charge transfer and diffusion impedances: **`[TLMD,TLMDn]`**
 
 
 
