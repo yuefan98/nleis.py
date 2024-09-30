@@ -201,7 +201,7 @@ Step 6: Visualize and print the results
   Nonlinear transmission line models (TLMs) and their corresponding current distribution functions are still under development. A detailed description will be included in the future.
    - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, representing an ultrathin surface film covering the bulk solid electrode : **`[TLM,TLMn]`**
    - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk spherical particles with both charge transfer and diffusion impedances: **`[TLMS,TLMSn]`**
-   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk platelet-like particles with both charge transfer and diffusion impedances: **`[TLMS,TLMSn]`**
+   - Nonlinear Transmission Line model for a high conductivity porous electrode permeated by a low ionic conductivity electrolyte undergoing interfacial charge transfer through two RC circuits in series, with the first RC representing an ultrathin surface film covering bulk platelet-like particles with both charge transfer and diffusion impedances: **`[TLMD,TLMDn]`**
 
 
 
