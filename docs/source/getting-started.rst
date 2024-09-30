@@ -2,7 +2,7 @@
 Getting started with :code:`nleis.py`
 =========================================
 
-:code:`nleis.py` is designed to be a toolbox that can be seamlessly integrated into :code:`impedance.py` to facilitate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. nleis.py also supports building nonlinear equivalent circuit models. Due to the nonlinear nature, the smallest building block is the nonlinear Randles circuit in nleis.py, while a single resistor and capacitor are supported in impedance.py. In short, nleis.py requires a wrapper function for the pair of linear and nonlinear responses.
+:code:`nleis.py` is designed to be a toolbox that can be seamlessly integrated into :code:`impedance.py` to facilitate NLEIS analysis and simultaneous analysis of EIS and 2nd-NLEIS. :code:`nleis.py` also supports building nonlinear equivalent circuit models. Due to the nonlinear nature, the smallest building block is the nonlinear Randles circuit in :code:`nleis.py`, while a single resistor and capacitor are supported in :code:`impedance.py`. In short, :code:`nleis.py` requires a wrapper function for the pair of linear and nonlinear responses.
 
 .. hint::
   If you get stuck or believe you have found a bug, please feel free to open an
@@ -11,7 +11,7 @@ Getting started with :code:`nleis.py`
 Step 1: Installation
 ====================
 
-If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This toolbox is designed to be a toolbox for :code:`impedance.py`. Please follows the following instruction to setup an envrionment 
+If you are not familiar with :code:`impedance.py`, please first read `their documentation <https://impedancepy.readthedocs.io/en/latest/getting-started.html>`_ before exploring this toolbox. This software is designed to be a toolbox for :code:`impedance.py`. Please follows the following instruction to setup an envrionment 
 and install the :code:`nleis.py` from PyPI.
 
 The best way to use this toolbox is creating a virtual environment using the :code:`environment.yml` file in the GitHub repo.
@@ -49,9 +49,9 @@ which should open a new tab in your browser.
 Step 2: Import your data
 ========================
 
-To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be found from in Journal of Electrochemical Society.
+To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be found as open access articles in Journal of Electrochemical Society.
 
-Since there isn't a standard for data acquisition and preparation, the :code:`nleis.py` only provides a simple :code:`data_processing` to help users truncate their data. You will need to obtain your own frequencies, Z1, and Z2 data in order to use this function. A better data loading and processing function is under development.   
+Since there isn't an instrumentation standard for acquisition and processing of second harmonic NLEIS data, :code:`nleis.py` only provides simple :code:`data_processing` to help users truncate their own data. For now, users will need to obtain their own frequencies, Z1, and Z2 data in order to use this function. An alternative data loading and processing function is under development for EIS instruments that provide frequency-domain harmonic data or time-domain data suitable for signal processing.   
 
 .. code-block:: python
 
@@ -75,7 +75,7 @@ Here, we provide a simple data processing function to help you truncate your dat
 Step 4: Define your model
 ==========================
 
-Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear ECM, you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
+Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear equivalent circuit models (ECM), you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
 The following example presents a cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. 
 For EIS, the response of the two porous electrodes are in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response is defined as the difference between the responses of the positive and negative electrodes (NLEIS_circuit).
 
