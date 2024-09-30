@@ -77,7 +77,7 @@ Step 4: Define your model
 
 Unlike :code:`impedance.py`, the smallest building block is a nonlinear Randles circuit (charge transfer only). Please refer to :doc:`examples/nleis_example` on how to define a nonlinear equivalent circuit model. In short, if you are familiar with linear equivalent circuit models (ECM), you can easily create a nonlinear ECM by adding an `n` to the end of each linear element that can generate nonlinearity. 
 The following example presents a two-electrode cell model with porous electrodes composed of spherical particles for both the positive and negative electrodes. Methodolological details are given in our peer reviewed paper `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_.
-For EIS of a two electrode cell, the individual impedances of each electrode are added in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response arises from the difference between the individual electrode responses, with the negtive electrode 2nd-NLEIS signal subtracted from positive electrode (NLEIS_circuit).
+For EIS of a two electrode cell, the individual impedances of each electrode are added in series with an ohmic resistance and an inductance (EIS_circuit). The 2nd-NLEIS response arises from the difference between the individual electrode responses, with the negative electrode 2nd-NLEIS signal subtracted from positive electrode (NLEIS_circuit).
 
 .. code-block:: python
 
