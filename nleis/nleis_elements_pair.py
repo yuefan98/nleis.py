@@ -117,7 +117,7 @@ def RC(p, f):
     return Rct / (1 + ω_star*1j)
 
 
-@element(num_params=3, units=['Ohm', 'F', ''])
+@element(num_params=3, units=['Ohm', 'F', '-'])
 def RCn(p, f):
     '''
 
@@ -215,7 +215,7 @@ def RCD(p, f):
     return (Z)
 
 
-@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', ''])
+@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', '-'])
 def RCDn(p, f):
     '''
 
@@ -352,7 +352,7 @@ def RCS(p, f):
     return (Z)
 
 
-@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', ''])
+@element(num_params=6, units=['Ohms', 'F', 'Ohms', 's', '1/V', '-'])
 def RCSn(p, f):
     '''
 
@@ -485,7 +485,7 @@ def TP(p, f):
     return Z
 
 
-@element(num_params=4, units=['Ohms', 'Ohms', 'F', ''])
+@element(num_params=4, units=['Ohms', 'Ohms', 'F', '-'])
 def TPn(p, f):
     """
 
@@ -634,7 +634,7 @@ def TDP(p, f):
     return Z
 
 
-@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
+@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', '-'])
 def TDPn(p, f):
     """
 
@@ -803,7 +803,7 @@ def TDS(p, f):
     return Z
 
 
-@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
+@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', '-'])
 def TDSn(p, f):
     """
 
@@ -979,7 +979,7 @@ def TDC(p, f):
     return Z
 
 
-@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', ''])
+@element(num_params=7, units=['Ohms', 'Ohms', 'F', 'Ohms', 's', '1/V', '-'])
 def TDCn(p, f):
     """
 
@@ -1107,7 +1107,7 @@ def TDCn(p, f):
 # TLM Model #
 
 
-@element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
+@element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', '-'])
 def TLM(p, f):
     """
 
@@ -1157,7 +1157,7 @@ def TLM(p, f):
 ###
 
 
-@element(num_params=8, units=['Ohm', 'Ohm', 'F', '', 'Ohm', 'F', '', ''])
+@element(num_params=8, units=['Ohm', 'Ohm', 'F', '-', 'Ohm', 'F', '-', '-'])
 def TLMn(p, f):
     """
 
@@ -1262,7 +1262,7 @@ def TLMn(p, f):
     return (Z)
 
 
-@element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', ''])
+@element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', '-'])
 def mTi(p, f):
     """
 
@@ -1343,7 +1343,7 @@ def mTi(p, f):
     return (I1)
 
 
-@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', ''])
+@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-'])
 def TLMS(p, f):
     """
 
@@ -1407,8 +1407,8 @@ def TLMS(p, f):
     return (Req)
 
 
-@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '',
-                               '1/V', '', ''])
+@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-',
+                               '1/V', '-', '-'])
 def TLMSn(p, f):
     """
 
@@ -1520,7 +1520,7 @@ def TLMSn(p, f):
     return (Z)
 
 
-@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', ''])
+@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-'])
 def mTiS(p, f):
     """
 
@@ -1606,8 +1606,8 @@ def mTiS(p, f):
     return (I1)
 
 
-@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '',
-                               '1/V', '', ''])
+@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-',
+                               '1/V', '-', '-'])
 def mTiSn(p, f):
     """
 
@@ -1721,7 +1721,7 @@ def mTiSn(p, f):
     return (I2)
 
 
-@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', ''])
+@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-'])
 def TLMD(p, f):
     """
 
@@ -1783,8 +1783,8 @@ def TLMD(p, f):
     return (Req)
 
 
-@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '',
-                               '1/V', '', ''])
+@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-',
+                               '1/V', '-', '-'])
 def TLMDn(p, f):
     """
 
@@ -1894,7 +1894,7 @@ def TLMDn(p, f):
     return (Z)
 
 
-@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', ''])
+@element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-'])
 def mTiD(p, f):
     """
 
@@ -1980,8 +1980,8 @@ def mTiD(p, f):
     return (I1)
 
 
-@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '',
-                               '1/V', '', ''])
+@element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-',
+                               '1/V', '-', '-'])
 def mTiDn(p, f):
     """
 
@@ -2092,6 +2092,141 @@ def mTiDn(p, f):
         I2[freq, :] = np.linalg.solve(Ax, -b*Z2[freq]).flatten()[::-1]
 
     return (I2)
+
+
+@element(num_params=5, units=['Ohms', 'F', '-', 'Ohms', 's'])
+def RCSQ(p, f):
+    '''
+    Beta element with CPE implementation
+    EIS: Randles circuit (CPE element) with spherical diffusion
+
+    Notes
+    -----
+
+    .. math::
+
+    p[0] = Rct
+    p[1] = Qdl
+    p[2] = α
+    p[3] = Aw
+    p[4] = τd
+
+    '''
+    ω = np.array(f)*2*np.pi
+    Rct, Qdl, alpha, Aw, τd = p[0], p[1], p[2], p[3], p[4]
+
+    Zd = Aw*np.tanh(np.sqrt(1j*ω*τd)) / \
+        (np.sqrt(1j*ω*τd)-np.tanh(np.sqrt(1j*ω*τd)))
+
+    tau = Rct*Qdl
+    Z = Rct/(Rct/(Rct+Zd) + tau*(1j*ω)**alpha)
+    return (Z)
+
+
+@element(num_params=7, units=['Ohms', 'F', '-', 'Ohms', 's', '1/V', '-'])
+def RCSQn(p, f):
+    '''
+    Beta element with CPE implementation
+    2nd-NLEIS: Randles circuit (CPE element) with spherical diffusion
+
+    Notes
+    -----
+
+    .. math::
+
+    p[0] = Rct
+    p[1] = Qdl
+    p[2] = alpha
+    p[3] = Aw
+    p[4] = τd
+    p[5] = κ
+    p[6] = ε
+    '''
+
+    ω = np.array(f)*2*np.pi
+    Rct, Qdl, alpha, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
+
+    Zd1 = Aw*np.tanh(np.sqrt(1j*ω*τd)) / \
+        (np.sqrt(1j*ω*τd)-np.tanh(np.sqrt(1j*ω*τd)))
+    Zd2 = Aw*np.tanh(np.sqrt(1j*2*ω*τd)) / \
+        (np.sqrt(1j*2*ω*τd)-np.tanh(np.sqrt(1j*2*ω*τd)))
+
+    tau = Rct*Qdl
+    y1 = Rct/(Zd1+Rct)
+    y2 = (Zd1/(Zd1+Rct))
+
+    Z1 = Rct/(y1+tau*(1j*ω)**alpha)
+    const = ((Rct*κ*y2**2)-Rct*e*F/(R*T)*y1**2)/(Zd2+Rct)
+
+    Z2 = (const*Z1**2)/(tau*(1j*2*ω)**alpha+Rct/(Zd2+Rct))
+
+    return (Z2)
+
+
+@element(num_params=5, units=['Ohms', 'F', '-', 'Ohms', 's'])
+def RCDQ(p, f):
+    '''
+    Beta element with CPE implementation
+    EIS: Randles circuit (CPE element) with spherical diffusion
+
+    Notes
+    -----
+
+    .. math::
+
+    p[0] = Rct
+    p[1] = Qdl
+    p[2] = alpha
+    p[3] = Aw
+    p[4] = τd
+
+    '''
+    ω = np.array(f)*2*np.pi
+    Rct, Qdl, alpha, Aw, τd = p[0], p[1], p[2], p[3], p[4]
+
+    Zd = Aw / (np.sqrt(1j*ω*τd) * np.tanh(np.sqrt(1j*ω*τd)))
+
+    tau = Rct*Qdl
+    Z = Rct/(Rct/(Rct+Zd) + tau*(1j*ω)**alpha)
+    return (Z)
+
+
+@element(num_params=7, units=['Ohms', 'F', '-', 'Ohms', 's', '1/V', '-'])
+def RCDQn(p, f):
+    '''
+    Beta element with CPE implementation
+    2nd-NLEIS: Randles circuit (CPE element) with spherical diffusion
+
+    Notes
+    -----
+
+    .. math::
+
+    p[0] = Rct
+    p[1] = Qdl
+    p[2] = alpha
+    p[3] = Aw
+    p[4] = τd
+    p[5] = κ
+    p[6] = ε
+    '''
+
+    ω = np.array(f)*2*np.pi
+    Rct, Qdl, alpha, Aw, τd, κ, e = p[0], p[1], p[2], p[3], p[4], p[5], p[6]
+
+    Zd1 = Aw / (np.sqrt(1j*ω*τd) * np.tanh(np.sqrt(1j*ω*τd)))
+    Zd2 = Aw / (np.sqrt(1j*2*ω*τd) * np.tanh(np.sqrt(1j*2*ω*τd)))
+
+    tau = Rct*Qdl
+    y1 = Rct/(Zd1+Rct)
+    y2 = (Zd1/(Zd1+Rct))
+
+    Z1 = Rct/(y1+tau*(1j*ω)**alpha)
+    const = ((Rct*κ*y2**2)-Rct*e*F/(R*T)*y1**2)/(Zd2+Rct)
+
+    Z2 = (const*Z1**2)/(tau*(1j*2*ω)**alpha+Rct/(Zd2+Rct))
+
+    return (Z2)
 
 
 def get_element_from_name(name):

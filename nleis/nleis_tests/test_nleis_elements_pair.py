@@ -114,6 +114,44 @@ def test_RC():
 
     assert np.allclose(Z1, Z2)
 
+    # Test the convergence between
+    # Randles and Randles with CPE element (spherical diffusion)
+
+    # EIS
+    freqs = [0.001, 1.0, 1000]
+    circuit_1 = CustomCircuit('RCS', initial_guess=[1, 1, 1, 1])
+    circuit_2 = CustomCircuit('RCSQ', initial_guess=[1, 1, 1, 1, 1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # 2nd-NLEIS
+    circuit_1 = NLEISCustomCircuit('RCSn', initial_guess=[1, 1, 1, 1, 1, 1])
+    circuit_2 = NLEISCustomCircuit('RCSQn',
+                                   initial_guess=[1, 1, 1, 1, 1, 1, 1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # Test the convergence between
+    # Randles and Randles with CPE element (Planar diffusion)
+
+    # EIS
+    freqs = [0.001, 1.0, 1000]
+    circuit_1 = CustomCircuit('RCD', initial_guess=[1, 1, 1, 1])
+    circuit_2 = CustomCircuit('RCDQ', initial_guess=[1, 1, 1, 1, 1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # 2nd-NLEIS
+    circuit_1 = NLEISCustomCircuit('RCDn', initial_guess=[1, 1, 1, 1, 1, 1])
+    circuit_2 = NLEISCustomCircuit('RCDQn',
+                                   initial_guess=[1, 1, 1, 1, 1, 1, 1])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
 
 def test_d():
     a = np.array([5 + 6 * 1j, 2 + 3 * 1j])

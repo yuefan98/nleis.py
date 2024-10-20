@@ -110,7 +110,6 @@ def seq_fit_param(input_dic, target_arr, output_arr):
 
 
 def set_default_bounds(circuit, constants={}):
-
     """
     Set default bounds for optimization.
 
@@ -170,10 +169,12 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['RCn'] and i == 2:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and (i == 5):
+            elif raw_element in ['TDSn', 'TDPn', 'TDCn', 'RCSQn',
+                                 'RCDQn'] and (i == 5):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-            elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and i == 6:
+            elif raw_element in ['TDSn', 'TDPn', 'TDCn', 'RCSQn',
+                                 'RCDQn'] and i == 6:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['RCDn', 'RCSn'] and (i == 4):
@@ -191,6 +192,10 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['TLMSn', 'TLMDn'] and (i == 8):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
+            elif raw_element in ['RCSQ', 'RCSQn',
+                                 'RCDQ', 'RCDQn'] and (i == 2):
+                upper_bounds.append(1)
+                lower_bounds.append(0)
             else:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(0)
