@@ -621,8 +621,8 @@ class EISandNLEIS:
             # plot_nyquist(Z2_fit,units='Ohms/A', ls='-',
             # marker='', ax=ax[1], **kwargs)
 
-            ax[0].legend(['data', 'fit'])
-            ax[1].legend(['data', 'fit'])
+            ax[0].legend(['Data', 'Fit'])
+            ax[1].legend(['Data', 'Fit'])
             return ax
         elif kind == 'bode':
             if ax is None:
@@ -1136,7 +1136,7 @@ class NLEISCustomCircuit(BaseCircuit):
             # plot_nyquist(Z2_fit,units='Ohms/A', ls='-',
             # marker='', ax=ax, **kwargs)
 
-            ax.legend(['data', 'fit'])
+            ax.legend(['Data', 'Fit'])
             return ax
         elif kind == 'bode':
             if ax is None:

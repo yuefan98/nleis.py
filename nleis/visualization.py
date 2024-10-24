@@ -65,6 +65,7 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
     if '-' in fmts:
         df = Z_df.groupby('fmt').get_group('-')
         # These are changed to introduce harmonics and units
+
         nyquist = alt.Chart(df).mark_line().encode(
             x=alt.X('z_real:Q', axis=alt.Axis(
                 title="Z{}' [{}]".format(k, units)),
@@ -151,7 +152,7 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
 
         bode_mag = bode.encode(
             y=alt.Y('mag:Q', axis=alt.Axis(
-                title="|Z{}|' [{}]".format(k, units)), sort=None))
+                title="|Z{}| [{}]".format(k, units)), sort=None))
         bode_phs = bode.encode(
             y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
 

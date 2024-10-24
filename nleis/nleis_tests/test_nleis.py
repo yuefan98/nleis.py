@@ -173,49 +173,6 @@ def test_eq():
         simul_circuit == NLEIS_circuit
 
 
-def test_NLEISCustomCircuit():
-    circ_str = 'd(TDSn0,TDSn1)'
-    initial_guess = [
-        5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
-        # TDS0 + additioal nonlinear parameters
-        1e-3, 1e-3, 1e-3, 1e-2, 1000, 0, 0,
-        # TDS1 + additioal nonlinear parameters
-    ]
-
-    NLEIS_circuit = NLEISCustomCircuit(
-        circ_str, initial_guess=initial_guess)
-
-    assert not NLEIS_circuit._is_fit()
-
-    # check get_param_names()
-    full_names_NLEIS, all_units_NLEIS = NLEIS_circuit.get_param_names()
-    assert full_names_NLEIS == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
-                                'TDSn0_4', 'TDSn0_5',
-                                'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
-                                'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
-    assert all_units_NLEIS == ['Ohms', 'Ohms', 'F', 'Ohms', 's',
-                               '1/V', '', 'Ohms', 'Ohms', 'F', 'Ohms', 's',
-                               '1/V', '']
-
-    # check _is_fit()
-    assert not NLEIS_circuit._is_fit()
-
-    # check complex frequencies raise TypeError
-    with pytest.raises(TypeError):
-        NLEIS_circuit.predict([0.42, 42 + 42j])
-
-    # test is_fit method
-    NLEIS_circuit.fit(f, Z2)
-    assert NLEIS_circuit._is_fit()
-
-    # test extract method
-    dict = NLEIS_circuit.extract()
-    assert list(dict.keys()) == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
-                                 'TDSn0_4', 'TDSn0_5',
-                                 'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
-                                 'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
-
-
 def test_EISandNLEIS_fitting():
     circ_str_1 = 'L0-R0-TDS0-TDS1'
     circ_str_2 = 'd(TDSn0,TDSn1)'
@@ -313,3 +270,71 @@ def test_EISandNLEIS_fitting():
                 1.71140213e+02, 2.77968560e+09, 1.02284629e+00, 6.38830393e-03]
 
     assert np.allclose(p2, results2, rtol=1e-3, atol=1e-3)
+
+
+def test_NLEISCustomCircuit():
+    circ_str = 'd(TDSn0,TDSn1)'
+    initial_guess = [
+        5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
+        # TDS0 + additioal nonlinear parameters
+        1e-3, 1e-3, 1e-3, 1e-2, 1000, 0, 0,
+        # TDS1 + additioal nonlinear parameters
+    ]
+
+    NLEIS_circuit = NLEISCustomCircuit(
+        circ_str, initial_guess=initial_guess)
+
+    assert not NLEIS_circuit._is_fit()
+
+    # check get_param_names()
+    full_names_NLEIS, all_units_NLEIS = NLEIS_circuit.get_param_names()
+    assert full_names_NLEIS == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
+                                'TDSn0_4', 'TDSn0_5',
+                                'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
+                                'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
+    assert all_units_NLEIS == ['Ohms', 'Ohms', 'F', 'Ohms', 's',
+                               '1/V', '', 'Ohms', 'Ohms', 'F', 'Ohms', 's',
+                               '1/V', '']
+
+    # check _is_fit()
+    assert not NLEIS_circuit._is_fit()
+
+    # check complex frequencies raise TypeError
+    with pytest.raises(TypeError):
+        NLEIS_circuit.predict([0.42, 42 + 42j])
+
+    # test is_fit method
+    NLEIS_circuit.fit(f, Z2)
+    assert NLEIS_circuit._is_fit()
+
+    # test extract method
+    dict = NLEIS_circuit.extract()
+    assert list(dict.keys()) == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
+                                 'TDSn0_4', 'TDSn0_5',
+                                 'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
+                                 'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
+
+    # test plotting
+    # kind = {'nyquist', 'bode'} should return a plt.Axes() object
+    _, ax = plt.subplots()
+    assert isinstance(NLEIS_circuit.plot(
+        ax, None, Z2, kind='nyquist'), type(ax))
+    assert isinstance(NLEIS_circuit.plot(
+        None, f, Z2, kind='nyquist'), type(ax))
+    _, axes = plt.subplots(1, 2)
+    assert isinstance(NLEIS_circuit.plot(
+        axes, f, Z2, kind='bode')[0], type(ax))
+    assert isinstance(NLEIS_circuit.plot(
+        None, f, Z2, kind='bode')[0], type(ax))
+
+    # check altair plotting with a fit circuit
+    chart = NLEIS_circuit.plot(f_data=f, Z2_data=Z2,
+                               kind='altair')
+
+    datasets = json.loads(chart.to_json())['datasets']
+    for dataset in datasets.keys():
+        assert len(datasets[dataset]) == len(Z2_trunc)
+
+    # incorrect kind raises a ValueError
+    with pytest.raises(ValueError):
+        NLEIS_circuit.plot(None, f, Z2, kind='SomethingElse')
