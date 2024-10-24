@@ -18,6 +18,10 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
             'f': frequencies
             'Z': impedance
             'fmt': {'-' for a line, else circles}
+        k: int
+            harmonic of the impedance data
+        units: str
+            unit of the impedance data
         size: int
             size in pixels of Nyquist height/width
         background: str
@@ -54,13 +58,14 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
                                    empty='none', fields=['f'])
     # potential future improvement
     # nearest = alt.selection_point(on='mouseover', nearest=True,
-    #                                empty='none', fields=['f'])
+    #                               empty='none', fields=['f'])
 
     fmts = Z_df['fmt'].unique()
     nyquists, bode_mags, bode_phss = [], [], []
     if '-' in fmts:
         df = Z_df.groupby('fmt').get_group('-')
         # These are changed to introduce harmonics and units
+
         nyquist = alt.Chart(df).mark_line().encode(
             x=alt.X('z_real:Q', axis=alt.Axis(
                 title="Z{}' [{}]".format(k, units)),
@@ -92,7 +97,7 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
 
         bode_mag = bode.encode(
             y=alt.Y('mag:Q', axis=alt.Axis(
-                title="|Z{}|' [{}]".format(k, units)), sort=None))
+                title="|Z{}| [{}]".format(k, units)), sort=None))
         bode_phs = bode.encode(
             y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
 
@@ -117,6 +122,9 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
             color=alt.Color('kind:N', legend=alt.Legend(title='Legend'))
         ).add_selection(
             nearest
+            # potential future improvement
+            # ).add_params(
+            #     nearest
         ).properties(
             height=size,
             width=size
@@ -131,6 +139,9 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
             color='kind:N'
         ).add_selection(
             nearest
+            # potential future improvement
+            # ).add_params(
+            #     nearest
         ).properties(
             width=size,
             height=size/2 - 25
@@ -141,7 +152,7 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
 
         bode_mag = bode.encode(
             y=alt.Y('mag:Q', axis=alt.Axis(
-                title="|Z{}|' [{}]".format(k, units)), sort=None))
+                title="|Z{}| [{}]".format(k, units)), sort=None))
         bode_phs = bode.encode(
             y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
 

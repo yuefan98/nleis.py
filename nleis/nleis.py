@@ -334,7 +334,6 @@ class EISandNLEIS:
             return False
 
     def predict(self, frequencies, max_f=10, use_initial=False):
-
         """
         Predict EIS and 2nd-NLEIS using
         linear and nonlinear equivalent circuit model.
@@ -492,7 +491,6 @@ class EISandNLEIS:
         return to_print
 
     def extract(self):
-
         """
         Extracts the parameters of
         EIS and 2nd-NLEIS circuits into dictionaries.
@@ -531,7 +529,6 @@ class EISandNLEIS:
 
     def plot(self, ax=None, f_data=None, Z1_data=None, Z2_data=None,
              kind='nyquist', max_f=10, **kwargs):
-
         """
         Visualizes the model and optional data as Nyquist, Bode,
         or Altair (interactive) plots.
@@ -624,8 +621,8 @@ class EISandNLEIS:
             # plot_nyquist(Z2_fit,units='Ohms/A', ls='-',
             # marker='', ax=ax[1], **kwargs)
 
-            ax[0].legend(['data', 'fit'])
-            ax[1].legend(['data', 'fit'])
+            ax[0].legend(['Data', 'Fit'])
+            ax[1].legend(['Data', 'Fit'])
             return ax
         elif kind == 'bode':
             if ax is None:
@@ -649,27 +646,28 @@ class EISandNLEIS:
                 mask = np.array(f_pred) < max_f
                 f2 = f_data[mask]
                 Z2 = Z2_data[mask]
-                ax[:, 1] = plot_bode(f2, Z2, units='Ohms/A', ls='', marker='s',
+                ax[:, 1] = plot_bode(f2, Z2, units='Ω/A', ls='', marker='s',
                                      axes=ax[:, 1], **kwargs)
             # we don't need the if else statement
             # if we want to enable plot without fit
             # if self._is_fit():
             Z1_fit, Z2_fit = self.predict(f_pred, max_f=max_f)
-            f1 = f_data
-            f2 = f_data[np.array(f_data) < max_f]
+
+            f1 = f_pred
+            f2 = f_pred[np.array(f_pred) < max_f]
 
             ax[:, 0] = plot_bode(f1, Z1_fit, ls='-', marker='o',
                                  axes=ax[:, 0], **kwargs)
-            ax[:, 1] = plot_bode(f2, Z2_fit, units='Ohms/A', ls='-',
+            ax[:, 1] = plot_bode(f2, Z2_fit, units='Ω/A', ls='-',
                                  marker='o',
                                  axes=ax[:, 1], **kwargs)
 
             ax[0, 0].set_ylabel(r'$|Z_{1}(\omega)|$ ' +
-                                '$[{}]$'.format('Ohms'), fontsize=20)
+                                '$[{}]$'.format('Ω'), fontsize=20)
             ax[1, 0].set_ylabel(
                 r'$-\phi_{Z_{1}}(\omega)$ ' + r'$[^o]$', fontsize=20)
             ax[0, 1].set_ylabel(r'$|Z_{2}(\omega)|$ ' +
-                                '$[{}]$'.format('Ohms/A'), fontsize=20)
+                                '$[{}]$'.format('Ω/A'), fontsize=20)
             ax[1, 1].set_ylabel(
                 r'$-\phi_{Z_{2}}(\omega)$ ' + r'$[^o]$', fontsize=20)
             ax[0, 0].legend(['Data', 'Fit'], fontsize=20)
@@ -716,7 +714,6 @@ class EISandNLEIS:
                              f"'nyquist', or 'bode' (received {kind})")
 
     def save(self, filepath):
-
         """
         Exports the model to a JSON file.
 
@@ -772,7 +769,6 @@ class EISandNLEIS:
             json.dump(data_dict, f)
 
     def load(self, filepath, fitted_as_initial=False):
-
         """
         Imports a model from a JSON file.
 
@@ -956,17 +952,22 @@ class NLEISCustomCircuit(BaseCircuit):
 
         return self
 
-    def predict(self, frequencies, use_initial=False):
+    def predict(self, frequencies, max_f=10, use_initial=False):
         """
 
         Predict impedance using an nonlinear equivalent circuit model
 
         Parameters
         ----------
-        frequencies: array-like of numeric type
-        use_initial: boolean
-            If true and the model was previously fit use the initial
-            parameters instead
+        frequencies : numpy.ndarray
+            Array of frequency values.
+
+        max_f : float, optional
+            The maximum frequency of interest for 2nd-NLEIS. Default is 10.
+
+        use_initial : bool
+            If True and the model was previously fit,
+            use the initial parameters instead of the fitted ones.
 
         Returns
         -------
@@ -975,6 +976,8 @@ class NLEISCustomCircuit(BaseCircuit):
 
         """
         frequencies = np.array(frequencies, dtype=float)
+        mask = np.array(frequencies) < max_f
+        frequencies = frequencies[mask]
 
         if self._is_fit() and not use_initial:
             return eval(buildCircuit(self.circuit, frequencies,
@@ -1023,7 +1026,6 @@ class NLEISCustomCircuit(BaseCircuit):
         return full_names, all_units
 
     def extract(self):
-
         """
         Extracts the parameter names and values of the fitted circuit model.
 
@@ -1048,3 +1050,160 @@ class NLEISCustomCircuit(BaseCircuit):
                 dict[name] = param
 
         return dict
+
+    def plot(self, ax=None, f_data=None, Z2_data=None,
+             kind='nyquist', max_f=10, **kwargs):
+        """
+        Visualizes the model and optional data as Nyquist, Bode,
+        or Altair (interactive) plots.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Axes to plot on. If None, a new figure and axes will be created.
+
+        f_data : numpy.ndarray, optional
+            Array of frequency values for input data (used for Bode plots).
+            The default is None.
+
+        Z2_data : numpy.ndarray of complex, optional
+            Array of 2nd-NLEIS values (impedance data). The default is None.
+
+        kind : {'altair', 'nyquist', 'bode'}, optional
+            The type of plot to visualize.
+
+            - 'nyquist': Nyquist plot of real vs imaginary impedance.
+
+            - 'bode': Bode plot showing magnitude and phase.
+
+            - 'altair': Altair plot for interactive visualizations.
+
+            Default is 'nyquist'.
+
+        max_f : float, optional
+            The maximum frequency of interest for 2nd-NLEIS data.
+            The default is 10.
+
+        **kwargs : optional
+            Additional keyword arguments passed to `matplotlib.pyplot.Line2D`
+            (for 'nyquist' or 'bode') to specify properties like linewidth,
+            color, marker type, etc.
+            If `kind` is 'altair',
+            `kwargs` is used to specify plot height as `size`.
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes or tuple of Axes, optional
+            Axes object(s) with the plotted data
+            if 'nyquist' or 'bode' plot is used.
+
+        chart : altair.Chart, optional
+            If `kind` is 'altair', it returns Altair chart objects
+            for 2nd-NLEIS data.
+
+        Raises
+        ------
+        ValueError
+            If an unsupported `kind` is provided.
+        """
+
+        if kind == 'nyquist':
+            if ax is None:
+                _, ax = plt.subplots(figsize=(5, 5))
+
+            # we don't need the if else statement if we want
+            # to enable plot without fit
+            # if self._is_fit():
+            if f_data is not None:
+                f_pred = f_data
+            else:
+                f_pred = np.logspace(5, -3)
+
+            if Z2_data is not None:
+                if f_data is not None:
+                    mask = np.array(f_data) < max_f
+                    ax = plot_second(ax, Z2_data[mask],
+                                     scale=1, fmt='s', **kwargs)
+                else:
+                    ax = plot_second(ax, Z2_data,
+                                     scale=1, fmt='s', **kwargs)
+                # impedance.py style
+                # plot_nyquist(Z2_data, units='Ohms/A', ls='',
+                # marker='s', ax=ax, **kwargs)
+
+            Z2_fit = self.predict(f_pred, max_f=max_f)
+            ax = plot_second(ax, Z2_fit, scale=1, fmt='-', **kwargs)
+            # plot_nyquist(Z2_fit,units='Ohms/A', ls='-',
+            # marker='', ax=ax, **kwargs)
+
+            ax.legend(['Data', 'Fit'])
+            return ax
+        elif kind == 'bode':
+            if ax is None:
+                _, ax = plt.subplots(nrows=2, figsize=(8, 8))
+
+            if f_data is not None:
+                f_pred = f_data
+            else:
+                f_pred = np.logspace(5, -3)
+
+            if Z2_data is not None:
+                if f_data is None:
+                    raise ValueError('f_data must be specified if' +
+                                     ' Z_data for a Bode plot')
+                mask = np.array(f_pred) < max_f
+                f2 = f_data[mask]
+                Z2 = Z2_data[mask]
+                ax = plot_bode(f2, Z2, units='Ω/A', ls='', marker='s',
+                               axes=ax, **kwargs)
+            # we don't need the if else statement
+            # if we want to enable plot without fit
+            # if self._is_fit():
+            Z2_fit = self.predict(f_pred, max_f=max_f)
+
+            f2 = f_pred[np.array(f_pred) < max_f]
+
+            ax = plot_bode(f2, Z2_fit, units='Ω/A', ls='-',
+                           marker='o',
+                           axes=ax, **kwargs)
+
+            ax[0].set_ylabel(r'$|Z_{2}(\omega)|$ ' +
+                             '$[{}]$'.format('Ω/A'), fontsize=20)
+            ax[1].set_ylabel(
+                r'$-\phi_{Z_{2}}(\omega)$ ' + r'$[^o]$', fontsize=20)
+            ax[0].legend(['Data', 'Fit'], fontsize=20)
+            ax[1].legend(['Data', 'Fit'], fontsize=20)
+
+            return ax
+        elif kind == 'altair':
+            plot_dict = {}
+
+            if (Z2_data is not None) and (f_data is not None):
+                mask = np.array(f_data) < max_f
+                plot_dict['data'] = {'f': f_data[mask], 'Z': Z2_data[mask]}
+            # we don't need the if else statement
+            # if we want to enable plot without fit
+            # if self._is_fit():
+            if f_data is not None:
+
+                f_pred = f_data
+
+            else:
+
+                f_pred = np.logspace(5, -3)
+
+            if self.name is not None:
+                name = self.name
+            else:
+                name = 'fit'
+
+            Z2_fit = self.predict(f_pred, max_f=max_f)
+            mask = np.array(f_pred) < max_f
+            plot_dict[name] = {'f': f_pred[mask], 'Z': Z2_fit, 'fmt': '-'}
+
+            chart = plot_altair(plot_dict, k=2, units='Ω/A', **kwargs)
+
+            return chart
+        else:
+            raise ValueError("Kind must be one of 'altair'," +
+                             f"'nyquist', or 'bode' (received {kind})")
