@@ -297,14 +297,16 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
         x1, x2 = wrappedImpedance(edited_circuit,
                                   circuit_1, constants_1, circuit_2,
                                   constants_2, f1, f2, parameters*ub)
+        # No normalization in currently applied
         # Z1max = max(np.abs(Z1))
         # Z2max = max(np.abs(Z2))
         # log1 = np.log(sum(((Z1.real-x1.real)/Z1max)**2))
         # +np.log(sum(((Z1.imag-x1.imag)/Z1max)**2))
         # log2 = np.log(sum(((Z2.real-x2.real)/Z2max)**2))
         # +np.log(sum(((Z2.imag-x2.imag)/Z2max)**2))
-        log1 = np.log(sum(((Z1-x1))**2))
-        log2 = np.log(sum(((Z2-x2))**2))
+
+        log1 = np.log(sum(abs(Z1-x1)**2))
+        log2 = np.log(sum(abs(Z2-x2)**2))
         return (cost*log1+(1-cost)*log2)
     return wrappedNeg_log_likelihood
 
