@@ -17,11 +17,11 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
             dictionary with keys
             'f': frequencies
             'Z': impedance
-            'fmt': {'-' for a line, else circles}
+            'fmt': {'-' for a line with circles, else circles}
         k: int
-            harmonic of the impedance data
+            harmonics of the impedance data
         units: str
-            unit of the impedance data
+            units of the impedance data
         size: int
             size in pixels of Nyquist height/width
         background: str
@@ -41,7 +41,7 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
         df = pd.DataFrame({'f': f, 'z_real': Z.real, 'z_imag': Z.imag,
                            'kind': kind, 'fmt': fmt})
 
-        Z_df = pd.concat([Z_df, df])
+        Z_df = pd.concat([Z_df, df], ignore_index=True)
         # Z_df.append(df)
 
     range_x = max(Z_df['z_real']) - min(Z_df['z_real'])
@@ -55,7 +55,8 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
     max_y = min(-Z_df['z_imag']) + rng
 
     nearest = alt.selection_single(on='mouseover', nearest=True,
-                                   empty='none', fields=['f'])
+                                   empty='none', fields=['f'],
+                                   clear='mouseout')
     # potential future improvement
     # nearest = alt.selection_point(on='mouseover', nearest=True,
     #                               empty='none', fields=['f'])
@@ -66,7 +67,7 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
         df = Z_df.groupby('fmt').get_group('-')
         # These are changed to introduce harmonics and units
 
-        nyquist = alt.Chart(df).mark_line().encode(
+        nyquist = alt.Chart(df).mark_circle().encode(
             x=alt.X('z_real:Q', axis=alt.Axis(
                 title="Z{}' [{}]".format(k, units)),
                 scale=alt.Scale(domain=[min_x, max_x],
@@ -75,7 +76,35 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
                 title="-Z{}'' [{}]".format(k, units)),
                 scale=alt.Scale(domain=[min_y, max_y],
                                 nice=False, padding=5), sort=None),
-            color='kind:N'
+            size=alt.condition(nearest, alt.value(80), alt.value(30)),
+
+            color='kind:N',
+            tooltip=[  # Added Tooltips to show values
+                alt.Tooltip('kind:N', title="Kind"),
+                alt.Tooltip('f:Q', title="f [Hz]"),
+                alt.Tooltip('z_real:Q', title="Z{}' [{}]".format(k, units)),
+                alt.Tooltip('z_imag:Q', title="Z{}'' [{}]".format(k, units))
+            ]
+        ).add_selection(
+            nearest
+        ).properties(
+            height=size,
+            width=size
+        ).transform_calculate(
+            neg_z_imag='-datum.z_imag'
+        ).interactive()
+
+        nyquist_line_plot = alt.Chart(df).mark_line().encode(
+            x=alt.X('z_real:Q', axis=alt.Axis(
+                title="Z{}' [{}]".format(k, units)),
+                scale=alt.Scale(domain=[min_x, max_x],
+                                nice=False, padding=5), sort=None),
+            y=alt.Y('neg_z_imag:Q', axis=alt.Axis(
+                title="-Z{}'' [{}]".format(k, units)),
+                scale=alt.Scale(domain=[min_y, max_y],
+                                nice=False, padding=5), sort=None),
+            color='kind:N',
+            order=alt.Order('f:Q', sort='ascending')
         ).properties(
             height=size,
             width=size
@@ -83,10 +112,45 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
             neg_z_imag='-datum.z_imag'
         )
 
-        bode = alt.Chart(df).mark_line().encode(
+        bode = alt.Chart(df).mark_circle().encode(
             alt.X('f:Q', axis=alt.Axis(title="f [Hz]"),
                   scale=alt.Scale(type='log', nice=False), sort=None),
-            color='kind:N'
+            size=alt.condition(nearest, alt.value(80), alt.value(30)),
+
+            color='kind:N',
+        ).add_selection(
+            nearest
+        ).properties(
+            width=size,
+            height=size/2 - 25
+        ).transform_calculate(
+            mag="sqrt(pow(datum.z_real,2) + pow(datum.z_imag,2))",
+            neg_phase="-(180/PI)*atan2(datum.z_imag,datum.z_real)"
+        ).interactive()
+
+        bode_mag = bode.encode(
+            y=alt.Y('mag:Q', axis=alt.Axis(
+                title="|Z{}| [{}]".format(k, units)), sort=None),
+            tooltip=[  # Added Tooltips to show values
+                alt.Tooltip('kind:N', title="Kind"),
+                alt.Tooltip('f:Q', title="f [Hz]"),
+                alt.Tooltip('mag:Q', title="|Z{}| [{}]".format(k, units))
+            ]
+        )
+        bode_phs = bode.encode(
+            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ{} [°]".format(k)),
+                    sort=None),
+            tooltip=[  # Added Tooltips to show values
+                alt.Tooltip('kind:N', title="Kind"),
+                alt.Tooltip('f:Q', title="f [Hz]"),
+                alt.Tooltip('neg_phase:Q', title="-ϕ{} [°]".format(k)),
+            ]
+        )
+
+        bode_line_plot = alt.Chart(df).mark_line().encode(
+            alt.X('f:Q', axis=alt.Axis(title="f [Hz]"),
+                  scale=alt.Scale(type='log', nice=False), sort=None),
+            color='kind:N',
         ).properties(
             width=size,
             height=size/2 - 25
@@ -95,16 +159,21 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
             neg_phase="-(180/PI)*atan2(datum.z_imag,datum.z_real)"
         )
 
-        bode_mag = bode.encode(
+        bode_mag_line_plot = bode_line_plot.encode(
             y=alt.Y('mag:Q', axis=alt.Axis(
-                title="|Z{}| [{}]".format(k, units)), sort=None))
-        bode_phs = bode.encode(
-            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
+                title="|Z{}| [{}]".format(k, units)), sort=None),
+        )
+        bode_phs_line_plot = bode_line_plot.encode(
+            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ{} [°]".format(k)),
+                    sort=None),
+        )
 
         nyquists.append(nyquist)
+        nyquists.append(nyquist_line_plot)
         bode_mags.append(bode_mag)
+        bode_mags.append(bode_mag_line_plot)
         bode_phss.append(bode_phs)
-        nyquists
+        bode_phss.append(bode_phs_line_plot)
 
     if 'o' in fmts:
         df = Z_df.groupby('fmt').get_group('o')
@@ -119,7 +188,13 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
                 scale=alt.Scale(domain=[min_y, max_y],
                                 nice=False, padding=5), sort=None),
             size=alt.condition(nearest, alt.value(80), alt.value(30)),
-            color=alt.Color('kind:N', legend=alt.Legend(title='Legend'))
+            color=alt.Color('kind:N', legend=alt.Legend(title='Legend')),
+            tooltip=[  # Added Tooltips to show values
+                alt.Tooltip('kind:N', title="Kind"),
+                alt.Tooltip('f:Q', title="f [Hz]"),
+                alt.Tooltip('z_real:Q', title="Z{}' [{}]".format(k, units)),
+                alt.Tooltip('z_imag:Q', title="Z{}'' [{}]".format(k, units))
+            ]
         ).add_selection(
             nearest
             # potential future improvement
@@ -152,9 +227,21 @@ def plot_altair(data_dict, k=1, units='Ω', size=400, background='#FFFFFF'):
 
         bode_mag = bode.encode(
             y=alt.Y('mag:Q', axis=alt.Axis(
-                title="|Z{}| [{}]".format(k, units)), sort=None))
+                title="|Z{}| [{}]".format(k, units)), sort=None),
+            tooltip=[  # Added Tooltips to show values
+                alt.Tooltip('kind:N', title="Kind"),
+                alt.Tooltip('f:Q', title="f [Hz]"),
+                alt.Tooltip('mag:Q', title="|Z{}| [{}]".format(k, units))
+            ])
         bode_phs = bode.encode(
-            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ [°]"), sort=None))
+            y=alt.Y('neg_phase:Q', axis=alt.Axis(title="-ϕ{} [°]".format(k)),
+                    sort=None),
+            tooltip=[  # Added Tooltips to show values
+                alt.Tooltip('kind:N', title="Kind"),
+                alt.Tooltip('f:Q', title="f [Hz]"),
+                alt.Tooltip('neg_phase:Q',
+                            title="-ϕ{} [°]".format(k)),
+            ])
 
         nyquists.append(nyquist)
         bode_mags.append(bode_mag)
