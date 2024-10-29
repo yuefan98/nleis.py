@@ -94,7 +94,10 @@ class EISandNLEIS:
                     'Either circuit_1 or circuit_2 cannot be empty')
             edited_circuit = ''
             for elem in elements_1:
-                nl_elem = elem[0:-1]+'n'+elem[-1]
+                raw_elem = get_element_from_name(elem)
+                len_raw_elem = len(raw_elem)
+                nl_elem = elem[0:len_raw_elem] + 'n' + elem[len_raw_elem:]
+                # elem[0:-1]+'n'+elem[-1]
                 if nl_elem in elements_2:
                     edited_circuit += '-' + nl_elem
                 else:
@@ -160,9 +163,12 @@ class EISandNLEIS:
                         len_elem = len(raw_elem)
                         nl_elem = elem[0:len_elem]+'n'+elem[len_elem:]
                         raw_nl_elem = get_element_from_name(nl_elem)
-                        if raw_nl_elem in circuit_elements.keys():
+                        allowed_elems = circuit_elements.keys()
+                        if raw_nl_elem in allowed_elems:
                             self.constants_2[nl_elem] = self.constants[elem]
                         else:
+                            # this code is kept here to ignore
+                            # EIS only constants in constnats_2
                             self.constants_2[elem] = self.constants[elem]
 
                     if raw_elem[-1] == 'n':
@@ -174,11 +180,9 @@ class EISandNLEIS:
                                 + f'number of parameters ({raw_num_params})')
 
                         num_params = check_and_eval(raw_elem[0:-1]).num_params
-                        len_elem = len(raw_elem[0:-1])
                         if param_num < num_params:
-                            self.constants_1[
-                                elem[0:len_elem] +
-                                elem[len_elem+1:]] = self.constants[elem]
+                            self.constants_1[elem.replace(
+                                'n', '')] = self.constants[elem]
                         self.constants_2[elem] = self.constants[elem]
 
         else:

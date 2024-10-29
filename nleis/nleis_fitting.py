@@ -187,15 +187,17 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
             inf_in_bounds = np.any(np.isinf(bounds[0])) \
                 or np.any(np.isinf(bounds[1]))
             if inf_in_bounds:
-                lb = np.where(bounds[0] == -np.inf, -1e10, bounds[0])
-                ub = np.where(bounds[1] == np.inf, 1e10, bounds[1])
+                lb = np.where(np.array(bounds[0]) == -np.inf, -1e10, bounds[0])
+                ub = np.where(np.array(bounds[1]) == np.inf, 1e10, bounds[1])
                 bounds = (lb, ub)
                 warnings.warn("inf is detected in the bounds, "
                               "to enable parameter normalization, "
                               "the bounds has been capped at 1e10. "
                               "You can disable parameter normalization "
                               "by set param_norm to False .")
-            # ub = bounds[1]
+            else:
+                ub = bounds[1]
+
             bounds = bounds/ub
         else:
             ub = np.ones(len(bounds[1]))

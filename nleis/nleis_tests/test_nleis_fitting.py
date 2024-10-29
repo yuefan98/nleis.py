@@ -288,6 +288,16 @@ def test_buildCircuit():
                         constants={})[0].replace(' ', '') == \
         'R([100],[1000.0,5.0,0.01])'
 
+    # Test two elements circuit with constants for one elements
+    circuit = 'R1-R2'
+    params = [100]
+    frequencies = [1000.0, 5.0, 0.01]
+
+    assert buildCircuit(circuit, frequencies, *params,
+                        constants={'R2': 1})[0].replace(' ', '') == \
+        's([R([100],[1000.0,5.0,0.01]),' +\
+        'R([1],[1000.0,5.0,0.01])])'
+
 
 def test_mae():
     a = np.array([2 + 4*1j, 3 + 2*1j])
@@ -365,9 +375,18 @@ def test_simul_fit():
                           edited_circuit, initial_guess, constants_1={},
                           constants_2={},
                           bounds=None, opt='max', cost=0.5, max_f=10,
-                          param_norm=True, positive=True)
+                          param_norm=False, positive=False)
 
     assert np.allclose(p, results, rtol=1e-3, atol=1e-3)
+
+    # test the option of parameter normalization
+    with pytest.warns(UserWarning, match="inf is detected in the bounds"):
+        bounds = set_default_bounds(edited_circuit)
+        p, perror = simul_fit(f, Z1, Z2, circ_str_1, circ_str_2,
+                              edited_circuit, initial_guess, constants_1={},
+                              constants_2={},
+                              bounds=bounds, opt='max', cost=0.5, max_f=10,
+                              param_norm=True, positive=True)
 
 
 def test_individual_parameters():
@@ -446,8 +465,6 @@ def test_individual_parameters():
         constants_1={'TDS1_0': 0}, constants_2={'TDSn0_6': 0.1})
     assert np.allclose(p1, [1e-7, 1e-3, 5e-3, 1e-3, 10.0,
                        1e-02, 100.0, 1e-3, 1e-03, 1e-02, 1000.0])
-    print(p1)
-    print(p2)
     assert np.allclose(p2, [5e-3, 1e-3, 10, 1e-2, 100, 10])
 
     # test the case when only one electrode is contributing to the 2nd-NLEIS
