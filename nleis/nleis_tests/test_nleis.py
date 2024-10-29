@@ -87,11 +87,20 @@ def test_EISandNLEIS():
                      1e-3, 1e-3, 1e-3, 1e-2, 1000, 0,
                      # TDS1 + additioal nonlinear parameters
                      ]
+    # check correct assignment of constants
+    # when EIS element is supplied
+    NLEIS_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess,
+        constants={'L0': 1e-7, 'TDS1_3': 1})
 
+    assert {'L0': 1e-7, 'TDS1_3': 1} == NLEIS_circuit.constants_1
+    assert {'TDSn1_3': 1} == NLEIS_circuit.constants_2
+
+    # check correct assignment of constants
+    # when 2nd-NLEIS element is supplied
     NLEIS_circuit = EISandNLEIS(
         circ_str_1, circ_str_2, initial_guess=initial_guess,
         constants={'L0': 1e-7, 'TDSn1_6': 0})
-
     assert {'L0': 1e-7} == NLEIS_circuit.constants_1
     assert {'TDSn1_6': 0} == NLEIS_circuit.constants_2
 
@@ -161,8 +170,16 @@ def test_EISandNLEIS():
 
     with pytest.raises(ValueError):
         NLEIS_circuit = EISandNLEIS(
-            circ_str_1, circ_str_2='', initial_guess=[1],
+            circ_str_1, circ_str_2, initial_guess=[1],
             constants={'L0': 1e-7, 'TDSn1_6': 0})
+
+    # check that wrong constants input raise ValueError
+    # when the wrong constants is applied for EIS_circuit
+
+    with pytest.raises(ValueError):
+        NLEIS_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=initial_guess,
+            constants={'L0': 1e-7, 'TDS1_10': 0})
 
 
 def test_eq():
