@@ -191,6 +191,9 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['TLMSn', 'TLMDn'] and (i == 8):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
+            elif raw_element in ['Kn'] and i == 0:
+                upper_bounds.append(np.inf)
+                lower_bounds.append(-np.inf)
             else:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(0)

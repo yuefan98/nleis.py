@@ -2094,6 +2094,15 @@ def mTiDn(p, f):
     return (I2)
 
 
+@element(num_params=2, units=['Ohm', 's'])
+def Kn(p, f):
+    omega = 2 * np.pi * np.array(f)
+    R2, tau_k = p[0], p[1]
+    Z = R2 / (1 + 4*1j * omega * tau_k - 5 *
+              (omega * tau_k)**2 - 2*1j*(omega * tau_k)**3)
+    return (Z)
+
+
 def get_element_from_name(name):
     excluded_chars = '0123456789_'
     return ''.join(char for char in name if char not in excluded_chars)
