@@ -578,7 +578,7 @@ def TPn(p, f):
 def TDP(p, f):
     """
 
-    EIS: orous electrode with high conductivity matrix
+    EIS: Porous electrode with high conductivity matrix
     and planar diffusion into platelet-like particles from Ji et al. [1]
 
     Notes

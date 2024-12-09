@@ -1,6 +1,13 @@
 # nleis.py
 
-`nleis.py` is designed as a toolbox that enables nonlinear impedance analysis for impedance.py. Key features include nonlinear ECMs and simultaneous analysis of EIS and 2nd-NLEIS. This repo will contains most recent version of `nleis.py`. As of today `nleis.py` supports the latest version of `impedance.py 1.7.1`.
+Second-harmonic nonlinear electrochemical impedance spectroscopy (2nd-NLEIS), a special form of nonlinear electrochemical impedance spectroscopy (NLEIS), is emerging as a powerful complementary technique to traditional electrochemical impedance spectroscopy (EIS). It retains the experimental simplicity of EIS while providing additional physical insights. However, its adoption and application have been limited by the lack of open-source, user-friendly software.
+
+`nleis.py` aims to address this gap by providing a Python toolbox that is designed to work with and extend the capabilities of `impedance.py`. Key features include:
+
+-   Nonlinear equivalent circuit modeling (nECM)
+-   Simultaneous analysis of EIS and 2nd-NLEIS data
+
+This repository contains the most recent version of nleis.py. As of today, nleis.py supports the latest version of `impedance.py (v1.7.1)`.
 
 ### Installation
 
@@ -31,6 +38,14 @@ In the near future, you will be able to access all the funcationality for `nleis
 
 The detailed documentation can be found at [nleispy.readthedocs.io](https://nleispy.readthedocs.io/en/latest).
 
+### Contributing to nleis.py
+
+The nleis.py project welcomes all kinds of contributions, including bug fixes, feature requests, code reviews, new features, examples, documentation improvements, and community engagement. For any changes involving the repository, please refer to the detailed guidance in the [`CONTRIBUTING.md`](https://github.com/yuefan98/nleis.py/blob/main/CONTRIBUTING.md). If you encounter any issues or have suggestions, feel free to submit an [issue](https://github.com/yuefan98/nleis.py/issues) to let us know.
+
+We are also excited to see contributions that expand the capabilities of `nleis.py`. Potential future features include:
+
+-   EIS and 2nd-NLEIS data processing from the time domain
+-   Data validation for 2nd-NLEIS 
 
 ### Credits
 ----------------------------------------------------------------
