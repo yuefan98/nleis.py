@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 
-def data_loader(filename, equipment='autolab', fft='instrument',
+def data_loader(filename, equipment='autolab', fft='instrument', max_k=3,
                 multi_current=False, rtol=5e-4, phase_correction=True,
                 baseline=True, scaling_factor=1000,
                 fit_visualize=False, freq_domain_visual=False):
@@ -22,6 +22,8 @@ def data_loader(filename, equipment='autolab', fft='instrument',
         Specifies the equipment used for data acquisition.
     fft : str, default 'instrument'
         Method used for FFT. Can be 'scipy' or 'instrument'.
+    max_k : int, default 3
+        Maximum number of harmonics to return in the results.
     multi_current : bool, default False
         If True, process multiple files with different current modulation.
     rtol : float, default 5e-4
@@ -46,6 +48,10 @@ def data_loader(filename, equipment='autolab', fft='instrument',
         Impedance values for EIS.
     Z2 : ndarray
         Impedance values for 2nd-NLEIS.
+    results : DataFrame
+        A DataFrame containing the frequencies and
+        the current/voltage values in frequency domain
+        for upto max_k harmonics.
     """
     if equipment == 'autolab':
         if multi_current:
@@ -60,7 +66,7 @@ def data_loader(filename, equipment='autolab', fft='instrument',
             for index, file in enumerate(filename):
                 df = pd.read_csv(file, low_memory=False)
                 results = autolab_fft(
-                    df, method=fft, rtol=rtol,
+                    df, method=fft, rtol=rtol, max_k=max_k,
                     phase_correction=phase_correction, baseline=baseline)
                 df_I1[index] = results['I1,[A]']
                 df_V1[index] = results['V1,[V]']
@@ -90,7 +96,7 @@ def data_loader(filename, equipment='autolab', fft='instrument',
                                        V2_cal, scaling_factor)
                     plt.show()
 
-            return frequencies.to_numpy(), np.array(Z1), np.array(Z2)
+            return frequencies.to_numpy(), np.array(Z1), np.array(Z2), results
 
         else:
             if not isinstance(filename, str):
@@ -99,7 +105,7 @@ def data_loader(filename, equipment='autolab', fft='instrument',
                     "paths when multi_current=False")
             df = pd.read_csv(filename, low_memory=False)
 
-            results = autolab_fft(df, method=fft, rtol=rtol,
+            results = autolab_fft(df, method=fft, rtol=rtol, max_k=max_k,
                                   phase_correction=phase_correction,
                                   baseline=baseline,
                                   freq_domain_visual=freq_domain_visual)
@@ -108,7 +114,7 @@ def data_loader(filename, equipment='autolab', fft='instrument',
 
             return (results['freq,[Hz]'].to_numpy(),
                     Z1.to_numpy().astype(np.complex128),
-                    Z2.to_numpy().astype(np.complex128))
+                    Z2.to_numpy().astype(np.complex128), results)
 
 
 def autolab_fft(df, method='scipy', rtol=5e-4, max_k=3, phase_correction=True,
