@@ -613,6 +613,9 @@ def extract_circuit_elements(circuit):
 
 
 class CircuitGraph:
+    '''
+    A class to represent a circuit as a directed graph.
+    '''
     # regular expression to find parallel and difference blocks
     _parallel_difference_block_expression = re.compile(r'(?:p|d)\([^()]*\)')
 
@@ -620,6 +623,8 @@ class CircuitGraph:
     _whitespce = re.compile(r"\s+")
 
     def __init__(self, circuit, constants=None):
+        '''
+        Initialize the CircuitGraph object.'''
         # remove all whitespace from the circuit string
         self.circuit = self._whitespce.sub("", circuit)
         # parse the circuit string and initialize the graph
@@ -630,6 +635,9 @@ class CircuitGraph:
         self.constants = constants if constants is not None else dict()
 
     def parse_circuit(self):
+        '''
+        Parse the circuit string and initialize the graph.
+        '''
         # initialize the node counters for each type of block
         self.snum = 1
         self.pnum = 1
@@ -688,6 +696,9 @@ class CircuitGraph:
     # function to add series elements to the graph
 
     def add_series_elements(self, elem):
+        '''
+        Add series elements to the graph.
+        '''
         selem = elem.split("-")
         if len(selem) > 1:
             node = f"s{self.snum}"
@@ -702,11 +713,16 @@ class CircuitGraph:
 
     # function to visualize the graph
     def visualize_graph(self, **kwargs):
+        '''
+        Visualize the graph.'''
         pos = nx.multipartite_layout(self.graph, subset_key="layer")
         nx.draw_networkx(self.graph, pos=pos, **kwargs)
 
     # function to compute the impedance of the circuit
     def compute(self, f, *parameters):
+        '''
+        Compute the impedance of the circuit at the given frequencies.
+        '''
         node_results = {}
         pindex = 0
         for node in self.execution_order:
@@ -733,6 +749,9 @@ class CircuitGraph:
     # To enable comparision
 
     def __eq__(self, other):
+        '''
+        Compare two CircuitGraph objects for equality.
+        '''
         if not isinstance(other, CircuitGraph):
             return False
         # Compare the internal graph attributes
@@ -742,14 +761,25 @@ class CircuitGraph:
     # To enable direct calling
 
     def __call__(self, f, *parameters):
+        '''
+        Compute the impedance of the circuit at the given frequencies.
+        And convert it to a long array for curve_fit.
+        '''
         Z = self.compute(f, *parameters)
         return np.hstack([Z.real, Z.imag])
 
     def compute_long(self, f, *parameters):
+        '''
+        Compute the impedance of the circuit at the given frequencies.
+        And convert it to a long array for curve_fit.
+        '''
         Z = self.compute(f, *parameters)
         return np.hstack([Z.real, Z.imag])
 
     def calculate_circuit_length(self):
+        '''
+        calculate the number of parameters in the circuit
+        '''
         n_params = [
             getattr(Zfunc, "num_params", 0)
             for node, Zfunc in self.graph.nodes(data="Z")
@@ -758,4 +788,7 @@ class CircuitGraph:
 
 
 def format_parameter_name(name, j, n_params):
+    '''
+    Format the parameter name for the given element.
+    '''
     return f"{name}_{j}" if n_params > 1 else f"{name}"

@@ -7,3 +7,4 @@ Examples
     :glob:
     
     examples/nleis_example
+    examples/graph_example

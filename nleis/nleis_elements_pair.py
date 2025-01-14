@@ -1079,6 +1079,7 @@ def TDCn(p, f):
 def A_matrices_TLMn(N, Rpore, Z12t):
     """
     Construct the matrix `Ax` for the TLMn model
+
     Parameters
     ----------
     N : int
@@ -1087,10 +1088,12 @@ def A_matrices_TLMn(N, Rpore, Z12t):
         Pore electrolyte resistance
     Z12t : np.complex128
         The single element impedance at 2ω
+
     Returns
     -------
     Ax : np.ndarray
         The matrix `Ax` for the TLMn model
+
     """
 
     Ax = np.zeros((N, N), dtype=np.complex128)
