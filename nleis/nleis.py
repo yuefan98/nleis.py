@@ -10,6 +10,8 @@ from .fitting import circuit_fit, buildCircuit, calculateCircuitLength, \
 
 from impedance.visualization import plot_bode
 from .visualization import plot_altair, plot_first, plot_second
+from nleis.fitting import CircuitGraph
+
 
 import json
 import matplotlib.pyplot as plt
@@ -20,7 +22,7 @@ import warnings
 class EISandNLEIS:
     # ToDO: add SSO method and SO method
     def __init__(self, circuit_1='', circuit_2='', initial_guess=[],
-                 constants=None, name=None, **kwargs):
+                 constants=None, name=None, graph=False, **kwargs):
         """
             Constructor for a customizable linear and nonlinear
             equivalent circuit model
@@ -69,6 +71,7 @@ class EISandNLEIS:
             NLEIS: circuit_2 = 'd(TDSn0-TDSn1)'
 
         """
+        self.graph = graph
         # if supplied, check that initial_guess is valid and store
         initial_guess = [x for x in initial_guess if x is not None]
         for i in initial_guess:
@@ -206,6 +209,10 @@ class EISandNLEIS:
         self.p1, self.p2 = individual_parameters(
             self.edited_circuit, self.initial_guess,
             self.constants_1, self.constants_2)
+        if self.circuit_1:
+            self.cg1 = CircuitGraph(self.circuit_1, self.constants_1)
+        if self.circuit_2:
+            self.cg2 = CircuitGraph(self.circuit_2, self.constants_2)
 
     def __eq__(self, other):
         if self.__class__ == other.__class__:
@@ -306,7 +313,7 @@ class EISandNLEIS:
                 constants_1=self.constants_1,
                 constants_2=self.constants_2, bounds=bounds, opt=opt,
                 cost=cost, max_f=max_f, param_norm=param_norm,
-                positive=positive,
+                positive=positive, graph=self.graph,
                 **kwargs)
             # self.parameters_ = list(parameters)
             self.parameters_ = parameters
@@ -317,6 +324,11 @@ class EISandNLEIS:
                 self.conf1, self.conf2 = individual_parameters(
                     self.edited_circuit, self.conf_, self.constants_1,
                     self.constants_2)
+            # if cov is not None:
+            #     self.cov_ = cov
+            #     self.cov1, self.cov2 = individual_parameters(
+            #         self.edited_circuit, self.cov_, self.constants_1,
+            #         self.constants_2)
 
             self.p1, self.p2 = individual_parameters(
                 self.edited_circuit, self.parameters_, self.constants_1,
@@ -379,14 +391,14 @@ class EISandNLEIS:
             x1, x2 = wrappedImpedance(self.edited_circuit,
                                       self.circuit_1, self.constants_1,
                                       self.circuit_2, self.constants_2, f1, f2,
-                                      self.parameters_)
+                                      self.parameters_, graph=self.graph)
             return x1, x2
         else:
             warnings.warn("Simulating circuit based on initial parameters")
             x1, x2 = wrappedImpedance(self.edited_circuit,
                                       self.circuit_1, self.constants_1,
                                       self.circuit_2, self.constants_2, f1, f2,
-                                      self.initial_guess)
+                                      self.initial_guess, graph=self.graph)
             return x1, x2
 
     def get_param_names(self, circuit, constants):
@@ -744,6 +756,7 @@ class EISandNLEIS:
         if self._is_fit():
             parameters_ = list(self.parameters_)
             model_conf_ = list(self.conf_)
+            # model_cov_ = list(self.cov_)
             # parameters_ = self.parameters_
             # model_conf_ = self.conf_
             data_dict = {"Name": model_name,
@@ -756,6 +769,7 @@ class EISandNLEIS:
                          "Fit": True,
                          "Parameters": parameters_,
                          "Confidence": model_conf_,
+                         #  "Covariance": model_cov_,
                          "Edited Circuit Str": edited_circuit_str
                          }
         else:
@@ -815,6 +829,9 @@ class EISandNLEIS:
             self.edited_circuit, self.initial_guess,
             self.constants_1, self.constants_2)
 
+        self.cg1 = CircuitGraph(self.circuit_1, self.constants_1)
+        self.cg2 = CircuitGraph(self.circuit_2, self.constants_2)
+
         self.name = model_name
 
         if json_data["Fit"]:
@@ -833,12 +850,16 @@ class EISandNLEIS:
                 self.p1, self.p2 = individual_parameters(
                     self.edited_circuit, self.parameters_,
                     self.constants_1, self.constants_2)
+                # self.cov_ = np.array(json_data["Covariance"])
+                # self.cov1, self.cov2 = individual_parameters(
+                #     self.edited_circuit, self.cov_,
+                #     self.constants_1, self.constants_2)
 
 
 class NLEISCustomCircuit(BaseCircuit):
     # this class can be fully integrated into CustomCircuit in the future
     # , but for the stable performance of nleis.py, we overwrite it here
-    def __init__(self, circuit='', **kwargs):
+    def __init__(self, circuit='', graph=False,  **kwargs):
         """
         Constructor for a customizable nonlinear equivalent circuit model
         for NLEIS analysis.
@@ -871,7 +892,11 @@ class NLEISCustomCircuit(BaseCircuit):
         """
 
         super().__init__(**kwargs)
+        # self.cov_ = None
         self.circuit = circuit.replace(" ", "")
+        self.graph = graph
+        if self.circuit:
+            self.cg = CircuitGraph(self.circuit, self.constants)
 
         circuit_len = calculateCircuitLength(self.circuit)
 
@@ -942,15 +967,20 @@ class NLEISCustomCircuit(BaseCircuit):
         impedance = impedance[mask]
 
         if self.initial_guess != []:
-            parameters, conf = circuit_fit(frequencies, impedance,
-                                           self.circuit, self.initial_guess,
-                                           constants=self.constants,
-                                           bounds=bounds,
-                                           weight_by_modulus=weight_by_modulus,
-                                           **kwargs)
+            parameters, conf = \
+                circuit_fit(frequencies, impedance,
+                            self.circuit,
+                            self.initial_guess,
+                            constants=self.constants,
+                            bounds=bounds,
+                            weight_by_modulus=weight_by_modulus,
+                            graph=self.graph,
+                            **kwargs)
             self.parameters_ = parameters
             if conf is not None:
                 self.conf_ = conf
+            # if cov is not None:
+            #     self.cov_ = cov
         else:
             raise ValueError('No initial guess supplied')
 
@@ -982,20 +1012,31 @@ class NLEISCustomCircuit(BaseCircuit):
         frequencies = np.array(frequencies, dtype=float)
         mask = np.array(frequencies) < max_f
         frequencies = frequencies[mask]
+        if self.graph:
+            self.cg = CircuitGraph(self.circuit, self.constants)
 
         if self._is_fit() and not use_initial:
-            return eval(buildCircuit(self.circuit, frequencies,
-                                     *self.parameters_,
-                                     constants=self.constants, eval_string='',
-                                     index=0)[0],
-                        circuit_elements)
+            if self.graph:
+                return self.cg.compute(frequencies, *self.parameters_)
+            else:
+                return eval(buildCircuit(self.circuit, frequencies,
+                                         *self.parameters_,
+                                         constants=self.constants,
+                                         eval_string='',
+                                         index=0)[0],
+                            circuit_elements)
         else:
             warnings.warn("Simulating circuit based on initial parameters")
-            return eval(buildCircuit(self.circuit, frequencies,
-                                     *self.initial_guess,
-                                     constants=self.constants, eval_string='',
-                                     index=0)[0],
-                        circuit_elements)
+
+            if self.graph:
+                return self.cg.compute(frequencies, *self.initial_guess)
+            else:
+                return eval(buildCircuit(self.circuit, frequencies,
+                                         *self.initial_guess,
+                                         constants=self.constants,
+                                         eval_string='',
+                                         index=0)[0],
+                            circuit_elements)
 
     def get_param_names(self):
         """
@@ -1211,3 +1252,9 @@ class NLEISCustomCircuit(BaseCircuit):
         else:
             raise ValueError("Kind must be one of 'altair'," +
                              f"'nyquist', or 'bode' (received {kind})")
+
+    # add on to the load function to create the graph
+
+    def load(self, filepath, fitted_as_initial=False):
+        super().load(filepath, fitted_as_initial)
+        self.cg = CircuitGraph(self.circuit, self.constants)
