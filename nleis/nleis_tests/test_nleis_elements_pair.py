@@ -16,7 +16,7 @@ def test_porous_electrode():
     # with it corresponding TLM (charge transfer only)
 
     # EIS
-    freqs = [0.001, 1.0, 1000]
+    freqs = [0.001, 1.0, 1000, 100000]
     circuit_1 = CustomCircuit('TP', initial_guess=[1, 1, 1])
     circuit_2 = CustomCircuit('TLM', initial_guess=[1, 1, 1, 0, 0, 1000])
     Z1 = circuit_1.predict(freqs)
@@ -27,8 +27,8 @@ def test_porous_electrode():
     circuit_1 = NLEISCustomCircuit('TPn', initial_guess=[1, 1, 1, 0.1])
     circuit_2 = NLEISCustomCircuit('TLMn',
                                    initial_guess=[1, 1, 1, 0, 0, 1000, .1, 0])
-    Z1 = circuit_1.predict(freqs)
-    Z2 = circuit_2.predict(freqs)
+    Z1 = circuit_1.predict(freqs, max_f=np.inf)
+    Z2 = circuit_2.predict(freqs, max_f=np.inf)
     assert np.allclose(Z1, Z2, atol=1e-3)
 
     # Test the convergence between
@@ -50,8 +50,8 @@ def test_porous_electrode():
     circuit_2 = NLEISCustomCircuit('TLMSn',
                                    initial_guess=[1, 1, 1, 1, 1, 0, 0, 1000,
                                                   1, .1, 0])
-    Z1 = circuit_1.predict(freqs)
-    Z2 = circuit_2.predict(freqs)
+    Z1 = circuit_1.predict(freqs, max_f=np.inf)
+    Z2 = circuit_2.predict(freqs, max_f=np.inf)
     assert np.allclose(Z1, Z2, atol=1e-3)
 
     # Test the convergence between
@@ -71,8 +71,8 @@ def test_porous_electrode():
     circuit_2 = NLEISCustomCircuit('TLMDn',
                                    initial_guess=[1, 1, 1, 1, 1, 0, 0, 1000,
                                                   1, .1, 0])
-    Z1 = circuit_1.predict(freqs)
-    Z2 = circuit_2.predict(freqs)
+    Z1 = circuit_1.predict(freqs, max_f=np.inf)
+    Z2 = circuit_2.predict(freqs, max_f=np.inf)
     assert np.allclose(Z1, Z2, atol=1e-3)
 
     # TDC should converge to TP when Aw is zero

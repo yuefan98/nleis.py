@@ -187,15 +187,17 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
             inf_in_bounds = np.any(np.isinf(bounds[0])) \
                 or np.any(np.isinf(bounds[1]))
             if inf_in_bounds:
-                lb = np.where(bounds[0] == -np.inf, -1e10, bounds[0])
-                ub = np.where(bounds[1] == np.inf, 1e10, bounds[1])
+                lb = np.where(np.array(bounds[0]) == -np.inf, -1e10, bounds[0])
+                ub = np.where(np.array(bounds[1]) == np.inf, 1e10, bounds[1])
                 bounds = (lb, ub)
                 warnings.warn("inf is detected in the bounds, "
                               "to enable parameter normalization, "
                               "the bounds has been capped at 1e10. "
                               "You can disable parameter normalization "
                               "by set param_norm to False .")
-            # ub = bounds[1]
+            else:
+                ub = bounds[1]
+
             bounds = bounds/ub
         else:
             ub = np.ones(len(bounds[1]))
@@ -297,14 +299,16 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
         x1, x2 = wrappedImpedance(edited_circuit,
                                   circuit_1, constants_1, circuit_2,
                                   constants_2, f1, f2, parameters*ub)
+        # No normalization in currently applied
         # Z1max = max(np.abs(Z1))
         # Z2max = max(np.abs(Z2))
         # log1 = np.log(sum(((Z1.real-x1.real)/Z1max)**2))
         # +np.log(sum(((Z1.imag-x1.imag)/Z1max)**2))
         # log2 = np.log(sum(((Z2.real-x2.real)/Z2max)**2))
         # +np.log(sum(((Z2.imag-x2.imag)/Z2max)**2))
-        log1 = np.log(sum(((Z1-x1))**2))
-        log2 = np.log(sum(((Z2-x2))**2))
+
+        log1 = np.log(sum(abs(Z1-x1)**2))
+        log2 = np.log(sum(abs(Z2-x2)**2))
         return (cost*log1+(1-cost)*log2)
     return wrappedNeg_log_likelihood
 
