@@ -257,6 +257,10 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
         If global optimization should be used (uses the basinhopping
         algorithm). Defaults to False
 
+    graph : bool, optional
+        Whether to use execution graph to process the circuit.
+        Defaults to False, which uses eval based code
+
     kwargs :
         Keyword arguments passed to scipy.optimize.curve_fit or
         scipy.optimize.basinhopping
@@ -611,7 +615,6 @@ def extract_circuit_elements(circuit):
 class CircuitGraph:
     # regular expression to find parallel and difference blocks
     _parallel_difference_block_expression = re.compile(r'(?:p|d)\([^()]*\)')
-    # _parallel_difference_block_expression = re.compile(r'p\([^()]*\)')
 
     # regular expression to remove whitespace
     _whitespce = re.compile(r"\s+")

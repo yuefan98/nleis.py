@@ -160,6 +160,10 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
     positive : bool, optional
         If True, high-frequency inductance is eliminated. Defaults to True.
 
+    graph : bool, optional
+        Whether to use execution graph to process the circuit.
+        Defaults to False, which uses eval based code
+
     kwargs :
         Additional keyword arguments passed to `scipy.optimize.curve_fit`.
 
@@ -282,12 +286,21 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
         frequencies: list of floats
         Z1: EIS data
         Z2: NLEIS data
+        edited_circuit : string
         circuit_1 : string
         constants_1 : dict
         circuit_2 : string
         constants_2 : dict
         ub : list of floats upper bound if bounds are provided
         max_f: int
+        cost : float, optional
+            Weighting between EIS and 2nd-NLEIS data. A value greater than 0.5
+            puts more weight on EIS,
+            while a value less than 0.5 puts more weight on 2nd-NLEIS.
+            Default is 0.5.
+        graph : bool, optional
+            Whether to use execution graph to process the circuit.
+            Defaults to False, which uses eval based code
         parameters : list of floats
 
         Returns
@@ -327,13 +340,21 @@ def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
 
         Parameters
         ----------
+        edited_circuit : string
         circuit_1 : string
         constants_1 : dict
         circuit_2 : string
         constants_2 : dict
-        max_f: int
-        parameters : list of floats
+        ub : list of floats upper bound if bounds are provided
+        max_f: float
+        graph : bool, optional
+            Whether to use execution graph to process the circuit.
+            Defaults to False, which uses eval based code
+
         frequencies : list of floats
+
+        parameters : list of floats
+
 
         Returns
         -------
@@ -394,6 +415,9 @@ def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
 
     parameters : list of float
         Full set of parameters derived from the edited circuit string.
+    graph : bool, optional
+        Whether to use execution graph to process the circuit.
+        Defaults to False, which uses eval based code
 
     Returns
     -------

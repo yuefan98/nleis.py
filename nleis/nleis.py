@@ -48,6 +48,9 @@ class EISandNLEIS:
 
             name : str, optional
                 A name for the model.
+            graph : bool, optional
+                Whether to use execution graph to process the circuit.
+                Defaults to False, which uses eval based code
 
             Notes
             -----
@@ -872,6 +875,10 @@ class NLEISCustomCircuit(BaseCircuit):
         circuit : str
             A string representing the nonlinear equivalent circuit for NLEIS.
 
+        graph : bool, optional
+            Whether to use execution graph to process the circuit.
+            Defaults to False, which uses eval based code
+
         Notes
         -----
         A custom NLEIS circuit is defined as a string comprised of elements
@@ -909,7 +916,7 @@ class NLEISCustomCircuit(BaseCircuit):
                              f'the circuit length ({circuit_len})')
 
     def fit(self, frequencies, impedance, bounds=None,
-            weight_by_modulus=False, max_f=10, **kwargs):
+            weight_by_modulus=False, max_f=np.inf, **kwargs):
         """
         Fit the nonlinear equivalent circuit model to NLEIS data.
 
@@ -986,7 +993,7 @@ class NLEISCustomCircuit(BaseCircuit):
 
         return self
 
-    def predict(self, frequencies, max_f=10, use_initial=False):
+    def predict(self, frequencies, max_f=np.inf, use_initial=False):
         """
 
         Predict impedance using an nonlinear equivalent circuit model
@@ -1097,7 +1104,7 @@ class NLEISCustomCircuit(BaseCircuit):
         return dict
 
     def plot(self, ax=None, f_data=None, Z2_data=None,
-             kind='nyquist', max_f=10, **kwargs):
+             kind='nyquist', max_f=np.inf, **kwargs):
         """
         Visualizes the model and optional data as Nyquist, Bode,
         or Altair (interactive) plots.
