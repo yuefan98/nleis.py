@@ -338,7 +338,7 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
                         np.hstack([Z.real, Z.imag]))
 
         def opt_function_graph(x):
-            return rmse(cg(f, *x), np.hstack([Z.real, Z.imag]))
+            return rmse(cg.compute_long(f, *x), np.hstack([Z.real, Z.imag]))
 
         class BasinhoppingBounds(object):
             """ Adapted from the basinhopping documetation
@@ -667,22 +667,21 @@ class CircuitGraph:
             for pd in pd_blocks:
                 operator = pd[0]
                 pd_elem = pd[2:-1].split(",")
+
                 if operator == "p":
-                    pnode = f"p{self.pnum}"
+                    nnum = self.pnum
                     self.pnum += 1
-                    self.graph.add_node(pnode, Z=circuit_elements["p"])
-                    for elem in pd_elem:
-                        elem = self.add_series_elements(elem)
-                        self.graph.add_edge(elem, pnode)
-                    parsing_circuit = parsing_circuit.replace(pd, pnode)
                 elif operator == "d":
-                    dnode = f"d{self.dnum}"
+                    nnum = self.dnum
                     self.dnum += 1
-                    self.graph.add_node(dnode, Z=circuit_elements["d"])
-                    for elem in pd_elem:
-                        elem = self.add_series_elements(elem)
-                        self.graph.add_edge(elem, dnode)
-                    parsing_circuit = parsing_circuit.replace(pd, dnode)
+
+                node = f"{operator}{nnum}"
+                self.graph.add_node(node, Z=circuit_elements[operator])
+                for elem in pd_elem:
+                    elem = self.add_series_elements(elem)
+                    self.graph.add_edge(elem, node)
+                parsing_circuit = parsing_circuit.replace(pd, node)
+
             pd_blocks = self._parallel_difference_block_expression.findall(
                 parsing_circuit)
 
@@ -763,10 +762,9 @@ class CircuitGraph:
     def __call__(self, f, *parameters):
         '''
         Compute the impedance of the circuit at the given frequencies.
-        And convert it to a long array for curve_fit.
         '''
         Z = self.compute(f, *parameters)
-        return np.hstack([Z.real, Z.imag])
+        return Z
 
     def compute_long(self, f, *parameters):
         '''

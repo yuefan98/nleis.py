@@ -129,7 +129,7 @@ def test_CircuitGraph():
     assert cg.calculate_circuit_length() == 4
 
     # test for __call__
-    assert np.allclose(cg.compute_long(
+    assert np.allclose(cg.compute(
         frequencies, *params), cg(frequencies, *params))
 
     # test for __eq__
