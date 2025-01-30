@@ -132,9 +132,15 @@ def test_set_default_bounds():
     default_bounds[1][6] = 0.5
     default_bounds[1][7] = 0.5
     assert np.allclose(default_bounds, bounds_from_func)
+
+    circuit = 'RCSQ'
+    bounds_from_func = set_default_bounds(circuit, constants=constants)
+    default_bounds = (np.zeros(5), np.inf*np.ones(5))
+    default_bounds[1][2] = 1
+    assert np.allclose(default_bounds, bounds_from_func)
+
+
 # This test remain unchanged as we are adopting it from impedance.py
-
-
 def test_circuit_fit():
 
     # Test trivial model (10 Ohm resistor)
@@ -297,6 +303,16 @@ def test_buildCircuit():
                         constants={'R2': 1})[0].replace(' ', '') == \
         's([R([100],[1000.0,5.0,0.01]),' +\
         'R([1],[1000.0,5.0,0.01])])'
+
+    # Test constants in circuit
+    circuit = 'Wo1'
+    params = [100]
+    frequencies = [1000.0, 5.0, 0.01]
+    constants = {'Wo1_1': 1}
+
+    assert buildCircuit(circuit, frequencies, *params,
+                        constants=constants)[0].replace(' ', '') == \
+        'Wo([100,1],[1000.0,5.0,0.01])'
 
 
 def test_mae():

@@ -7,6 +7,9 @@ from impedance.models.circuits.elements import circuit_elements
 from impedance.models.circuits.elements import get_element_from_name
 from impedance.models.circuits.fitting import check_and_eval, rmse
 
+import networkx as nx
+import re
+
 # Note: a lot of codes are directly adopted from impedance.py.,
 # which is designed to be enable a easy integration in the future,
 # but now we are keep them separated to ensure the stable performance
@@ -110,7 +113,6 @@ def seq_fit_param(input_dic, target_arr, output_arr):
 
 
 def set_default_bounds(circuit, constants={}):
-
     """
     Set default bounds for optimization.
 
@@ -170,10 +172,12 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['RCn'] and i == 2:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
-            elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and (i == 5):
+            elif raw_element in ['TDSn', 'TDPn', 'TDCn', 'RCSQn',
+                                 'RCDQn'] and (i == 5):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
-            elif raw_element in ['TDSn', 'TDPn', 'TDCn'] and i == 6:
+            elif raw_element in ['TDSn', 'TDPn', 'TDCn', 'RCSQn',
+                                 'RCDQn'] and i == 6:
                 upper_bounds.append(0.5)
                 lower_bounds.append(-0.5)
             elif raw_element in ['RCDn', 'RCSn'] and (i == 4):
@@ -194,6 +198,10 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['Kn'] and i == 0:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
+            elif raw_element in ['RCSQ', 'RCSQn',
+                                 'RCDQ', 'RCDQn'] and (i == 2):
+                upper_bounds.append(1)
+                lower_bounds.append(0)
             else:
                 upper_bounds.append(np.inf)
                 lower_bounds.append(0)
@@ -207,6 +215,7 @@ def set_default_bounds(circuit, constants={}):
 
 def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
                 bounds=None, weight_by_modulus=False, global_opt=False,
+                graph=False,
                 **kwargs):
     """ Main function for fitting an equivalent circuit to data.
 
@@ -251,6 +260,10 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
         If global optimization should be used (uses the basinhopping
         algorithm). Defaults to False
 
+    graph : bool, optional
+        Whether to use execution graph to process the circuit.
+        Defaults to False, which uses eval based code
+
     kwargs :
         Keyword arguments passed to scipy.optimize.curve_fit or
         scipy.optimize.basinhopping
@@ -277,6 +290,8 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
     if bounds is None:
         bounds = set_default_bounds(circuit, constants=constants)
 
+    cg = CircuitGraph(circuit, constants)
+
     if not global_opt:
         if 'maxfev' not in kwargs:
             kwargs['maxfev'] = int(1e5)
@@ -287,10 +302,17 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
         if weight_by_modulus:
             abs_Z = np.abs(Z)
             kwargs['sigma'] = np.hstack([abs_Z, abs_Z])
-
-        popt, pcov = curve_fit(wrapCircuit(circuit, constants), f,
-                               np.hstack([Z.real, Z.imag]),
-                               p0=initial_guess, bounds=bounds, **kwargs)
+        if graph:
+            popt, pcov = curve_fit(cg.compute_long, f,
+                                   np.hstack([Z.real, Z.imag]),
+                                   p0=initial_guess,
+                                   bounds=bounds,
+                                   **kwargs,
+                                   )
+        else:
+            popt, pcov = curve_fit(wrapCircuit(circuit, constants), f,
+                                   np.hstack([Z.real, Z.imag]),
+                                   p0=initial_guess, bounds=bounds, **kwargs)
 
         # Calculate one standard deviation error estimates for fit parameters,
         # defined as the square root of the diagonal of the covariance matrix.
@@ -318,6 +340,9 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
             return rmse(wrapCircuit(circuit, constants)(f, *x),
                         np.hstack([Z.real, Z.imag]))
 
+        def opt_function_graph(x):
+            return rmse(cg.compute_long(f, *x), np.hstack([Z.real, Z.imag]))
+
         class BasinhoppingBounds(object):
             """ Adapted from the basinhopping documetation
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.basinhopping.html
@@ -335,8 +360,12 @@ def circuit_fit(frequencies, impedances, circuit, initial_guess, constants={},
 
         basinhopping_bounds = BasinhoppingBounds(xmin=bounds[0],
                                                  xmax=bounds[1])
-        results = basinhopping(opt_function, x0=initial_guess,
-                               accept_test=basinhopping_bounds, **kwargs)
+        if graph:
+            results = basinhopping(opt_function_graph, x0=initial_guess,
+                                   accept_test=basinhopping_bounds, **kwargs)
+        else:
+            results = basinhopping(opt_function, x0=initial_guess,
+                                   accept_test=basinhopping_bounds, **kwargs)
         popt = results.x
 
         # Calculate perror
@@ -581,3 +610,186 @@ def extract_circuit_elements(circuit):
                 current_element.append(char)
     extracted_elements.append(''.join(current_element))
     return extracted_elements
+
+# Circuit Graph for computation optimization
+# Special Thanks to Jake Anderson for the original code
+
+
+class CircuitGraph:
+    '''
+    A class to represent a circuit as a directed graph.
+    '''
+    # regular expression to find parallel and difference blocks
+    _parallel_difference_block_expression = re.compile(r'(?:p|d)\([^()]*\)')
+
+    # regular expression to remove whitespace
+    _whitespce = re.compile(r"\s+")
+
+    def __init__(self, circuit, constants=None):
+        '''
+        Initialize the CircuitGraph object.'''
+        # remove all whitespace from the circuit string
+        self.circuit = self._whitespce.sub("", circuit)
+        # parse the circuit string and initialize the graph
+        self.parse_circuit()
+        # compute the execution order of the graph
+        self.execution_order = list(nx.topological_sort(self.graph))
+        # initialize the constants dictionary
+        self.constants = constants if constants is not None else dict()
+
+    def parse_circuit(self):
+        '''
+        Parse the circuit string and initialize the graph.
+        '''
+        # initialize the node counters for each type of block
+        self.snum = 1
+        self.pnum = 1
+        self.dnum = 1
+        # initialize the circuit string to be parsed
+        parsing_circuit = self.circuit
+
+        # determine all of the base elements, their functions
+        # and add them to the graph
+        element_name = extract_circuit_elements(parsing_circuit)
+        element_func = [
+            circuit_elements[get_element_from_name(e)] for e in element_name
+        ]
+        # graph initialization
+        self.graph = nx.DiGraph()
+        # add nodes to the graph
+        for e, f in zip(element_name, element_func):
+            self.graph.add_node(e, Z=f)
+
+        # find unnested parallel and difference blocks
+        pd_blocks = self._parallel_difference_block_expression.findall(
+            parsing_circuit)
+
+        while len(pd_blocks) > 0:
+            # add parallel or difference blocks to the graph
+            # unnesting each time around the loop
+            for pd in pd_blocks:
+                operator = pd[0]
+                pd_elem = pd[2:-1].split(",")
+
+                if operator == "p":
+                    nnum = self.pnum
+                    self.pnum += 1
+                elif operator == "d":
+                    nnum = self.dnum
+                    self.dnum += 1
+
+                node = f"{operator}{nnum}"
+                self.graph.add_node(node, Z=circuit_elements[operator])
+                for elem in pd_elem:
+                    elem = self.add_series_elements(elem)
+                    self.graph.add_edge(elem, node)
+                parsing_circuit = parsing_circuit.replace(pd, node)
+
+            pd_blocks = self._parallel_difference_block_expression.findall(
+                parsing_circuit)
+
+        # pick up any top line series connections
+        self.add_series_elements(parsing_circuit)
+
+        # assign layers to the nodes
+        for layer, nodes in enumerate(nx.topological_generations(self.graph)):
+            for n in nodes:
+                self.graph.nodes[n]["layer"] = layer
+    # function to add series elements to the graph
+
+    def add_series_elements(self, elem):
+        '''
+        Add series elements to the graph.
+        '''
+        selem = elem.split("-")
+        if len(selem) > 1:
+            node = f"s{self.snum}"
+            self.snum += 1
+            self.graph.add_node(node, Z=circuit_elements["s"])
+            for n in selem:
+                self.graph.add_edge(n, node)
+            return node
+
+        # if there isn't a series connection in elem just return it unchanged
+        return selem[0]
+
+    # function to visualize the graph
+    def visualize_graph(self, **kwargs):
+        '''
+        Visualize the graph.'''
+        pos = nx.multipartite_layout(self.graph, subset_key="layer")
+        nx.draw_networkx(self.graph, pos=pos, **kwargs)
+
+    # function to compute the impedance of the circuit
+    def compute(self, f, *parameters):
+        '''
+        Compute the impedance of the circuit at the given frequencies.
+        '''
+        node_results = {}
+        pindex = 0
+        for node in self.execution_order:
+            Zfunc = self.graph.nodes[node]["Z"]
+            plist = [
+                node_results[pred] for pred in self.graph.predecessors(node)
+            ]
+
+            if len(plist) < 1:
+                n_params = Zfunc.num_params
+                for j in range(n_params):
+                    p_name = format_parameter_name(node, j, n_params)
+                    if p_name in self.constants:
+                        plist.append(self.constants[p_name])
+                    else:
+                        plist.append(parameters[pindex])
+                        pindex += 1
+                node_results[node] = Zfunc(plist, f)
+            else:
+                node_results[node] = Zfunc(plist)
+
+        return np.squeeze(node_results[node])
+
+    # To enable comparision
+
+    def __eq__(self, other):
+        '''
+        Compare two CircuitGraph objects for equality.
+        '''
+        if not isinstance(other, CircuitGraph):
+            return False
+        # Compare the internal graph attributes
+        return (self.graph.nodes == other.graph.nodes
+                and self.graph.edges == other.graph.edges)
+
+    # To enable direct calling
+
+    def __call__(self, f, *parameters):
+        '''
+        Compute the impedance of the circuit at the given frequencies.
+        '''
+        Z = self.compute(f, *parameters)
+        return Z
+
+    def compute_long(self, f, *parameters):
+        '''
+        Compute the impedance of the circuit at the given frequencies.
+        And convert it to a long array for curve_fit.
+        '''
+        Z = self.compute(f, *parameters)
+        return np.hstack([Z.real, Z.imag])
+
+    def calculate_circuit_length(self):
+        '''
+        calculate the number of parameters in the circuit
+        '''
+        n_params = [
+            getattr(Zfunc, "num_params", 0)
+            for node, Zfunc in self.graph.nodes(data="Z")
+        ]
+        return np.sum(n_params)
+
+
+def format_parameter_name(name, j, n_params):
+    '''
+    Format the parameter name for the given element.
+    '''
+    return f"{name}_{j}" if n_params > 1 else f"{name}"

@@ -71,8 +71,8 @@ def test_EISandNLEIS():
                                 'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
                                 'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
     assert all_units_NLEIS == ['Ohms', 'Ohms', 'F', 'Ohms', 's',
-                               '1/V', '', 'Ohms', 'Ohms', 'F', 'Ohms', 's',
-                               '1/V', '']
+                               '1/V', '-', 'Ohms', 'Ohms', 'F', 'Ohms', 's',
+                               '1/V', '-']
 
     # check _is_fit()
     assert not NLEIS_circuit._is_fit()
@@ -310,8 +310,8 @@ def test_NLEISCustomCircuit():
                                 'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
                                 'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
     assert all_units_NLEIS == ['Ohms', 'Ohms', 'F', 'Ohms', 's',
-                               '1/V', '', 'Ohms', 'Ohms', 'F', 'Ohms', 's',
-                               '1/V', '']
+                               '1/V', '-', 'Ohms', 'Ohms', 'F', 'Ohms', 's',
+                               '1/V', '-']
 
     # check _is_fit()
     assert not NLEIS_circuit._is_fit()
@@ -345,7 +345,7 @@ def test_NLEISCustomCircuit():
         None, f, Z2, kind='bode')[0], type(ax))
 
     # check altair plotting with a fit circuit
-    chart = NLEIS_circuit.plot(f_data=f, Z2_data=Z2,
+    chart = NLEIS_circuit.plot(f_data=f, Z2_data=Z2, max_f=10,
                                kind='altair')
 
     datasets = json.loads(chart.to_json())['datasets']

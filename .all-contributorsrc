@@ -41,6 +41,16 @@
         "doc",
         "review"
       ]
+    },
+    {
+      "login": "andersonjacob",
+      "name": "Jake Anderson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4662082?v=4",
+      "profile": "https://github.com/andersonjacob",
+      "contributions": [
+        "code",
+        "review"
+      ]
     }
   ],
   "contributorsPerLine": 7,
