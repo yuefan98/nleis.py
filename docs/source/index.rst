@@ -14,7 +14,8 @@ Welcome to :code:`nleis.py`'s documentation!
    nleis_fitting
    visualization
    data-processing
-
+   release-notes
+   
 
 Indices and tables
 ==================

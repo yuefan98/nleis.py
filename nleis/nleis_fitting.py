@@ -10,6 +10,7 @@ from impedance.models.circuits.fitting import check_and_eval
 from .fitting import set_default_bounds, buildCircuit, extract_circuit_elements
 from scipy.optimize import minimize
 import warnings
+from nleis.fitting import CircuitGraph
 
 # Customize warning format (here, simpler and just the message)
 warnings.formatwarning = lambda message, category, filename, lineno, \
@@ -76,7 +77,7 @@ def data_processing(f, Z1, Z2, max_f=10):
 def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
               initial_guess, constants_1={}, constants_2={},
               bounds=None, opt='max', cost=0.5, max_f=10, param_norm=True,
-              positive=True, **kwargs):
+              positive=True, graph=False, **kwargs):
     """
     Main function for the simultaneous fitting of EIS and 2nd-NLEIS data.
 
@@ -159,6 +160,10 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
     positive : bool, optional
         If True, high-frequency inductance is eliminated. Defaults to True.
 
+    graph : bool, optional
+        Whether to use execution graph to process the circuit.
+        Defaults to False, which uses eval based code
+
     kwargs :
         Additional keyword arguments passed to `scipy.optimize.curve_fit`.
 
@@ -234,7 +239,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         popt, pcov = curve_fit(
             wrapCircuit_simul(edited_circuit, circuit_1, constants_1,
                               circuit_2, constants_2,
-                              ub, max_f), frequencies, Zstack,
+                              ub, max_f, graph=graph), frequencies, Zstack,
             p0=initial_guess, bounds=bounds, **kwargs)
 
     # Calculate one standard deviation error estimates for fit parameters,
@@ -259,7 +264,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
             wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
                                    circuit_1, constants_1,
                                    circuit_2, constants_2,
-                                   ub, max_f, cost=cost),
+                                   ub, max_f, cost=cost, graph=graph),
             x0=initial_guess, bounds=bounds, **kwargs)
 
         return (res.x*ub, None)
@@ -267,7 +272,8 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 
 def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
                            circuit_1, constants_1,
-                           circuit_2, constants_2, ub, max_f=10, cost=0.5):
+                           circuit_2, constants_2, ub, max_f=10, cost=0.5,
+                           graph=False):
     ''' wraps function so we can pass the circuit string
     for negtive log likelihood optimization'''
 
@@ -280,12 +286,21 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
         frequencies: list of floats
         Z1: EIS data
         Z2: NLEIS data
+        edited_circuit : string
         circuit_1 : string
         constants_1 : dict
         circuit_2 : string
         constants_2 : dict
         ub : list of floats upper bound if bounds are provided
         max_f: int
+        cost : float, optional
+            Weighting between EIS and 2nd-NLEIS data. A value greater than 0.5
+            puts more weight on EIS,
+            while a value less than 0.5 puts more weight on 2nd-NLEIS.
+            Default is 0.5.
+        graph : bool, optional
+            Whether to use execution graph to process the circuit.
+            Defaults to False, which uses eval based code
         parameters : list of floats
 
         Returns
@@ -298,7 +313,9 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
         f2 = frequencies[mask]
         x1, x2 = wrappedImpedance(edited_circuit,
                                   circuit_1, constants_1, circuit_2,
-                                  constants_2, f1, f2, parameters*ub)
+                                  constants_2, f1, f2, parameters*ub,
+                                  graph=graph)
+
         # No normalization in currently applied
         # Z1max = max(np.abs(Z1))
         # Z2max = max(np.abs(Z2))
@@ -314,7 +331,7 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
 
 
 def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
-                      constants_2, ub, max_f=10):
+                      constants_2, ub, max_f=10, graph=False):
     """ wraps function so we can pass the circuit string
     for simultaneous fitting """
     def wrappedCircuit_simul(frequencies, *parameters):
@@ -323,13 +340,21 @@ def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
 
         Parameters
         ----------
+        edited_circuit : string
         circuit_1 : string
         constants_1 : dict
         circuit_2 : string
         constants_2 : dict
-        max_f: int
-        parameters : list of floats
+        ub : list of floats upper bound if bounds are provided
+        max_f: float
+        graph : bool, optional
+            Whether to use execution graph to process the circuit.
+            Defaults to False, which uses eval based code
+
         frequencies : list of floats
+
+        parameters : list of floats
+
 
         Returns
         -------
@@ -343,7 +368,7 @@ def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
         x1, x2 = wrappedImpedance(edited_circuit,
                                   circuit_1, constants_1,
                                   circuit_2, constants_2,
-                                  f1, f2, parameters*ub)
+                                  f1, f2, parameters*ub, graph=graph)
 
         y1_real = np.real(x1)
         y1_imag = np.imag(x1)
@@ -357,7 +382,7 @@ def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
 
 
 def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
-                     constants_2, f1, f2, parameters):
+                     constants_2, f1, f2, parameters, graph=False):
     """
     Calculate EIS and 2nd-NLEIS impedances using the provided circuits.
 
@@ -390,6 +415,9 @@ def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
 
     parameters : list of float
         Full set of parameters derived from the edited circuit string.
+    graph : bool, optional
+        Whether to use execution graph to process the circuit.
+        Defaults to False, which uses eval based code
 
     Returns
     -------
@@ -402,15 +430,20 @@ def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
 
     p1, p2 = individual_parameters(
         edited_circuit, parameters, constants_1, constants_2)
-
-    x1 = eval(buildCircuit(circuit_1, f1, *p1,
-                           constants=constants_1, eval_string='',
-                           index=0)[0],
-              circuit_elements)
-    x2 = eval(buildCircuit(circuit_2, f2, *p2,
-                           constants=constants_2, eval_string='',
-                           index=0)[0],
-              circuit_elements)
+    if graph:
+        graph_EIS = CircuitGraph(circuit_1, constants_1)
+        graph_NLEIS = CircuitGraph(circuit_2, constants_2)
+        x1 = graph_EIS.compute(f1, *p1)
+        x2 = graph_NLEIS.compute(f2, *p2)
+    else:
+        x1 = eval(buildCircuit(circuit_1, f1, *p1,
+                               constants=constants_1, eval_string='',
+                               index=0)[0],
+                  circuit_elements)
+        x2 = eval(buildCircuit(circuit_2, f2, *p2,
+                               constants=constants_2, eval_string='',
+                               index=0)[0],
+                  circuit_elements)
     return (x1, x2)
 
 

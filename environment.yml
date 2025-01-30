@@ -16,5 +16,6 @@ dependencies:
     - tqdm
     - tabulate
     - impedance
+    - networkx
 
     
