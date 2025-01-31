@@ -3,10 +3,12 @@ import numpy as np
 from .nleis import NLEISCustomCircuit
 from .visualization import plot_first, plot_second
 from tqdm import tqdm
+import warnings
 
 
-def MM(f, Z, raw_circuit='K', initial_guess=[0.01, 1], method='cost',
-       max_f=np.inf, max_M=20, tol=1e-5, plot=False, CI_plot=False):
+def MM(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1], method='cost',
+       max_f=np.inf, max_M=20, tol=1e-5, k=1,
+       graph=True, plot=False, CI_plot=False):
     '''
     Wrapper function to perform measurement models fitting with either cost
     or confidence interval method.
@@ -39,6 +41,14 @@ def MM(f, Z, raw_circuit='K', initial_guess=[0.01, 1], method='cost',
     tol : float
         Tolerance for cost convergence
         Default: 1e-5
+    k : int
+        Harmonic number for the measurement model to ensure the correct ploting
+        Default = 1 for EIS.
+        k = 2 for 2nd-NLEIS
+    graph : bool
+        whether to use graph-based or eval()-based calculation.
+        Default = True.
+
     plot : bool
         Whether to plot the results during the fitting process
         Default = False
@@ -52,19 +62,19 @@ def MM(f, Z, raw_circuit='K', initial_guess=[0.01, 1], method='cost',
     --------
     M : int
         The optimal number of elements determined by the fitting
-    cost : list
-        List of cost values for each iteration.
-        Only avaliable when method is 'cost'
     p : list
         Final optimized parameters
+    conf : array
+        confidence interval of the fitted parameter calculated from covariance
     Z_fit : array
         Fitted impedance values
     res_real : array
         Residuals for the real part of the impedance
     res_imag : array
         Residuals for the imaginary part of the impedance
-    conf : array
-        confidence interval of the fitted parameter calculated from covariance
+    cost : list
+        List of cost values for each iteration.
+        Only avaliable when method is 'cost'
 
     Note:
     -----
@@ -81,17 +91,17 @@ def MM(f, Z, raw_circuit='K', initial_guess=[0.01, 1], method='cost',
     '''
 
     if method == 'cost':
-        return MM_cost(f, Z, raw_circuit, initial_guess, max_f, max_M, tol,
-                       plot)
+        return MM_cost(f, Z, raw_circuit, initial_guess, max_f, max_M, tol, k,
+                       graph, plot)
     elif method == 'conf':
-        return MM_conf(f, Z, raw_circuit, initial_guess, max_f, max_M,
-                       plot, CI_plot)
+        return MM_conf(f, Z, raw_circuit, initial_guess, max_f, max_M, k,
+                       plot, graph, CI_plot)
     else:
         raise ValueError('The method should be either cost or conf')
 
 
 def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
-            max_f=np.inf, max_M=20, tol=1e-5,
+            max_f=np.inf, max_M=20, tol=1e-5, k=1, graph=True,
             plot=False):
     """
     Perform NLEIS fitting using nonlinear measurement models
@@ -116,6 +126,13 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
     tol : float
         Tolerance for cost convergence
         Default: 1e-5
+    k : int
+        Harmonic number for the measurement model to ensure the correct ploting
+        Default = 1 for EIS.
+        k = 2 for 2nd-NLEIS
+    graph : bool
+        whether to use graph-based or eval()-based calculation.
+        Default = True.
     plot : bool
         Whether to plot the results during the fitting process
         Default = False
@@ -124,18 +141,18 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
     --------
     M : int
         The number of elements used in the circuit model
-    cost : list
-        List of cost values for each iteration
     p : list
         Final optimized parameters
+    conf : array
+        confidence interval of the fitted parameter calculated from covariance
     Z_fit : array
         Fitted impedance values
     res_real : array
         Residuals for the real part of the impedance
     res_imag : array
         Residuals for the imaginary part of the impedance
-    conf : array
-        confidence interval of the fitted parameter calculated from covariance
+    cost : list
+        List of cost values for each iteration
 
     """
     if not isinstance(max_M, int):
@@ -149,63 +166,79 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
     circuit = raw_circuit+'0'
     p0 = initial_guess * max_M
     n = len(initial_guess)
-    # Initialize the cost
+    # Initialize the variables
     cost = [0]
     previous_cost = 0
+    Z_fit_previous = 0
     # Mask the data
     mask = f < max_f
     f = f[mask]
     Z = Z[mask]
+
+    # initialize the model
+    model = NLEISCustomCircuit(graph=graph)
     # Main loop to fit the model
     with tqdm(total=max_M, file=None) as pbar:
         for i in range(max_M):
             # perform MM fitting with M elements
             M = i + 1
-            model = NLEISCustomCircuit(circuit, initial_guess=p0[:n*M])
+
+            # update circuit and initial guess for the model
+            model.circuit = circuit
+            model.initial_guess = p0[:n*M]
+
+            # Fit the model
             model.fit(f, Z, max_f=max_f)
+
+            # update the initial guess
             p0[:n*M] = model.parameters_
 
+            # Predict the impedance
             Z_fit = model.predict(f, max_f=max_f)
 
             # Compute the cost
             current_cost = cost_max_norm(Z, Z_fit)
             cost.append(current_cost)
 
-            # generate plot for each iteration
-            if plot:
-                fig, ax = plt.subplots(figsize=(5, 5))
-                plot_second(ax, Z)
-                plot_second(ax, Z_fit)
-                ax.text(0.75, 0.2, '# elements = '
-                        + str(i+1),
-                        horizontalalignment='center',
-                        verticalalignment='center',
-                        transform=ax.transAxes, size=12)
-                ax.text(0.75, 0.1, '$COST = $'
-                        + '{:0.2e}'.format(current_cost),
-                        horizontalalignment='center',
-                        verticalalignment='center',
-                        transform=ax.transAxes, size=12)
-                plt.legend(['Data', 'Fit'])
-                plt.show()
-
             # Check for convergence
             if abs(current_cost - previous_cost) < tol:
                 # If the cost is less than the tolerance, return the results
-                print(f'Optimal solution found with M = {M}')
 
-                res_real = (Z.real - Z_fit.real) / Z.real
-                res_imag = (Z.imag - Z_fit.imag) / Z.imag
+                if M == 1:
 
-                pbar.update(1)
-                pbar.total = M
-                pbar.refresh()
+                    # generate plot
+                    if plot:
+                        cost_plot(Z, Z_fit, current_cost, M, k)
+                    print(f'Optimal solution found with M = {M}')
 
-                p = model.parameters_
-                conf = model.conf_
-                return M, cost[1:], p, Z_fit, res_real, res_imag, conf
+                    res_real = (Z.real - Z_fit.real) / Z.real
+                    res_imag = (Z.imag - Z_fit.imag) / Z.imag
 
-            # Update the cost and the circuit model
+                    pbar.update(1)
+                    pbar.total = M
+                    pbar.refresh()
+
+                    p = model.parameters_
+                    conf = model.conf_
+                    return M, p, conf, Z_fit, res_real, res_imag, cost[1:]
+                else:
+                    print(f'Optimal solution found with M = {M-1}')
+                    res_real = (Z.real - Z_fit_previous.real) / Z.real
+                    res_imag = (Z.imag - Z_fit_previous.imag) / Z.imag
+
+                    pbar.total = M-1
+                    pbar.refresh()
+
+                    return (M-1, p, conf, Z_fit_previous, res_real,
+                            res_imag, cost[1:-1])
+
+            # generate plot for each iteration
+            if plot:
+                cost_plot(Z, Z_fit, current_cost, M, k)
+
+            p = model.parameters_
+            conf = model.conf_
+            Z_fit_previous = Z_fit
             previous_cost = current_cost
 
             circuit += '-' + raw_circuit + str(i+1)
@@ -216,8 +249,59 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
                      'Please adjust max_M or other parameters.')
 
 
+def cost_plot(Z, Z_fit, cost, M, k):
+    '''
+    Generate plot for the cost function method
+    Parameters:
+    -----------
+    Z : array-like,dtype=complex128
+        Impedance data
+    Z_fit : array-like,dtype=complex128
+        Fitted impedance values
+    cost : float
+        Cost value
+    M : int
+        Number of elements used in the circuit model
+    k : int
+        Harmonic number for the measurement model to ensure the correct ploting
+        Default = 1 for EIS.
+        k = 2 for 2nd-NLEIS
+    Returns:
+    --------
+    None
+    '''
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    if k == 1:
+        plot = plot_first
+    elif k == 2:
+        plot = plot_second
+    else:
+        warnings.warn('The harmonic number k should be either 1 or 2. ' +
+                      'The default value of 1 will be used, which will give ' +
+                      'units and legend corresponding to EIS.')
+
+        plot = plot_first
+
+    plot(ax, Z)
+    plot(ax, Z_fit)
+    ax.text(0.75, 0.2, '# elements = '
+            + str(M),
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform=ax.transAxes, size=12)
+    ax.text(0.75, 0.1, '$COST = $'
+            + '{:0.2e}'.format(cost),
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform=ax.transAxes, size=12)
+    plt.legend(['Data', 'Fit'])
+    plt.show()
+    return ()
+
+
 def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
-            max_f=np.inf, max_M=20,
+            max_f=np.inf, max_M=20, k=1, graph=True,
             plot=False, CI_plot=False):
     """
     Perform impedance fitting using measurement models
@@ -246,6 +330,10 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
     max_M : int
         Maximum number of elements to try in the measurement model
         Default = 20
+    k : int
+        Harmonic number for the measurement model to ensure the correct ploting
+        Default = 1 for EIS.
+        k = 2 for 2nd-NLEIS
     plot : bool
         Whether to plot the results during the fitting process
         Default = False
@@ -260,14 +348,14 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
         The number of elements used in the circuit model
     p : list
         Final optimized parameters
+    conf : array
+        confidence interval of the fitted parameter calculated from covariance
     Z_fit : array
         Fitted impedance values
     res_real : array
         Residuals for the real part of the impedance
     res_imag : array
         Residuals for the imaginary part of the impedance
-    conf : array
-        confidence interval of the fitted parameter calculated from covariance
 
     """
     if not isinstance(max_M, int):
@@ -293,15 +381,19 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
     conf_previous = 0
     circuit_previous = ''
 
+    # initialize the model
+    model = NLEISCustomCircuit(graph=graph)
+
     with tqdm(total=max_M, file=None) as pbar:
         for i in range(max_M):
             # perform MM fitting with M elements
             M = i + 1
-
-            model = NLEISCustomCircuit(circuit, initial_guess=p0[:n*M])
-
+            # update circuit and initial guess for the model
+            model.circuit = circuit
+            model.initial_guess = p0[:n*M]
+            # Fit the model
             model.fit(f, Z, max_f=max_f)
-
+            # calculate the impedance
             Z_fit = model.predict(f, max_f=max_f)
 
             # calculate confidence intervals
@@ -328,47 +420,12 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
                 pbar.close()
 
                 if CI_plot:
-                    # Monte Carlo simulation for confidence intervals
-                    # with random sampling of 1000 samples
-                    n_simulations = 1000
-
-                    # initialize monte carlo simulation array and model
-                    monte_simulation = np.zeros(
-                        (n_simulations, len(f)), dtype='complex128')
-
-                    model = NLEISCustomCircuit(
-                        circuit_previous, initial_guess=p_previous)
-                    len_p = len(p_previous)
-
-                    # Perform Monte Carlo simulation
-                    for i in range(n_simulations):
-                        # Generate random parameters from a normal distribution
-                        p1 = p_previous + \
-                            np.random.normal(0, conf_previous, size=len_p)
-
-                        model.initial_guess = p1
-                        monte_simulation[i] = model.predict(f, max_f=max_f)
-
-                    # Calculate confidence intervals
-                    # 95% confidence (lower)
-                    lower_bound = np.percentile(monte_simulation, 2.5, axis=0)
-                    # 95% confidence (upper)
-                    upper_bound = np.percentile(monte_simulation, 97.5, axis=0)
-
-                    # Plot the results
-                    fig, ax = plt.subplots(figsize=(5, 5))
-
-                    # plot data and fit
-                    plot_first(ax, Z, fmt='-o')
-                    plot_first(ax, Z_fit_previous, fmt='-o')
-
-                    # plot the confidence interval
-                    plot_first(ax, lower_bound, fmt='r--')
-                    plot_first(ax, upper_bound, fmt='r--')
-
-                    plt.legend(['Data', 'Fit', '95% CI'])
-
-                    plt.show()
+                    # Perform Monte Carlo simulation and generate plot
+                    _, _ = CI_MonteCarlo(f, Z, circuit=circuit_previous,
+                                         p=p_previous,
+                                         conf=conf_previous, max_f=max_f,
+                                         k=k,
+                                         graph=graph, plot=True)
 
                 # return the results
                 M = M-1
@@ -376,8 +433,7 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
                 Z_fit = Z_fit_previous
                 conf = conf_previous
 
-                return (M, p, Z_fit, res_real, res_imag,
-                        conf)
+                return (M, p, conf, Z_fit, res_real, res_imag)
 
             # Update the previous values
             p_previous = model.parameters_
@@ -387,9 +443,21 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
 
             # generate plot for each iteration
             if plot:
-                fig, ax = plt.subplots(figsize=(5, 5))
-                plot_first(ax, Z)
-                plot_first(ax, Z_fit)
+                if k == 1:
+                    plot_func = plot_first
+                elif k == 2:
+                    plot_func = plot_second
+                else:
+                    warnings.warn('The harmonic number k should be ' +
+                                  'either 1 or 2. '
+                                  'The default value of 1 will be used, ' +
+                                  'which will give units and legend ' +
+                                  'corresponding to EIS.')
+                    plot_func = plot_first
+
+                _, ax = plt.subplots(figsize=(5, 5))
+                plot_func(ax, Z)
+                plot_func(ax, Z_fit)
                 ax.text(0.75, 0.1, '# elements = '
                         + str(i+1),
                         horizontalalignment='center',
@@ -404,6 +472,107 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
     raise ValueError(f'The calculation exceeded max_M = {max_M} without '
                      + 'finding an optimal solution. '
                      'Please adjust max_M or other relevant parameters.')
+
+
+def CI_MonteCarlo(f, Z, circuit='', p=[], conf=[], max_f=np.inf,
+                  n_simulations=1000, k=1,  graph=True,  plot=False):
+    '''
+    Perform Monte Carlo simulation to calculate the 95% confidence interval
+    of the the impedance spectrum using the confidence interval of
+    the parameters calculated using covariance.
+
+    Parameters:
+    -----------
+    f : array-like
+        Frequency data
+    Z : array-like, dtype=complex128
+        Impedance data
+    circuit : str
+        Circuit for the final measurement model
+    p : list
+        Fitted measurement model parameters
+    conf : list
+        Confidence interval of the fitted parameters
+    max_f : float
+        Maximum frequency cutoff
+        Default = inf
+    n_simulations : int
+        Number of simulations to perform for the Monte Carlo simulation
+        Default = 1000
+    k : int
+        Harmonic number for the measurement model to ensure the correct ploting
+        Default = 1 for EIS.
+        k = 2 for 2nd-NLEIS
+    graph : bool
+        whether to use graph-based or eval()-based calculation.
+        Default = True.
+        To use graph-based calculation, set to True.
+    plot : bool
+        Whether to plot the final confidence interval results
+        Default = False
+    Returns:
+    --------
+    lower_bound : array
+        Lower bound of the 95% confidence interval
+    upper_bound : array
+        Upper bound of the 95% confidence interval
+        '''
+
+    # initialize monte carlo simulation array and model
+    monte_simulation = np.zeros(
+        (n_simulations, len(f)), dtype='complex128')
+
+    model = NLEISCustomCircuit(graph=graph)
+    model.circuit = circuit
+    model.parameters_ = p
+
+    Z_fit = model.predict(f, max_f=max_f)
+
+    len_p = len(p)
+
+    # Perform Monte Carlo simulation
+    for i in range(n_simulations):
+        # Generate random parameters from a normal distribution
+        p1 = p + \
+            np.random.normal(0, conf, size=len_p)
+
+        model.parameters_ = p1
+        monte_simulation[i] = model.predict(f, max_f=max_f)
+
+        # Calculate confidence intervals
+        # 95% confidence (lower)
+        lower_bound = np.percentile(monte_simulation, 2.5, axis=0)
+        # 95% confidence (upper)
+        upper_bound = np.percentile(monte_simulation, 97.5, axis=0)
+
+        if plot:
+            # Plot the results
+            _, ax = plt.subplots(figsize=(5, 5))
+            if k == 1:
+                plot_func = plot_first
+            elif k == 2:
+                plot_func = plot_second
+            else:
+                warnings.warn('The harmonic number k should be ' +
+                              'either 1 or 2. '
+                              'The default value of 1 will be used, ' +
+                              'which will give units and legend ' +
+                              'corresponding to EIS.')
+                plot_func = plot_first
+
+            # plot data and fit
+            plot_func(ax, Z, fmt='-o')
+            plot_func(ax, Z_fit, fmt='-o')
+
+            # plot the confidence interval
+            plot_func(ax, lower_bound, fmt='r--')
+            plot_func(ax, upper_bound, fmt='r--')
+
+            plt.legend(['Data', 'Fit', '95% CI'])
+
+            plt.show()
+
+    return lower_bound, upper_bound
 
 
 def cost_max_norm(data, model):

@@ -4,6 +4,8 @@ from nleis.validation import MM, cost_max_norm
 from impedance.models.circuits import CustomCircuit
 from nleis import NLEISCustomCircuit
 import pytest
+import warnings
+warnings.filterwarnings("ignore")
 
 
 # Suppress plt.show()
@@ -20,12 +22,12 @@ def test_MM_cost_method():
 
     # test invalid max_M raises value error
     with pytest.raises(ValueError):
-        M, cost, p, Z_fit, res_real, res_imag, conf = MM(
+        M, p, conf, Z_fit, res_real, res_imag, cost = MM(
             f, Z2, raw_circuit='Kn', initial_guess=[.1, 1], method='cost',
             max_f=10, max_M=0, tol=1e-5, plot=True)
 
     # check for an ideal weakly nonlinear RC, M equal to 1
-    M, cost, p, Z_fit, res_real, res_imag, conf = MM(
+    M, p, conf, Z_fit, res_real, res_imag, cost = MM(
         f, Z2, raw_circuit='Kn', initial_guess=[.1, 1], method='cost',
         max_f=10, max_M=10, tol=1e-5, plot=True)
     assert np.isclose(M, 1)
@@ -35,9 +37,18 @@ def test_MM_cost_method():
 
     # test optimal solution unfound with max_M raises value error
     with pytest.raises(ValueError):
-        M, cost, p, Z_fit, res_real, res_imag, conf = MM(
+        M, p, conf, Z_fit, res_real, res_imag, cost = MM(
             f, Z2, raw_circuit='Kn', initial_guess=[.1, 1], method='cost',
-            max_f=10, max_M=2, tol=1e-5, plot=True)
+            max_f=10, max_M=2, tol=1e-5, k=2, plot=True)
+
+    # test optimal solution can be found with enough elements
+    # and check for warnings when using invalid k
+    with pytest.warns(UserWarning, match="The harmonic number"):
+        M, p, conf, Z_fit, res_real, res_imag, cost = MM(
+            f, Z2, raw_circuit='Kn', initial_guess=[.1, 1], method='cost',
+            max_f=10, max_M=20, tol=1e-5, k=3, plot=True)
+
+    plt.close('all')
 
 
 def test_MM_conf_method():
@@ -47,15 +58,19 @@ def test_MM_conf_method():
 
     # test invalid max_M raises value error
     with pytest.raises(ValueError):
-        M, p, Z_fit, res_real, res_imag, conf = MM(
+        M, p, conf, Z_fit, res_real, res_imag = MM(
             f, Z1, raw_circuit='K', initial_guess=[.1, .1], method='conf',
             max_M=0, plot=True, CI_plot=True)
 
     # check for an ideal RC, M equal to 1
-    M, p, Z_fit, res_real, res_imag, conf = MM(
+    M, p, conf, Z_fit, res_real, res_imag = MM(
         f, Z1, raw_circuit='K', initial_guess=[.1, .1], method='conf',
-        max_M=10, plot=True, CI_plot=True)
-    print(M)
+        max_M=10, k=1, plot=True, CI_plot=True)
+
+    # to make sure it is possible to pass k = 2 for plotting
+    M, p, conf, Z_fit, res_real, res_imag = MM(
+        f, Z1, raw_circuit='K', initial_guess=[.1, .1], method='conf',
+        max_M=10, k=2, plot=True, CI_plot=True)
     assert np.isclose(M, 1)
 
     model = CustomCircuit('TP0', initial_guess=[1, 1, 1])
@@ -64,15 +79,22 @@ def test_MM_conf_method():
 
     # test optimal solution unfound with max_M raises value error
     with pytest.raises(ValueError):
-        M, p, Z_fit, res_real, res_imag, conf = MM(
+        M, p, conf, Z_fit, res_real, res_imag = MM(
             f, Z1, raw_circuit='K', initial_guess=[.1, .1], method='conf',
-            max_M=3, plot=True, CI_plot=True)
+            max_M=3, k=2, plot=True, CI_plot=True)
 
     # test faliure of conf method raises value error
     with pytest.raises(ValueError):
-        M, p, Z_fit, res_real, res_imag, conf = MM(
-            f, -Z1, raw_circuit='K', initial_guess=[.1, .1], method='conf',
-            max_M=3, plot=True, CI_plot=True)
+        M, p, conf, Z_fit, res_real, res_imag = MM(
+            f, -Z1, raw_circuit='RC', initial_guess=[.1, .1], method='conf',
+            max_M=3, k=3, plot=True, CI_plot=False)
+
+    # check for warnings when using invalid k
+    with pytest.warns(UserWarning, match="The harmonic number"):
+
+        M, p, conf, Z_fit, res_real, res_imag = MM(
+            f, Z1, raw_circuit='K', initial_guess=[.1, .1], method='conf',
+            max_M=10, k=3, plot=True, CI_plot=True)
 
 
 def test_MM_method():
