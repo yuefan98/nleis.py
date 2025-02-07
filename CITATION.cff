@@ -1,0 +1,47 @@
+cff-version: "1.2.0"
+authors:
+- email: yuefan@uw.edu
+  family-names: Ji
+  given-names: Yuefan
+  orcid: "https://orcid.org/0000-0003-1912-767X"
+- family-names: Murbach
+  given-names: Matthew D.
+  orcid: "https://orcid.org/0000-0002-6583-5995"
+- family-names: Schwartz
+  given-names: Daniel T.
+  orcid: "https://orcid.org/0000-0003-1173-5611"
+contact:
+- email: yuefan@uw.edu
+  family-names: Ji
+  given-names: Yuefan
+  orcid: "https://orcid.org/0000-0003-1912-767X"
+doi: 10.5281/zenodo.14606367
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - email: yuefan@uw.edu
+    family-names: Ji
+    given-names: Yuefan
+    orcid: "https://orcid.org/0000-0003-1912-767X"
+  - family-names: Murbach
+    given-names: Matthew D.
+    orcid: "https://orcid.org/0000-0002-6583-5995"
+  - family-names: Schwartz
+    given-names: Daniel T.
+    orcid: "https://orcid.org/0000-0003-1173-5611"
+  date-published: 2025-01-28
+  doi: 10.21105/joss.07424
+  issn: 2475-9066
+  issue: 105
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 7424
+  title: "nleis.py: A Nonlinear Electrochemical Impedance Analysis
+    Toolbox"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.07424"
+  volume: 10
+title: "nleis.py: A Nonlinear Electrochemical Impedance Analysis
+  Toolbox"
