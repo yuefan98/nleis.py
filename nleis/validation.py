@@ -95,7 +95,7 @@ def MM(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1], method='cost',
                        graph, plot)
     elif method == 'conf':
         return MM_conf(f, Z, raw_circuit, initial_guess, max_f, max_M, k,
-                       plot, graph, CI_plot)
+                       graph, plot, CI_plot)
     else:
         raise ValueError('The method should be either cost or conf')
 
@@ -393,6 +393,10 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
             model.initial_guess = p0[:n*M]
             # Fit the model
             model.fit(f, Z, max_f=max_f)
+
+            # update the initial guess
+            p0[:n*M] = model.parameters_
+
             # calculate the impedance
             Z_fit = model.predict(f, max_f=max_f)
 
@@ -539,38 +543,38 @@ def CI_MonteCarlo(f, Z, circuit='', p=[], conf=[], max_f=np.inf,
         model.parameters_ = p1
         monte_simulation[i] = model.predict(f, max_f=max_f)
 
-        # Calculate confidence intervals
-        # 95% confidence (lower)
-        lower_bound = np.percentile(monte_simulation, 2.5, axis=0)
-        # 95% confidence (upper)
-        upper_bound = np.percentile(monte_simulation, 97.5, axis=0)
+    # Calculate confidence intervals
+    # 95% confidence (lower)
+    lower_bound = np.percentile(monte_simulation, 2.5, axis=0)
+    # 95% confidence (upper)
+    upper_bound = np.percentile(monte_simulation, 97.5, axis=0)
 
-        if plot:
-            # Plot the results
-            _, ax = plt.subplots(figsize=(5, 5))
-            if k == 1:
-                plot_func = plot_first
-            elif k == 2:
-                plot_func = plot_second
-            else:
-                warnings.warn('The harmonic number k should be ' +
-                              'either 1 or 2. '
-                              'The default value of 1 will be used, ' +
-                              'which will give units and legend ' +
-                              'corresponding to EIS.')
-                plot_func = plot_first
+    if plot:
+        # Plot the results
+        _, ax = plt.subplots(figsize=(5, 5))
+        if k == 1:
+            plot_func = plot_first
+        elif k == 2:
+            plot_func = plot_second
+        else:
+            warnings.warn('The harmonic number k should be ' +
+                          'either 1 or 2. '
+                          'The default value of 1 will be used, ' +
+                          'which will give units and legend ' +
+                          'corresponding to EIS.')
+            plot_func = plot_first
 
-            # plot data and fit
-            plot_func(ax, Z, fmt='-o')
-            plot_func(ax, Z_fit, fmt='-o')
+        # plot data and fit
+        plot_func(ax, Z, fmt='-o')
+        plot_func(ax, Z_fit, fmt='-o')
 
-            # plot the confidence interval
-            plot_func(ax, lower_bound, fmt='r--')
-            plot_func(ax, upper_bound, fmt='r--')
+        # plot the confidence interval
+        plot_func(ax, lower_bound, fmt='r--')
+        plot_func(ax, upper_bound, fmt='r--')
 
-            plt.legend(['Data', 'Fit', '95% CI'])
+        plt.legend(['Data', 'Fit', '95% CI'])
 
-            plt.show()
+        plt.show()
 
     return lower_bound, upper_bound
 
