@@ -1,3 +1,9 @@
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.07424/status.svg)](https://doi.org/10.21105/joss.07424)
+
+![GitHub release](https://img.shields.io/github/release/yuefan98/nleis.py)![Coveralls](https://img.shields.io/coverallsCoverage/github/yuefan98/nleis.py)
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14606367.svg)](https://doi.org/10.5281/zenodo.14606367)
+
 # nleis.py
 
 Second-harmonic nonlinear electrochemical impedance spectroscopy (2nd-NLEIS), a special form of nonlinear electrochemical impedance spectroscopy (NLEIS), is emerging as a powerful complementary technique to traditional electrochemical impedance spectroscopy (EIS). It retains the experimental simplicity of EIS while providing additional physical insights. However, its adoption and application have been limited by the lack of open-source, user-friendly software.
@@ -45,7 +51,24 @@ The nleis.py project welcomes all kinds of contributions, including bug fixes, f
 We are also excited to see contributions that expand the capabilities of `nleis.py`. Potential future features include:
 
 -   EIS and 2nd-NLEIS data processing from the time domain
--   Data validation for 2nd-NLEIS 
+-   Data validation for 2nd-NLEIS
+
+### Citing nleis.py
+If you use nleis.py in your work, please consider citing our JOSS paper as:
+
+```bash
+@article{Ji2025,
+  doi = {10.21105/joss.07424},
+  url = {https://doi.org/10.21105/joss.07424},
+  year = {2025}, publisher = {The Open Journal},
+  volume = {10},
+  number = {105},
+  pages = {7424},
+  author = {Yuefan Ji and Matthew D. Murbach and Daniel T. Schwartz},
+  title = {nleis.py: A Nonlinear Electrochemical Impedance Analysis Toolbox},
+  journal = {Journal of Open Source Software}
+}
+```
 
 ### Credits
 ----------------------------------------------------------------
