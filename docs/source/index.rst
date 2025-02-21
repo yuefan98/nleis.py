@@ -12,10 +12,10 @@ Welcome to :code:`nleis.py`'s documentation!
    nleis-elements-pair
    fitting
    nleis_fitting
-   visualization
    data-processing
+   validation
+   visualization
    release-notes
-   
 
 Indices and tables
 ==================

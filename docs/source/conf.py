@@ -15,7 +15,7 @@ import sys
 
 # using system path to extract version number
 sys.path.insert(0, os.path.abspath('../../'))
-from nleis import __version__ # noqa
+from nleis import __version__  # noqa
 
 
 # -- Project information -----------------------------------------------------
@@ -118,3 +118,12 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+
+# Enable edit on github button
+html_context = {
+    "display_github": True,
+    "github_user": "yuefan98",
+    "github_repo": "nleis.py",
+    "github_version": "main",
+    "conf_py_path": "/docs/source/",
+}

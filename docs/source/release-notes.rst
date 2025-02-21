@@ -2,7 +2,7 @@
 Release Notes
 ====================
 
-Version 0.2
+Version 0.2 (2025-02-20)
 ---------------------------
 This release introduces directed acyclic graph (DAG)-based function evaluation, optimizing computation speed and structure.
 It also includes vectorized circuit calculations and new nonlinear circuit elements (:code:`RCDQ`, :code:`RCDQn`, :code:`RCSQ`, :code:`RCSQn`) for enhanced modeling flexibility. 🚀 

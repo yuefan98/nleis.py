@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.fft import rfft, rfftfreq
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+import re
 
 
 def data_loader(filename, equipment='autolab', fft='instrument', max_k=3,
@@ -11,13 +12,14 @@ def data_loader(filename, equipment='autolab', fft='instrument', max_k=3,
                 fit_visualize=False, freq_domain_visual=False):
     """
     Load data and perform FFT processing for EIS and 2nd-NLEIS data.
+
     Currently supports data from Autolab.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     filename : str or list of str
         Path(s) to the CSV file(s) containing the raw data.
-        list of str is required if using multi_current mode.
+        List of str is required if using multi_current mode.
     equipment : str, default 'autolab'
         Specifies the equipment used for data acquisition.
     fft : str, default 'instrument'
@@ -34,13 +36,12 @@ def data_loader(filename, equipment='autolab', fft='instrument', max_k=3,
         If True, generate plots to visualize the impedance fit
         to multiple current.
         Only available when multi_current = True
-    freq_domain_visual: bool, default False
+    freq_domain_visual : bool, default False
         If True, generate frequency domain current and voltage responses
         at each frequency for the first three harmonics.
-        Only available when multi_current = False
+        Only available when multi_current = False.
 
-
-    Returns:
+    Returns
     --------
     frequencies : ndarray
         Array of frequency values.
@@ -51,7 +52,7 @@ def data_loader(filename, equipment='autolab', fft='instrument', max_k=3,
     results : DataFrame
         A DataFrame containing the frequencies and
         the current/voltage values in frequency domain
-        for upto max_k harmonics.
+        for up to max_k harmonics.
     """
     if equipment == 'autolab':
         if multi_current:
@@ -124,7 +125,7 @@ def autolab_fft(df, method='scipy', rtol=5e-4, max_k=3, phase_correction=True,
     Perform FFT on the Autolab time domain or extract Autolab
     frequency domain current and voltage.
 
-    Parameters:
+    Parameters
     -----------
     df : DataFrame
         Input data from Autolab.
@@ -145,7 +146,7 @@ def autolab_fft(df, method='scipy', rtol=5e-4, max_k=3, phase_correction=True,
     freq_domain_visual: bool, default False
         If True, generate plot for current and voltage in the frequency domain.
 
-    Returns:
+    Returns
     --------
     results :
         A DataFrame containing the frequencies and
@@ -220,7 +221,7 @@ def fft_data(data, f, max_k=3, rtol=5e-4, phase_correction=True, baseline=True,
     and return the current and voltage values in frequency domain
     for the first max_k harmonics.
 
-    Parameters:
+    Parameters
     -----------
     data : DataFrame
         Processed data for each frequency.
@@ -238,7 +239,7 @@ def fft_data(data, f, max_k=3, rtol=5e-4, phase_correction=True, baseline=True,
     freq_domain_visual: bool, default False
         If True, generate plot for current and voltage in the frequency domain.
 
-    Returns:
+    Returns
     --------
     I_dict: dict
         Dictionary containing the current values for the first max_k harmonics.
@@ -296,7 +297,7 @@ def fit_Z1(I1, Z1_real, Z1_imag):
     and the current
     is also complex (I = I_real + j * I_imag).
 
-    Parameters:
+    Parameters
     -----------
     I : numpy.ndarray, dtype=complex128
         The first-harmonic current.
@@ -305,7 +306,7 @@ def fit_Z1(I1, Z1_real, Z1_imag):
     Z1_imag : float
         The imaginary part of the first-harmonic impedance (EIS).
 
-    Returns:
+    Returns
     --------
     ndarray
         A 1D array where the first half contains the real parts of the computed
@@ -329,7 +330,7 @@ def fit_Z2(I1, Z2_real, Z2_imag):
     and the current is also complex (I = I_real + j * I_imag). The voltage is
     calculated as V2 = Z2 * I^2.
 
-    Parameters:
+    Parameters
     -----------
     I : numpy.ndarray, dtype=complex128
         The first-harmonic current.
@@ -338,7 +339,7 @@ def fit_Z2(I1, Z2_real, Z2_imag):
     Z2_imag : float
         The imaginary part of the second-harmonic impedance (2nd-NLEIS).
 
-    Returns:
+    Returns
     --------
     ndarray
         A 1D array where the first half contains the real parts of the computed
@@ -358,7 +359,7 @@ def plot_fit(I1, V1, V2, V1_cal, V2_cal, scaling_factor):
     V1 should follows a linear relationship with I1.real,
     while V2 should follows a quadratic relationship with I1.real.
 
-    Parameters:
+    Parameters
     -----------
     I1 : numpy.ndarray, dtype=complex128
         The first-harmonic current.
@@ -374,7 +375,7 @@ def plot_fit(I1, V1, V2, V1_cal, V2_cal, scaling_factor):
         Scaling factor for visualizing 2nd-NLEIS results.
         Making it comparable to EIS results.
 
-    Returns:
+    Returns
     --------
     fig, ax : tuple
         A tuple containing the figure and axis objects.
@@ -402,7 +403,7 @@ def plot_freq_domain(freq, f, If, V, k):
     '''Plot the frequency domain current and voltage responses
     at each frequency for the first k harmonics.
 
-    Parameters:
+    Parameters
     -----------
     freq : numpy.ndarray, dtype=float64
         Array of frequency values in freq domain.
@@ -415,7 +416,7 @@ def plot_freq_domain(freq, f, If, V, k):
     k : list
         List of indices for the first k harmonics.
 
-    Returns:
+    Returns
     --------
     fig, ax : tuple
         A tuple containing the figure and axis objects.
@@ -461,10 +462,11 @@ def plot_freq_domain(freq, f, If, V, k):
 
 
 def fft_phase_correction(currents, voltages, num_cycle):
-    '''Phase correction in frequency domain
+    '''
+    Phase correction in frequency domain
     based on the first harmonic current response.
 
-    Parameters:
+    Parameters
     -----------
     currents : numpy.ndarray, dtype=complex128
         Array of current values in frequency domain.
@@ -473,11 +475,12 @@ def fft_phase_correction(currents, voltages, num_cycle):
     num_cycle : int
         Number of cycles for the measurement.
 
-    Returns:
+    Returns
     --------
     I_corrected, V_corrected : tuple
         A tuple containing the phase corrected current and voltage
         values in the frequency domain.
+
     '''
     # number of data points in frequency domain
     N = len(currents)
@@ -519,7 +522,7 @@ def fft_baseline(freq, currents, voltages, idx):
     using a polynomial fit to the surrounding frequencies
     from idx - 5 to idx - 1 and idx + 2 to idx + 6.
 
-    Parameters:
+    Parameters
     -----------
     freq : numpy.ndarray, dtype=float64
         Array of frequency values.
@@ -530,7 +533,7 @@ def fft_baseline(freq, currents, voltages, idx):
     idx : int
         Index of the frequency of interest.
 
-    Returns:
+    Returns
     --------
     I_baseline, V_baseline : tuple
         A tuple containing the baseline current and voltage
@@ -586,3 +589,42 @@ def convert_to_complex(ascStr):
         ibreak = ascStr.find('I')
         newStr = ascStr[1:ibreak] + ascStr[ibreak+2:-1] + 'j'
         return complex(newStr)
+
+
+def thd(df):
+    """
+    Calculate the Total Harmonic Distortion (THD) for current and voltage
+    in the frequency domain.
+
+    To calculate the THD, please set max_k to 10 in the dataloader() function.
+
+    Parameters
+    -----------
+    df : DataFrame
+        DataFrame returned by the data_loader function.
+
+    Returns
+    --------
+    thd_I, thd_V : tuple
+        A tuple containing the THD values for current and voltage.
+
+    Notes
+    -----
+
+    .. math::
+
+        THD = \\sqrt{\\frac{\\sum_{n=2}^{10} Y_n^2}{Y_1}},
+
+    where :math:`Y_1` is the fundamental frequency component
+    and :math:`Y_n` (for :math:`n \\geq 2`) are the higher harmonic components.
+
+    """
+    current_columns = [col for col in df.columns if re.match(r'I', col)]
+    voltage_columns = [col for col in df.columns if re.match(r'V', col)]
+
+    thd_I = np.sum(abs(df[current_columns[1:]])**2,
+                   axis=1)**0.5/abs(df[current_columns[0]])
+    thd_V = np.sum(abs(df[voltage_columns[1:]])**2,
+                   axis=1)**0.5/abs(df[voltage_columns[0]])
+
+    return thd_I, thd_V

@@ -13,7 +13,7 @@ def MM(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1], method='cost',
     Wrapper function to perform measurement models fitting with either cost
     or confidence interval method.
 
-    Parameters:
+    Parameters
     -----------
     f : array-like
         Frequency data
@@ -58,7 +58,7 @@ def MM(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1], method='cost',
         using covariance derived standard deviation.
         Default = False
 
-    Returns:
+    Returns
     --------
     M : int
         The optimal number of elements determined by the fitting
@@ -107,7 +107,7 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
     Perform NLEIS fitting using nonlinear measurement models
     with a specified maximum number of elements.
 
-    Parameters:
+    Parameters
     -----------
     f : array-like
         Frequency data
@@ -137,7 +137,7 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
         Whether to plot the results during the fitting process
         Default = False
 
-    Returns:
+    Returns
     --------
     M : int
         The number of elements used in the circuit model
@@ -252,7 +252,8 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
 def cost_plot(Z, Z_fit, cost, M, k):
     '''
     Generate plot for the cost function method
-    Parameters:
+
+    Parameters
     -----------
     Z : array-like,dtype=complex128
         Impedance data
@@ -266,7 +267,8 @@ def cost_plot(Z, Z_fit, cost, M, k):
         Harmonic number for the measurement model to ensure the correct ploting
         Default = 1 for EIS.
         k = 2 for 2nd-NLEIS
-    Returns:
+
+    Returns
     --------
     None
     '''
@@ -315,7 +317,8 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
     J Solid State Electrochem 28, 1273–1289 (2024).
     https://doi.org/10.1007/s10008-023-05755-9
 
-    Parameters:
+    Parameters
+    -----------
     f : array-like
         Frequency data
     Z : array-like
@@ -343,7 +346,8 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
         using covariance derived standard deviation.
         Default = False
 
-    Returns:
+    Returns
+    --------
     M : int
         The number of elements used in the circuit model
     p : list
@@ -485,7 +489,7 @@ def CI_MonteCarlo(f, Z, circuit='', p=[], conf=[], max_f=np.inf,
     of the the impedance spectrum using the confidence interval of
     the parameters calculated using covariance.
 
-    Parameters:
+    Parameters
     -----------
     f : array-like
         Frequency data
@@ -514,7 +518,8 @@ def CI_MonteCarlo(f, Z, circuit='', p=[], conf=[], max_f=np.inf,
     plot : bool
         Whether to plot the final confidence interval results
         Default = False
-    Returns:
+
+    Returns
     --------
     lower_bound : array
         Lower bound of the 95% confidence interval
@@ -590,7 +595,7 @@ def cost_max_norm(data, model):
     as the sum of the squared differences between the real
     and imaginary parts of the normalized data and model.
 
-    Parameters:
+    Parameters
     -----------
     data : array-like
         Complex impedance. This array should contain complex numbers,
@@ -603,7 +608,7 @@ def cost_max_norm(data, model):
         The cost function will compare both the real
         and imaginary components.
 
-    Returns:
+    Returns
     --------
     float
         The sum of the squared differences

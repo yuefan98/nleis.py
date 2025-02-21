@@ -1,6 +1,6 @@
 ===============================================
-Data Processing
+Data Validation
 ===============================================
 
-.. automodule:: nleis.data_processing
+.. automodule:: nleis.validation
    :members:
