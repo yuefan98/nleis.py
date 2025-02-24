@@ -211,8 +211,9 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
                         cost_plot(Z, Z_fit, current_cost, M, k)
                     print(f'Optimal solution found with M = {M}')
 
-                    res_real = (Z.real - Z_fit.real) / Z.real
-                    res_imag = (Z.imag - Z_fit.imag) / Z.imag
+                    abs_Z = abs(Z)
+                    res_real = (Z.real - Z_fit.real) / abs_Z
+                    res_imag = (Z.imag - Z_fit.imag) / abs_Z
 
                     pbar.update(1)
                     pbar.total = M
@@ -223,8 +224,10 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
                     return M, p, conf, Z_fit, res_real, res_imag, cost[1:]
                 else:
                     print(f'Optimal solution found with M = {M-1}')
-                    res_real = (Z.real - Z_fit_previous.real) / Z.real
-                    res_imag = (Z.imag - Z_fit_previous.imag) / Z.imag
+
+                    abs_Z = abs(Z)
+                    res_real = (Z.real - Z_fit_previous.real) / abs_Z
+                    res_imag = (Z.imag - Z_fit_previous.imag) / abs_Z
 
                     pbar.total = M-1
                     pbar.refresh()
@@ -421,8 +424,9 @@ def MM_conf(f, Z, raw_circuit='K', initial_guess=[0.01, 1],
 
                 print(f'Optimal solution found with M = {M-1}')
 
-                res_real = (Z.real - Z_fit_previous.real) / Z.real
-                res_imag = (Z.imag - Z_fit_previous.imag) / Z.imag
+                abs_Z = abs(Z)
+                res_real = (Z.real - Z_fit_previous.real) / abs_Z
+                res_imag = (Z.imag - Z_fit_previous.imag) / abs_Z
                 pbar.total = M-1
                 pbar.refresh()
                 pbar.close()
