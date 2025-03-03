@@ -201,7 +201,9 @@ def MM_cost(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1],
             cost.append(current_cost)
 
             # Check for convergence
-            if abs(current_cost - previous_cost) < tol:
+            # if abs(current_cost - previous_cost) < tol:
+            if (abs(current_cost - previous_cost) < tol or
+                    (current_cost > previous_cost and i > 1)):
                 # If the cost is less than the tolerance, return the results
 
                 if M == 1:
