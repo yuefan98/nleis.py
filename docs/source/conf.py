@@ -21,7 +21,7 @@ from nleis import __version__  # noqa
 # -- Project information -----------------------------------------------------
 
 project = 'nleis.py'
-copyright = '2024, Yuefan Ji and nleis.py developers'
+copyright = '2025, Yuefan Ji and nleis.py developers'
 author = 'Yuefan Ji and nleis.py developers'
 
 # The full version, including alpha/beta/rc tags

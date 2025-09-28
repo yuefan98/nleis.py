@@ -17,5 +17,7 @@ dependencies:
     - tabulate
     - impedance
     - networkx
+    - joblib
+    - threadpoolctl
 
     
