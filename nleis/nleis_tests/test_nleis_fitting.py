@@ -11,6 +11,9 @@ from nleis.nleis_fitting import data_processing, \
 import os
 import pytest
 
+# supress warnings for cleaner test output
+import warnings
+warnings.filterwarnings("ignore")
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(test_dir, '../data')

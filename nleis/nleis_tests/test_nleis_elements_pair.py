@@ -8,6 +8,10 @@ from nleis.nleis_elements_pair import (OverwriteError,  # noqa: F401
 from impedance.models.circuits.circuits import CustomCircuit
 from nleis.nleis import NLEISCustomCircuit  # noqa: F401
 
+# supress warnings for cleaner test output
+import warnings
+warnings.filterwarnings("ignore")
+
 
 def test_porous_electrode():
 

@@ -4,6 +4,8 @@ from nleis.validation import MM, cost_max_norm
 from impedance.models.circuits import CustomCircuit
 from nleis import NLEISCustomCircuit
 import pytest
+
+# supress warnings for cleaner test output
 import warnings
 warnings.filterwarnings("ignore")
 

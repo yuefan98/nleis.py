@@ -3,6 +3,10 @@ import numpy as np
 from nleis.visualization import plot_altair, plot_first, plot_second
 import json
 
+# supress warnings for cleaner test output
+import warnings
+warnings.filterwarnings("ignore")
+
 
 def test_plot_nyquist():
 

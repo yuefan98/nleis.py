@@ -69,17 +69,14 @@ def fit_once(base_model, initial_guess, f, show_results=True, **fit_kwargs):
 
         # Set the per-try initial guess
         model.initial_guess = initial_guess
-
-        if fit_kwargs.pop("cost_func", None) is None:
-            cost_func = cost_max_norm
+        cost_func = fit_kwargs.pop("cost_func", cost_max_norm)
+        cost = fit_kwargs.pop("cost", 0.5)
 
         if (Z1_data is not None) and (Z2_data is not None):
             # Avoid BLAS/OpenMP oversubscription inside each worker
             with threadpool_limits(1):
                 model.fit(f, Z1_data, Z2_data, **fit_kwargs)
             Z1_fit, Z2_fit = model.predict(f)
-            if fit_kwargs.pop("cost", None) is None:
-                cost = 0.5
 
             cost_value = cost_func(Z1_data, Z1_fit) + \
                 cost * cost_func(Z2_data, Z2_fit)
@@ -120,8 +117,8 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
     f : array_like
         Frequencies at which the data is measured.
     sampling_method : str, optional
-        Method to sample the initial guesses. Supported methods are 'sobol'
-        and 'random'. The default is 'sobol'.
+        Method to sample the initial guesses. Supported methods are 'sobol',
+        'random', or 'custom'. The default is 'sobol'.
     num_samples : int, optional
         Number of initial guesses to sample. The default is 1024.
     n_jobs : int, optional
@@ -165,14 +162,21 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
             'num_vars': len(initial_guess),
             'bounds': [[min(guess, 0), 2*guess] for guess in initial_guess]
         }
-        initial_guesses = sobol.sample(problem, num_samples)
+        initial_guesses = sobol.sample(problem, N=num_samples)
     elif sampling_method == "random":
         initial_guesses = np.random.uniform(low=0, high=2, size=(
             num_samples, len(initial_guess)))*initial_guess
+    elif sampling_method == 'custom':
+        if 'initial_guesses' not in fit_kwargs:
+            raise ValueError(
+                "For 'custom' sampling_method, "
+                "'initial_guesses' must be provided in fit_kwargs.")
+        initial_guesses = fit_kwargs.pop('initial_guesses')
+
     else:
         raise ValueError(
-            "Unsupported sampling method, only 'sobol' and 'random' "
-            "is supported currently.")
+            "Unsupported sampling method, only 'sobol', 'random' "
+            "and 'custom' are supported currently.")
     # Adding the sampled initial guess to the inputed initial guess
     initial_guesses = np.vstack([initial_guess, initial_guesses])
 

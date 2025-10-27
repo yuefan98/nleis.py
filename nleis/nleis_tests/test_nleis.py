@@ -1,3 +1,4 @@
+import warnings
 import json  # noqa: F401
 import os
 
@@ -11,6 +12,9 @@ from nleis.nleis_fitting import data_processing
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(test_dir, '../data')
+
+# supress warnings for cleaner test output
+warnings.filterwarnings("ignore")
 
 # # get example data
 # # The example is shown in "Getting Started" page

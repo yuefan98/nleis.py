@@ -8,3 +8,5 @@ Examples
     
     examples/nleis_example
     examples/graph_example
+    examples/validation
+    examples/parallel
