@@ -24,7 +24,7 @@ setuptools.setup(
     ],
     packages=setuptools.find_packages(include=['nleis']),
     package_data={
-        "nleis": ["data/*", 'nleis_tests/*'],
+        "nleis": ["data/*", 'tests/*'],
 
     },
 

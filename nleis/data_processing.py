@@ -6,6 +6,61 @@ import matplotlib.pyplot as plt
 import re
 
 
+def data_truncation(f, Z1, Z2, max_f=10):
+    """
+    Simple data processing function for EIS and 2nd-NLEIS simultaneously.
+
+    This function processes frequency (`f`), EIS data (`Z1`), and 2nd-NLEIS
+    data (`Z2`), removing high-frequency inductance effects and truncating the
+    data for 2nd-NLEIS analysis based on the specified maximum frequency.
+
+    Parameters
+    ----------
+    f : numpy.ndarray
+        Array of frequency values.
+
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data (complex impedance values).
+
+    Z2 : numpy.ndarray of dtype complex128
+        2nd-NLEIS data (complex impedance values).
+
+    max_f : float, optional
+        The maximum frequency of interest for 2nd-NLEIS. Frequencies higher
+        than `max_f` will be truncated for 2nd-NLEIS data. Default is 10.
+
+    Returns
+    -------
+    f : numpy.ndarray
+        Frequencies after removing high-frequency inductance effects.
+
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data with high-frequency inductance removed.
+
+    Z2 : numpy.ndarray of dtype complex128
+        2nd-NLEIS data that matches the length of
+        high-frequency inductance removed EIS.
+
+    f2_truncated : numpy.ndarray
+        Frequencies that are less than
+        the specified maximum frequency (`max_f`)
+        for 2nd-NLEIS, while removes high frequency inductance
+
+    Z2_truncated : numpy.ndarray of dtype complex128
+        2nd-NLEIS data corresponding to the truncated frequency range.
+
+    """
+
+    mask = np.array(Z1.imag) < 0
+    f = f[mask]
+    Z1 = Z1[mask]
+    Z2 = Z2[mask]
+    mask1 = np.array(f) < max_f
+    f2_truncated = f[mask1]
+    Z2_truncated = Z2[mask1]
+    return (f, Z1, Z2, f2_truncated, Z2_truncated)
+
+
 def data_loader(filename, equipment='autolab', fft='instrument', max_k=3,
                 multi_current=False, rtol=5e-4, phase_correction=True,
                 baseline=True, scaling_factor=1000,

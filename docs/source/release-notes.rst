@@ -2,6 +2,37 @@
 Release Notes
 ====================
 
+Version 0.3 (2025-Nov-01)
+---------------------------
+This release brings some exciting new features and some corrections to previous versions, enabling a complete and efficient workflow 
+for 2nd-NLEIS from data processing and validation to parallelization capabilities in analysis.
+
+**What's Changed** `#31 <https://github.com/yuefan98/nleis.py/pull/31>`_
+
+**Data Processing Module**
+- Added a new data processing module (:code:`nleis.data_processing`) to facilitate extraction of raw impedance data from time-domain. including filtering and normalization steps.
+
+**Data Validation Module**
+- Introduced a new data validation module (:code:`nleis.validation`) to ensure data integrity before analysis through measurement model approach.
+For more details, refer to the our recent publication '`Measurement Model Validation of Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy<https://iopscience.iop.org/article/10.1149/1945-7111/ae1064/meta>`_' in JECS
+
+**Parallelization Support**
+- Added parallel computing capabilities in fitting and analysis via the new module (:code:`nleis.parallel`), providing an efficient way to explore minimization landscapes with different initial guess.
+
+**Documentation Updates**
+- Updated documentation with examples for data validation and parallel fitting.
+
+**Fundamental governing equations correction**
+- We introduced a 0.5 factor correction in all of our nonlinear circuit elements to align with the usage of sine or cosine perturbation in practical impedance experiments
+
+**Code Improvements and Handling Improvements**
+- We change the default value of max_f from 10 Hz to np.inf to make it general for any impedancemeasurement.
+- Changed data_processing function name to data_truncation to better reflect its functionality and moved it to data_processing module.
+- Restructured the automated tests to cover new modules and functionalities.
+- Improved code structure and readability across modules.
+
+**Full Changelog**: https://github.com/yuefan98/nleis.py/compare/v0.2...v0.3
+
 Version 0.2 (2025-02-20)
 ---------------------------
 This release introduces directed acyclic graph (DAG)-based function evaluation, optimizing computation speed and structure.

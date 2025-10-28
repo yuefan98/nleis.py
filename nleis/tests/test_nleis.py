@@ -8,7 +8,7 @@ import pytest
 
 from nleis.nleis import EISandNLEIS, NLEISCustomCircuit  # noqa: F401
 
-from nleis.nleis_fitting import data_processing
+from nleis.data_processing import data_truncation
 
 test_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(test_dir, '../data')
@@ -23,7 +23,7 @@ frequencies = np.loadtxt(os.path.join(data_dir, 'freq_30a.txt'))
 Z1 = np.loadtxt(os.path.join(data_dir, 'Z1s_30a.txt')).view(complex)[1]
 Z2 = np.loadtxt(os.path.join(data_dir, 'Z2s_30a.txt')).view(complex)[1]
 
-f, Z1, Z2, f2_trunc, Z2_trunc = data_processing(frequencies, Z1, Z2)
+f, Z1, Z2, f2_trunc, Z2_trunc = data_truncation(frequencies, Z1, Z2)
 
 
 def test_parsing():
@@ -205,10 +205,11 @@ def test_EISandNLEIS_fitting():
 
     # The test framework here can be improved in the future
     # with better and stable initial guess
-    results = [9.81368514e-08, 1.34551972e-02, 2.52387276e-02, 5.06176242e-03,
-               8.82244297e+00, 8.70692162e-05, 3.55536976e+00, 1.22576118e+01,
-               8.75169434e-02, 2.09045802e-02, 1.13804384e-03, 8.13658287e-01,
-               1.83783329e+02, 3.20554700e+09, 1.02277512e+00, 6.39228801e-03]
+    results = [2.76862889e-07, 9.27338912e-03, 2.57626033e-02, 6.09369447e-03,
+               6.91681283e+00, 1.23574283e-04, 5.13935770e+00, 2.54622037e+01,
+               1.37710342e-01, 2.45544428e-02, 2.65941949e-03, 7.05861025e-02,
+               1.85837897e+02, 3.20561842e+09, 1.87142864e+00, 3.66300641e-03]
+
     initial_guess = results
 
     # initial_guess
@@ -220,13 +221,14 @@ def test_EISandNLEIS_fitting():
         circ_str_1, circ_str_2, initial_guess=initial_guess)
 
     # test predict with initial_guess
-    Z1_fit, Z2_fit = NLEIS_circuit.predict(f)
+    Z1_fit, Z2_fit = NLEIS_circuit.predict(f, max_f=10)
     assert np.allclose(Z1, Z1_fit, rtol=1e-2, atol=1e-2)
     assert np.allclose(Z2_trunc, Z2_fit, rtol=1e-2, atol=1e-2)
 
     # test fitting
-    NLEIS_circuit.fit(f, Z1, Z2)
+    NLEIS_circuit.fit(f, Z1, Z2, max_f=10)
     p = NLEIS_circuit.parameters_
+    print(p)
 
     assert np.allclose(p, results)
 
@@ -257,7 +259,7 @@ def test_EISandNLEIS_fitting():
 
     # check altair plotting with a fit circuit
     chart1, chart2 = NLEIS_circuit.plot(f_data=f, Z1_data=Z1, Z2_data=Z2,
-                                        kind='altair')
+                                        max_f=10, kind='altair')
 
     datasets = json.loads(chart1.to_json())['datasets']
     for dataset in datasets.keys():

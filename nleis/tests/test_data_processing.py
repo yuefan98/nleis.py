@@ -4,7 +4,7 @@ import pytest
 
 import os
 from nleis.data_processing import data_loader, fft_phase_correction, \
-    convert_to_complex, plot_fit, plot_freq_domain
+    convert_to_complex, plot_fit, plot_freq_domain, data_truncation
 import pandas as pd
 # import matplotlib
 
@@ -19,6 +19,25 @@ data_path_100mA = os.path.join(data_dir, 'autolab_100mA.txt')
 data_25mA_raw = data_loader(data_path_25mA, equipment='autolab',
                             fft='scipy', phase_correction=False,
                             baseline=False, multi_current=False)
+
+
+def test_data_truncation():
+
+    # # get example data
+    # # The example is shown in "Getting Started" page
+
+    frequencies = np.loadtxt(os.path.join(data_dir, 'freq_30a.txt'))
+    Z1 = np.loadtxt(os.path.join(data_dir, 'Z1s_30a.txt')).view(complex)[1]
+    Z2 = np.loadtxt(os.path.join(data_dir, 'Z2s_30a.txt')).view(complex)[1]
+
+    max_f = 10
+
+    f, Z1, Z2, f2_truncated, Z2_truncated = data_truncation(
+        frequencies, Z1, Z2, max_f=max_f)
+    assert len(f) == len(Z1) == len(Z2)
+    assert Z1.imag.max() < 0
+    assert f2_truncated.max() < max_f
+    assert len(f2_truncated) == len(Z2_truncated)
 
 
 def test_data_loader_multi_current():
