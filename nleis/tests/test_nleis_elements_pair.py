@@ -109,6 +109,63 @@ def test_porous_electrode():
     assert np.allclose(Z1, Z2, atol=1e-3)
 
 
+def test_TLM():
+    freqs = [0.001, 1.0, 1000, 100000]
+
+    # Test to make sure single and 2 element works 2nd-NLEIS
+    circuit_1 = NLEISCustomCircuit('TLMn',
+                                   initial_guess=[0, 1, 1, 0, 0, 1, .1, 0])
+    circuit_2 = NLEISCustomCircuit('TLMn',
+                                   initial_guess=[0, 1, 1, 0, 0, 2, .1, 0])
+
+    Z1 = circuit_1.predict(freqs, max_f=np.inf)
+    Z2 = circuit_2.predict(freqs, max_f=np.inf)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    circuit_1 = NLEISCustomCircuit('TLMSn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 1,
+                                                  1, .1, 0])
+    circuit_2 = NLEISCustomCircuit('TLMSn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 2,
+                                                  1, .1, 0])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    circuit_1 = NLEISCustomCircuit('TLMDn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 1,
+                                                  1, .1, 0])
+    circuit_2 = NLEISCustomCircuit('TLMDn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 2,
+                                                  1, .1, 0])
+    Z1 = circuit_1.predict(freqs)
+    Z2 = circuit_2.predict(freqs)
+    assert np.allclose(Z1, Z2, atol=1e-3)
+
+    # Test the current distribution function outputs
+
+    circuit_1 = NLEISCustomCircuit('mTiSn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 1,
+                                                  1, .1, 0])
+    circuit_2 = NLEISCustomCircuit('mTiSn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 2,
+                                                  1, .1, 0])
+    Z1 = circuit_1.predict(1)
+    Z2 = circuit_2.predict(1)
+
+    # Test the current distribution function outputs
+    assert np.allclose(np.sum(Z1), np.sum(Z2), atol=1e-3)
+    circuit_1 = NLEISCustomCircuit('mTiDn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 1,
+                                                  1, .1, 0])
+    circuit_2 = NLEISCustomCircuit('mTiDn',
+                                   initial_guess=[0, 1, 1, 1, 1, 0, 0, 2,
+                                                  1, .1, 0])
+    Z1 = circuit_1.predict(1)
+    Z2 = circuit_2.predict(1)
+    assert np.allclose(np.sum(Z1), np.sum(Z2), atol=1e-3)
+
+
 def test_RC():
     freqs = [0.001, 1.0, 1000]
     circuit_1 = CustomCircuit('RC', initial_guess=[1, 1])

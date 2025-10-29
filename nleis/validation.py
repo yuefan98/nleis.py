@@ -82,11 +82,14 @@ def MM(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1], method='cost',
     When method = 'conf': a total of 6 outputs are returned.
 
     [1] Orazem, M.E. Measurement model for analysis of
-    electrochemical impedance data.
-    J Solid State Electrochem 28, 1273–1289 (2024).
-    https://doi.org/10.1007/s10008-023-05755-9
+        electrochemical impedance data.
+        J Solid State Electrochem 28, 1273–1289 (2024).
+        https://doi.org/10.1007/s10008-023-05755-9
 
-    [2] Y. Ji, A. H. Shih D. T. Schwartz
+    [2] Ji et al, Measurement Model Validation of Second-Harmonic
+        Nonlinear Electrochemical Impedance Spectroscopy,
+        2025 J. Electrochem. Soc. 172 103506.
+        https://iopscience.iop.org/article/10.1149/1945-7111/ae1064/meta
 
     '''
 
