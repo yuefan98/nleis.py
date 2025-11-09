@@ -2,7 +2,7 @@
 Release Notes
 ====================
 
-Version 0.3 (2025-Nov-01)
+Version 0.3 (2025-Nov-09)
 ---------------------------
 This release brings some exciting new features and some corrections to previous versions, enabling a complete and efficient workflow 
 for 2nd-NLEIS from data processing and validation to parallelization capabilities in analysis.
@@ -14,10 +14,11 @@ for 2nd-NLEIS from data processing and validation to parallelization capabilitie
 
 **Data Validation Module**
 - Introduced a new data validation module (:code:`nleis.validation`) to ensure data integrity before analysis through measurement model approach.
-For more details, refer to the our recent publication '`Measurement Model Validation of Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy<https://iopscience.iop.org/article/10.1149/1945-7111/ae1064/meta>`_' in JECS
+For more details, refer to our recent publication `Measurement Model Validation of Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy <https://iopscience.iop.org/article/10.1149/1945-7111/ae1064/meta>`_ in JECS
 
 **Parallelization Support**
 - Added parallel computing capabilities in fitting and analysis via the new module (:code:`nleis.parallel`), providing an efficient way to explore minimization landscapes with different initial guess.
+- New functions include :code:`multistart_fit`, :code:`batch_data_fit`, and :code:`batch_model_fit` to facilitate parallel fitting of multiple initial guesses, datasets, or models.
 
 **Documentation Updates**
 - Updated documentation with examples for data validation and parallel fitting.

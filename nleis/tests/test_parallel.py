@@ -45,6 +45,18 @@ def test_fit_once(capsys):
     assert result["Status"] is False
     assert "Status" in capsys.readouterr().out
 
+    result = parallel.fit_once(
+        eis_model,
+        initial_guess=0,
+        f=f,
+        show_results=True,
+        impedance=Z1,
+        Z1=Z1,
+        Z2=Z2,
+    )
+    assert result["Status"] is False
+    assert "ValueError" in capsys.readouterr().out
+
     # Test to make sure exception in the input data is handled
     result = parallel.fit_once(
         eis_model,
@@ -69,7 +81,7 @@ def test_fit_once(capsys):
     assert "Status" in capsys.readouterr().out
 
 
-def test_multistart_fit(capsys):
+def test_multistart_fit():
     # Again test to ensure the backward compatibility of impedance.py
     eis_model = CustomCircuit(circuit_eis, initial_guess=initial_guess_2)
     best, results = parallel.multistart_fit(
@@ -140,4 +152,76 @@ def test_multistart_fit(capsys):
             num_samples=2,
             show_results=True,
             impedance=None,
+        )
+
+
+def test_batch_data_fit():
+
+    # Again test to ensure the backward compatibility of impedance.py
+    eis_model = CustomCircuit(circuit_eis, initial_guess=initial_guess_2)
+    results = parallel.batch_data_fit(
+        eis_model,
+        f=f,
+        impedance_list=[Z1, Z1*2],
+    )
+    assert results[0]["Status"] is True
+
+    # Test to make sure exception in the input data is handled
+    # and value error message is printed if no impedance data is provided
+    with pytest.raises(ValueError):
+        results = parallel.batch_data_fit(
+            eis_model,
+            f=f,
+            show_results=True,
+        )
+    # Test to make sure exception in the input data is handled
+    # and value error message is printed if too many impedance data is provided
+    with pytest.raises(ValueError):
+        results = parallel.batch_data_fit(
+            eis_model,
+            impedance_list=[Z1, Z2],
+            Z1_list=[Z1, Z2],
+            Z2_list=[Z1, Z2],
+            f=f,
+            show_results=True,
+        )
+
+    # Test to make sure RuntimeError is raised when all fits fail
+    with pytest.raises(RuntimeError):
+        results = parallel.batch_data_fit(
+            eis_model,
+            f=f,
+            impedance_list=[np.inf, np.inf],
+        )
+    # Test to make sure the fitting works correctly for simultaneous fitting
+    # of EIS and 2nd-NLEIS
+    model = EISandNLEIS(circuit_1, circuit_2, initial_guess_1)
+    results = parallel.batch_data_fit(
+        model,
+        f=f,
+        Z1_list=[Z1, Z1],
+        Z2_list=[Z2, Z2],
+        show_results=True,
+    )
+    # print(result)
+    assert results[0]["Status"] is True
+
+
+def test_batch_model_fit():
+
+    # Again test to ensure the backward compatibility of impedance.py
+    eis_model_1 = CustomCircuit(circuit_eis, initial_guess=initial_guess_2)
+    eis_model_2 = CustomCircuit(circuit_eis, initial_guess=initial_guess_2)
+    results = parallel.batch_model_fit(
+        [eis_model_1, eis_model_2],
+        f=f,
+        impedance=Z1,
+    )
+    assert results[0]["Status"] is True
+
+    # Test to make sure RuntimeError is raised when all fits fail
+    with pytest.raises(RuntimeError):
+        results = parallel.batch_model_fit(
+            [eis_model_1, eis_model_2],
+            f=f,
         )

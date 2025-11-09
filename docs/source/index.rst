@@ -18,6 +18,7 @@ Welcome to :code:`nleis.py`'s documentation!
    data-processing
    validation
    visualization
+   parallel
    release-notes
 
 Indices and tables

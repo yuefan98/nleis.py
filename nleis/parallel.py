@@ -13,7 +13,8 @@ except Exception:
         def __exit__(self, *args): return False
 
 
-def fit_once(base_model, initial_guess, f, show_results=True, **fit_kwargs):
+def fit_once(base_model, initial_guess, f, run_idx=None, show_results=True,
+             **fit_kwargs):
     """
     Run one fit with initial_guess using the base_model
     Parameters
@@ -25,16 +26,20 @@ def fit_once(base_model, initial_guess, f, show_results=True, **fit_kwargs):
         The initial guess for the fitting parameters.
     f : array_like
         Frequencies at which the data is measured.
+    run_idx : int or None, optional
+        Optional index identifying runs (e.g., from enumerate).
     show_results : bool, optional
         Whether to print the fitting results. The default is True.
     **fit_kwargs : keyword arguments
         Additional keyword arguments to pass to the fit method of the model
         from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
         Supported keywords are:
-        - Z1: array_like, the first set of impedance data to fit.
-        - Z2: array_like, the second set of impedance data to fit.
-        - impedance: array_like, the impedance data to fit
-        (if fitting EIS or NLEIS only).
+        - Z1: array_like, the EIS data to fit. For simultaneous EIS
+        and 2nd-NLEIS fitting.
+        - Z2: array_like, the 2nd-NLEIS data to fit. For simultaneous EIS and
+        2nd-NLEIS fitting.
+        - impedance: array_like, the impedance data to fit. For EIS or NLEIS
+        only fitting.
         - cost_func: callable, the cost function to use for fitting.
         The default is cost_max_norm. It must take two arguments:
         the measured data
@@ -53,9 +58,13 @@ def fit_once(base_model, initial_guess, f, show_results=True, **fit_kwargs):
     -------
     results : dict
         A dictionary containing the fitting results:
+        - 'idx': int or None, the index of the run if provided.
         - 'Status': bool, whether the fit was successful.
-        - 'err': str, the error message if the fit failed.
         - 'p0': array_like, the initial guess used for the fit.
+        - 'p': array_like, the fitted parameters if the fit was successful.
+        - 'cost': float, the cost value of the fit if successful.
+        - 'model': the fitted model instance if the fit was successful.
+        - 'err': str, the error message if the fit failed.
     """
 
     try:
@@ -72,7 +81,8 @@ def fit_once(base_model, initial_guess, f, show_results=True, **fit_kwargs):
         cost_func = fit_kwargs.pop("cost_func", cost_max_norm)
         cost = fit_kwargs.pop("cost", 0.5)
 
-        if (Z1_data is not None) and (Z2_data is not None):
+        if (Z1_data is not None) and (Z2_data is not None) and (impedance_data
+                                                                is None):
             # Avoid BLAS/OpenMP oversubscription inside each worker
             with threadpool_limits(1):
                 model.fit(f, Z1_data, Z2_data, **fit_kwargs)
@@ -80,26 +90,32 @@ def fit_once(base_model, initial_guess, f, show_results=True, **fit_kwargs):
 
             cost_value = cost_func(Z1_data, Z1_fit) + \
                 cost * cost_func(Z2_data, Z2_fit)
-        elif impedance_data is not None:
+        elif (impedance_data is not None) and (Z1_data is None) and (Z2_data
+                                                                     is None):
             # Avoid BLAS/OpenMP oversubscription inside each worker
 
             with threadpool_limits(1):
                 model.fit(f, impedance_data, **fit_kwargs)
             Z_fit = model.predict(f)
             cost_value = cost_func(impedance_data, Z_fit)
+        elif (Z1_data is not None) or (Z2_data is not None) and (impedance_data
+                                                                 is not None):
+            raise ValueError(
+                "Provide either (Z1 and Z2) or impedance, not both.")
 
         else:
             raise ValueError(
                 "Either (Z1 and Z2) or "
                 "impedance must be provided for fitting.")
 
-        results = {'Status': True, "p0": initial_guess,
-                   'p': model.parameters_, "cost": cost_value, "model": model}
+        results = {'idx': run_idx, 'Status': True, 'p0': initial_guess,
+                   'p': model.parameters_, 'cost': cost_value, 'model': model}
         if show_results:
             print(results)
         return results
     except Exception as e:
-        results = {"Status": False, "err": repr(e), "p0": initial_guess}
+        results = {'idx': run_idx, 'Status': False,
+                   'err': repr(e), 'p0': initial_guess}
         if show_results:
             print(results)
         return results
@@ -132,11 +148,13 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
     **fit_kwargs : keyword arguments
         Additional keyword arguments to pass to the fit method of the model
         from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
-                Supported keywords are:
-        - Z1: array_like, the first set of impedance data to fit.
-        - Z2: array_like, the second set of impedance data to fit.
-        - impedance: array_like, the impedance data to fit
-        (if fitting EIS or NLEIS only).
+        Supported keywords are:
+        - Z1: array_like, the EIS data to fit. For simultaneous EIS and
+        2nd-NLEIS fitting.
+        - Z2: array_like, the 2nd-NLEIS data to fit. For simultaneous EIS and
+        2nd-NLEIS fitting.
+        - impedance: array_like, the impedance data to fit. For EIS or NLEIS
+        only fitting.
         - cost_func: callable, the cost function to use for fitting.
         The default is cost_max_norm. It must take two arguments:
         the measured data and the fitted data, and return a scalar cost value.
@@ -182,8 +200,8 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
 
     # Create and launch the jobs
     jobs = (
-        delayed(fit_once)(base_model, p0, f, **fit_kwargs)
-        for p0 in initial_guesses
+        delayed(fit_once)(base_model, p0, f, run_idx=i, **fit_kwargs)
+        for i, p0 in enumerate(initial_guesses)
     )
     # Run the jobs in parallel
     results = Parallel(n_jobs=n_jobs, backend=backend,
@@ -198,7 +216,178 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
     best = min(fits, key=lambda r: r["cost"])
 
     # Print the best fitting result
-    print("Best fitting result: \np0:", best["p0"],
+    print("Best fitting result: \nidx:", best['idx'],
+          "\np0:", best["p0"],
+          "\np:", best["p"],
+          "\ncost:", best["cost"])
+    return best, results
+
+
+def batch_data_fit(base_model, f, impedance_list=None, Z1_list=None,
+                   Z2_list=None,
+                   n_jobs=-1, backend="loky", batch_size="auto", **fit_kwargs):
+    """
+
+    Perform parallel fitting using the same circuit model to multiple data
+    using the same initial guesses.
+    This can be a useful approach to do batch analysis on a big dataset.
+
+    Parameters
+    ----------
+    base_model : object
+        The base circuit model.
+    f : frequencies
+        Frequencies at which the data is measured.
+    impedance_list : list of array_like, optional
+        List of impedance data to fit. For EIS or NLEIS only fitting.
+    Z1_list : list of array_like, optional
+        List of EIS data to fit. For simultaneous EIS and 2nd-NLEIS fitting.
+    Z2_list : list of array_like, optional
+        List of 2nd-NLEIS data to fit. For simultaneous EIS and 2nd-NLEIS
+        fitting.
+    n_jobs : int, optional
+        The number of jobs to run in parallel. The default is -1, which means
+        using all available processors.
+    backend : str, optional
+        The parallelization backend to use. The default is 'loky'.
+    batch_size : int or str, optional
+        The number of tasks to dispatch at once to each worker. The default is
+        'auto'.
+    **fit_kwargs : keyword arguments
+        Additional keyword arguments to pass to the fit method of the model.
+        from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
+        Supported keywords are:
+        - cost_func: callable, the cost function to use for fitting.
+        The default is cost_max_norm. It must take two arguments:
+        the measured data and the fitted data, and return a scalar cost value.
+        Other cost functions will be supported in the future.
+        - cost: float, the weight of cost
+            function when fitting both Z1 and Z2.
+            A value greater than 0.5 puts more weight on EIS,
+            while a value less than 0.5 puts more weight on 2nd-NLEIS.
+            (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
+            The default is 0.5.
+        - max_f : float, optional
+            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
+
+    Returns
+    -------
+    results : list of dict
+        All fitting results.
+    """
+    initial_guess = base_model.initial_guess
+
+    # Create and launch the jobs: loop over datasets (Z1 and Z2 or impedance)
+    # to fit
+
+    if (((Z1_list is not None) and (Z2_list is not None))
+            and (impedance_list is None)):
+        jobs = (
+            delayed(fit_once)(base_model, initial_guess, f, run_idx=i,
+                              Z1=Z1_data, Z2=Z2_data, **fit_kwargs)
+            for i, (Z1_data, Z2_data) in enumerate(zip(Z1_list, Z2_list))
+        )
+
+    elif ((impedance_list is not None) and ((Z1_list is None)
+          and (Z2_list is None))):
+        jobs = (
+            delayed(fit_once)(base_model, initial_guess, f, run_idx=i,
+                              impedance=impedance, **fit_kwargs)
+            for i, impedance in enumerate(impedance_list)
+        )
+    elif (((Z1_list is not None) and (Z2_list is not None))
+          and (impedance_list is not None)):
+        raise ValueError(
+            "Provide either (Z1_list and Z2_list) or "
+            "impedance_list, not both.")
+    else:
+        raise ValueError(
+            "Either (Z1_list and Z2_list) or impedance_list must be provided"
+            " for fitting.")
+    # Run the jobs in parallel
+    results = Parallel(n_jobs=n_jobs, backend=backend,
+                       batch_size=batch_size)(jobs)
+
+    # Filter out failed fits
+    fits = [r for r in results if r.get("Status")]
+    if not fits:
+        raise RuntimeError("All fits failed", results)
+
+    return results
+
+
+def batch_model_fit(base_models, f,
+                    n_jobs=-1, backend="loky", batch_size="auto",
+                    **fit_kwargs):
+    """
+
+    Perform parallel fitting of the same data with multiple models.
+    This can be an useful approach to do model selection.
+
+    Parameters
+    ----------
+    base_models : list of objects
+        The base circuit models.
+    f : array_like
+        Frequencies at which the data is measured.
+    n_jobs : int, optional
+        The number of jobs to run in parallel. The default is -1, which means
+        using all available processors.
+    backend : str, optional
+        The parallelization backend to use. The default is 'loky'.
+    batch_size : int or str, optional
+        The number of tasks to dispatch at once to each worker. The default is
+        'auto'.
+    **fit_kwargs : keyword arguments
+        Additional keyword arguments to pass to the fit method of the model.
+        from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
+        Supported keywords are:
+        - Z1: array_like, the EIS data to fit. For simultaneous EIS and
+        2nd-NLEIS fitting.
+        - Z2: array_like, the 2nd-NLEIS data to fit. For simultaneous EIS and
+        2nd-NLEIS fitting.
+        - impedance: array_like, the impedance data to fit. For EIS or NLEIS
+        only fitting.
+        - cost_func: callable, the cost function to use for fitting.
+        The default is cost_max_norm. It must take two arguments:
+        the measured data and the fitted data, and return a scalar cost value.
+        Other cost functions will be supported in the future.
+        - cost: float, the weight of cost
+            function when fitting both Z1 and Z2.
+            A value greater than 0.5 puts more weight on EIS,
+            while a value less than 0.5 puts more weight on 2nd-NLEIS.
+            (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
+            The default is 0.5.
+        - max_f : float, optional
+            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
+
+    Returns
+    -------
+    results : list of dict
+        All fitting results.
+    """
+    # Create and launch the jobs: loop over models to fit
+    jobs = (
+        delayed(fit_once)(base_model, base_model.initial_guess, f, run_idx=i,
+                          **fit_kwargs)
+        for i, base_model in enumerate(base_models)
+    )
+
+    # Run the jobs in parallel
+    results = Parallel(n_jobs=n_jobs, backend=backend,
+                       batch_size=batch_size)(jobs)
+
+    # Filter out failed fits
+    fits = [r for r in results if r.get("Status")]
+    if not fits:
+        raise RuntimeError("All fits failed", results)
+
+    # Select the best fit by cost
+    best = min(fits, key=lambda r: r["cost"])
+
+    # Print the best fitting result
+    print("Best fitting result: \nidx:", best['idx'],
+          "\np0:", best["p0"],
           "\np:", best["p"],
           "\ncost:", best["cost"])
     return best, results
