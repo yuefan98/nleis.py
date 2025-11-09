@@ -13,5 +13,5 @@ sphinx_rtd_theme
 impedance >= 1.7.1
 networkx>=2.6.3
 joblib>=1.4.2
-SALib>=1.5.1
+SALib>=1.4.8
 threadpoolctl>=3.6.0

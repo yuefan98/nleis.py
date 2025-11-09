@@ -33,5 +33,5 @@ setuptools.setup(
                       'numpy>=1.14', 'scipy>=1.0',
                       'networkx>=2.6.3',
                       'impedance>=1.7.1', 'pandas >= 2.0.2',
-                      'threadpoolctl>=3.6.0', 'joblib>=1.4.2', 'SALib>=1.5.1'],
+                      'threadpoolctl>=3.6.0', 'joblib>=1.4.2', 'SALib>=1.4.8'],
 )
