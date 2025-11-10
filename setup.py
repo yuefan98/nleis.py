@@ -28,7 +28,7 @@ setuptools.setup(
 
     },
 
-    python_requires=">=3.8,<=3.13",
+    python_requires=">=3.8,<3.14",
     install_requires=['altair>=3.0', 'matplotlib>=3.5',
                       'numpy>=1.14', 'scipy>=1.0',
                       'networkx>=2.6.3',
