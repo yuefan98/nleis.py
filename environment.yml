@@ -2,7 +2,7 @@ name: nleis
 channels:
   - defaults
 dependencies:
-  - python>=3.8,<3.12
+  - python>=3.8,<3.13
   - pip
 
   - pip:

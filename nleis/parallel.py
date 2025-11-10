@@ -2,6 +2,8 @@ import numpy as np
 from joblib import Parallel, delayed
 from SALib.sample import sobol
 from .validation import cost_max_norm
+import traceback
+
 
 try:
     from threadpoolctl import threadpool_limits
@@ -77,7 +79,7 @@ def fit_once(base_model, initial_guess, f, run_idx=None, show_results=True,
         model = base_model
 
         # Set the per-try initial guess
-        model.initial_guess = initial_guess
+        model.initial_guess = list(initial_guess)
         cost_func = fit_kwargs.pop("cost_func", cost_max_norm)
         cost = fit_kwargs.pop("cost", 0.5)
 
@@ -98,8 +100,8 @@ def fit_once(base_model, initial_guess, f, run_idx=None, show_results=True,
                 model.fit(f, impedance_data, **fit_kwargs)
             Z_fit = model.predict(f)
             cost_value = cost_func(impedance_data, Z_fit)
-        elif (Z1_data is not None) or (Z2_data is not None) and (impedance_data
-                                                                 is not None):
+        elif (Z1_data is not None or Z2_data is not None) and (impedance_data
+                                                               is not None):
             raise ValueError(
                 "Provide either (Z1 and Z2) or impedance, not both.")
 
@@ -114,8 +116,10 @@ def fit_once(base_model, initial_guess, f, run_idx=None, show_results=True,
             print(results)
         return results
     except Exception as e:
-        results = {'idx': run_idx, 'Status': False,
-                   'err': repr(e), 'p0': initial_guess}
+        # add traceback to the results for easier debugging
+        results = {'idx': run_idx, 'Status': False, 'p0': initial_guess,
+                   'err': repr(e), 'traceback': traceback.format_exc(),
+                   }
         if show_results:
             print(results)
         return results
@@ -178,7 +182,8 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
     if sampling_method == "sobol":
         problem = {
             'num_vars': len(initial_guess),
-            'bounds': [[min(guess, 0), 2*guess] for guess in initial_guess]
+            'bounds': [[min(guess, 0), max(2*guess, 0)]
+                       for guess in initial_guess]
         }
         initial_guesses = sobol.sample(problem, N=num_samples)
     elif sampling_method == "random":
@@ -295,7 +300,7 @@ def batch_data_fit(base_model, f, impedance_list=None, Z1_list=None,
                               impedance=impedance, **fit_kwargs)
             for i, impedance in enumerate(impedance_list)
         )
-    elif (((Z1_list is not None) and (Z2_list is not None))
+    elif (((Z1_list is not None) or (Z2_list is not None))
           and (impedance_list is not None)):
         raise ValueError(
             "Provide either (Z1_list and Z2_list) or "

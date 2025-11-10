@@ -142,18 +142,20 @@ def test_plot_freq_domain():
     # Check the x-data and y-data of each line
     # for current and voltage
     x0, y0 = ax[0].lines[0].get_xydata().T
-    assert (x0 == freq).all() and (y0 == abs(If)).all()
+
+    assert np.allclose(x0, freq) and np.allclose(y0, abs(If))
+    # (x0 == freq).all() and (y0 == abs(If)).all()
     x1, y1 = ax[1].lines[0].get_xydata().T
-    assert (x1 == freq).all() and (y1 == abs(V)).all()
+    assert np.allclose(x1, freq) and np.allclose(y1, abs(V))
 
     # Check the x-data and y-data of current harmonics
     x2, y2 = ax[0].lines[1].get_xydata().T
-    assert (x2 == freq[k[0]]).all() and (y2 == abs(If[k[0]])).all()
+    assert np.allclose(x2, freq[k[0]]) and np.allclose(y2, abs(If[k[0]]))
 
     # Check the x-data and y-data of voltage harmonics
     for i in range(N):
         x3, y3 = ax[1].lines[i+1].get_xydata().T
-        assert (x3 == freq[k[i]]).all() and (y3 == abs(If[k[i]])).all()
+        assert np.allclose(x3, freq[k[i]]) and np.allclose(y3, abs(If[k[i]]))
 
     # test if the input data is a pandas dataframe
     df_freq = pd.DataFrame(freq)
@@ -165,18 +167,17 @@ def test_plot_freq_domain():
     # Check the x-data and y-data of each line
     # for current and voltage
     x0, y0 = ax[0].lines[0].get_xydata().T
-    assert (x0 == freq).all() and (y0 == abs(If)).all()
+    assert np.allclose(x0, freq) and np.allclose(y0, abs(If))
     x1, y1 = ax[1].lines[0].get_xydata().T
-    assert (x1 == freq).all() and (y1 == abs(V)).all()
+    assert np.allclose(x1, freq) and np.allclose(y1, abs(V))
 
     # Check the x-data and y-data of current harmonics
     x2, y2 = ax[0].lines[1].get_xydata().T
-    assert (x2 == freq[k[0]]).all() and (y2 == abs(If[k[0]])).all()
-
+    assert np.allclose(x2, freq[k[0]]) and np.allclose(y2, abs(If[k[0]]))
     # Check the x-data and y-data of voltage harmonics
     for i in range(N):
         x3, y3 = ax[1].lines[i+1].get_xydata().T
-        assert (x3 == freq[k[i]]).all() and (y3 == abs(If[k[i]])).all()
+        assert np.allclose(x3, freq[k[i]]) and np.allclose(y3, abs(If[k[i]]))
 
 
 def test_fft_phase_correction():

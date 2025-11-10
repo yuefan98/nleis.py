@@ -14,4 +14,5 @@ impedance >= 1.7.1
 networkx>=2.6.3
 joblib>=1.4.2
 SALib>=1.4.8
-threadpoolctl>=3.6.0
+threadpoolctl>=3.5.0
+tqdm>=4.66.5

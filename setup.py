@@ -28,10 +28,11 @@ setuptools.setup(
 
     },
 
-    python_requires=">=3.8",
+    python_requires=">=3.8,<=3.13",
     install_requires=['altair>=3.0', 'matplotlib>=3.5',
                       'numpy>=1.14', 'scipy>=1.0',
                       'networkx>=2.6.3',
                       'impedance>=1.7.1', 'pandas >= 2.0.2',
-                      'threadpoolctl>=3.6.0', 'joblib>=1.4.2', 'SALib>=1.4.8'],
+                      'threadpoolctl>=3.5.0', 'joblib>=1.4.2', 'SALib>=1.4.8',
+                      'tqdm>=4.66.5'],
 )

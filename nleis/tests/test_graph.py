@@ -28,8 +28,8 @@ def test_graph_NLEISCustomCircuit():
 
     def time_predict_graph():
         return graph_circuit.predict(frequencies, max_f=np.inf)
-    eval_time = timeit.timeit(time_predict_eval, number=10)
-    graph_time = timeit.timeit(time_predict_graph, number=10)
+    eval_time = timeit.timeit(time_predict_eval, number=20)
+    graph_time = timeit.timeit(time_predict_graph, number=20)
     Z2_eval = eval_circuit.predict(frequencies, max_f=np.inf)
     Z2_graph = graph_circuit.predict(frequencies, max_f=np.inf)
     assert np.allclose(Z2_eval, Z2_graph)
@@ -69,8 +69,8 @@ def test_graph_EISandNLEIS():
 
     def time_predict_graph():
         return graph_circuit.predict(frequencies)
-    eval_time = timeit.timeit(time_predict_eval, number=10)
-    graph_time = timeit.timeit(time_predict_graph, number=10)
+    eval_time = timeit.timeit(time_predict_eval, number=20)
+    graph_time = timeit.timeit(time_predict_graph, number=20)
 
     Z1_eval, Z2_eval = eval_circuit.predict(frequencies, max_f=np.inf)
     Z1_graph, Z2_graph = graph_circuit.predict(frequencies, max_f=np.inf)

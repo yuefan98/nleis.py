@@ -47,7 +47,7 @@ def test_fit_once(capsys):
 
     result = parallel.fit_once(
         eis_model,
-        initial_guess=0,
+        initial_guess=[1, 1],
         f=f,
         show_results=True,
         impedance=Z1,
@@ -60,7 +60,7 @@ def test_fit_once(capsys):
     # Test to make sure exception in the input data is handled
     result = parallel.fit_once(
         eis_model,
-        initial_guess=0,
+        initial_guess=[1, 1],
         f=f,
         show_results=True,
     )

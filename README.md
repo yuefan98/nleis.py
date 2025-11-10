@@ -29,9 +29,9 @@ In the near future, you will be able to access all the funcationality for `nleis
 
 #### Dependencies
 
-`nleis.py` requires the same dependencies as `impedance.py` puls the latest version of `impedance.py`:
+`nleis.py` requires the same dependencies as `impedance.py` plus the latest version of `impedance.py`:
 
--   Python (>=3.8)
+-   Python (>=3.8,<=3.13)
 -   SciPy (>=1.0)
 -   NumPy (>=1.14)
 -   Matplotlib (>=3.0)
@@ -51,7 +51,7 @@ The nleis.py project welcomes all kinds of contributions, including bug fixes, f
 We are also excited to see contributions that expand the capabilities of `nleis.py`. Potential future features include:
 
 -   EIS and 2nd-NLEIS data processing from the time domain
--   Data validation for 2nd-NLEIS
+-   Data validation for 2nd-NLEIS (Available with v0.3 and later)
 
 ### Citing nleis.py
 If you use nleis.py in your work, please consider citing our JOSS paper as:

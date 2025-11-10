@@ -5,6 +5,9 @@ from .visualization import plot_first, plot_second
 from tqdm import tqdm
 import warnings
 
+# set random seed for reproducibility
+np.random.seed(0)
+
 
 def MM(f, Z, raw_circuit='Kn', initial_guess=[0.01, 1], method='cost',
        max_f=np.inf, max_M=20, tol=1e-5, k=1,
@@ -558,10 +561,71 @@ def CI_MonteCarlo(f, Z, circuit='', p=[], conf=[], max_f=np.inf,
         monte_simulation[i] = model.predict(f, max_f=max_f)
 
     # Calculate confidence intervals
-    # 95% confidence (lower)
-    lower_bound = np.percentile(monte_simulation, 2.5, axis=0)
-    # 95% confidence (upper)
-    upper_bound = np.percentile(monte_simulation, 97.5, axis=0)
+
+    # Zr_low = np.percentile(monte_simulation.real, 2.5, axis=0)
+    # Zr_high = np.percentile(monte_simulation.real, 97.5, axis=0)
+    # Zi_low = np.percentile(monte_simulation.imag, 2.5, axis=0)
+    # Zi_high = np.percentile(monte_simulation.imag, 97.5, axis=0)
+    # lower_bound = Zr_low + 1j*Zi_low
+    # upper_bound = Zr_high + 1j*Zi_high
+
+    # # 95% confidence (lower)
+    # lower_bound = np.percentile(monte_simulation, 2.5, axis=0)
+    # # 95% confidence (upper)
+    # upper_bound = np.percentile(monte_simulation, 97.5, axis=0)
+
+    warnings.warn('The confidence interval is calculated based on normal '
+                  'projection of the 1000 Monte Carlo simulations '
+                  'around the mean curve at each frequency, which converts '
+                  'the 2D ellipses into 1D intervals orthogonal '
+                  'to the mean curve. '
+                  'So that a confidence interval band can be obtained. '
+                  'This approach may lead to slight overestimation '
+                  'of the confidence intervals compared '
+                  'to the true 2D ellipses in the Nyquist plot.')
+    # Compute the 95% confidence interval bands based on normal projection
+    # Approximate tangent of mean curve at each frequency
+    n_freq = len(f)
+    t = np.empty(n_freq, dtype=np.complex128)
+    mean_mc = monte_simulation.mean(axis=0)
+    for i in range(n_freq):
+        if i == 0:
+            t[i] = mean_mc[1] - mean_mc[0]
+        elif i == n_freq - 1:
+            t[i] = mean_mc[-1] - mean_mc[-2]
+        else:
+            t[i] = mean_mc[i + 1] - mean_mc[i - 1]
+
+    # Compute unit normal vectors in the Nyquist plane
+    # Treat complex z = x + jy as (x, y)
+    nx = -t.imag
+    ny = t.real
+    norm = np.hypot(nx, ny)
+
+    # Guard against zero tangent (flat or single-point)
+    norm[norm == 0] = 1.0
+
+    nx /= norm
+    ny /= norm
+    n_complex = nx + 1j * ny  # unit normal as complex
+
+    lower_bound = np.empty(n_freq, dtype=np.complex128)
+    upper_bound = np.empty(n_freq, dtype=np.complex128)
+
+    for i in range(n_freq):
+        # Deviations from mean
+        d = monte_simulation[:, i] - mean_mc[i]
+
+        # Signed projection onto normal
+        s = d.real * nx[i] + d.imag * ny[i]
+
+        # Quantiles of signed distance along normal
+        s_low = np.percentile(s, 2.5)
+        s_high = np.percentile(s, 97.5)
+
+        # Map back to complex plane
+        lower_bound[i] = mean_mc[i] + s_low * n_complex[i]
+        upper_bound[i] = mean_mc[i] + s_high * n_complex[i]
 
     if plot:
         # Plot the results
