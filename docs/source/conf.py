@@ -15,13 +15,13 @@ import sys
 
 # using system path to extract version number
 sys.path.insert(0, os.path.abspath('../../'))
-from nleis import __version__ # noqa
+from nleis import __version__  # noqa
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'nleis.py'
-copyright = '2024, Yuefan Ji and nleis.py developers'
+copyright = '2025, Yuefan Ji and nleis.py developers'
 author = 'Yuefan Ji and nleis.py developers'
 
 # The full version, including alpha/beta/rc tags
@@ -118,3 +118,12 @@ html_static_path = ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
+
+# Enable edit on github button
+html_context = {
+    "display_github": True,
+    "github_user": "yuefan98",
+    "github_repo": "nleis.py",
+    "github_version": "main",
+    "conf_py_path": "/docs/source/",
+}

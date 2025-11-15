@@ -1,5 +1,7 @@
-Welcome to :code:`nleis.py`'s documentation!
+nleis.py
 =============================================
+Welcome to :code:`nleis.py`'s documentation!
+
 :code:`nleis.py` is a substantial toolbox for :code:`impedance.py` that enables the analysis of EIS and 2nd-NLEIS.
 
 .. toctree::
@@ -8,14 +10,16 @@ Welcome to :code:`nleis.py`'s documentation!
 
    getting-started
    examples
+   application_notes
    nleis
    nleis-elements-pair
    fitting
    nleis_fitting
-   visualization
    data-processing
+   validation
+   visualization
+   parallel
    release-notes
-   
 
 Indices and tables
 ==================

@@ -12,7 +12,6 @@ from impedance.visualization import plot_bode
 from .visualization import plot_altair, plot_first, plot_second
 from nleis.fitting import CircuitGraph
 
-
 import json
 import matplotlib.pyplot as plt
 import numpy as np
@@ -230,7 +229,7 @@ class EISandNLEIS:
             raise TypeError('Comparing object is not of the same type.')
 
     def fit(self, frequencies, Z1, Z2, bounds=None,
-            opt='max', max_f=10, cost=0.5, param_norm=True,
+            opt='max', max_f=np.inf, cost=0.5, param_norm=True,
             positive=True, **kwargs):
         """
 
@@ -260,7 +259,7 @@ class EISandNLEIS:
             calculation, as introduced by Kirk et al. [2]
 
         max_f : float, optional
-            The maximum frequency of interest for 2nd-NLEIS. Default is 10.
+            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
 
         cost : float, optional
             Cost function weight for optimization. Default is 0.5.
@@ -352,7 +351,7 @@ class EISandNLEIS:
         else:
             return False
 
-    def predict(self, frequencies, max_f=10, use_initial=False):
+    def predict(self, frequencies, max_f=np.inf, use_initial=False):
         """
         Predict EIS and 2nd-NLEIS using
         linear and nonlinear equivalent circuit model.
@@ -363,7 +362,7 @@ class EISandNLEIS:
             Array of frequency values.
 
         max_f : float, optional
-            The maximum frequency of interest for 2nd-NLEIS. Default is 10.
+            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
 
         use_initial : bool
             If True and the model was previously fit,
@@ -547,7 +546,7 @@ class EISandNLEIS:
         return dict1, dict2
 
     def plot(self, ax=None, f_data=None, Z1_data=None, Z2_data=None,
-             kind='nyquist', max_f=10, **kwargs):
+             kind='nyquist', max_f=np.inf, **kwargs):
         """
         Visualizes the model and optional data as Nyquist, Bode,
         or Altair (interactive) plots.
@@ -580,7 +579,7 @@ class EISandNLEIS:
 
         max_f : float, optional
             The maximum frequency of interest for 2nd-NLEIS data.
-            The default is 10.
+            The default is np.inf.
 
         **kwargs : optional
             Additional keyword arguments passed to `matplotlib.pyplot.Line2D`
@@ -942,7 +941,7 @@ class NLEISCustomCircuit(BaseCircuit):
         max_f : float, optional
             The maximum frequency of interest for NLEIS.
             This is used for truncating the data based on prior experiments.
-            Default is 10.
+            Default is np.inf.
 
         **kwargs :
             Additional keyword arguments passed to

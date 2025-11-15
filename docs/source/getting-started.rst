@@ -51,7 +51,7 @@ Step 2: Import your data
 
 To begin, we need to first load data from our 2nd-NLEIS manuscripts. The peer-reviewed paper for `Part I <https://iopscience.iop.org/article/10.1149/1945-7111/ad15ca>`_ and `II <https://iopscience.iop.org/article/10.1149/1945-7111/ad2596>`_ can be found as open access articles in Journal of Electrochemical Society.
 
-Since there isn't an instrumentation standard for acquisition and processing of second harmonic NLEIS data, :code:`nleis.py` only provides simple :code:`data_processing` to help users truncate their own data. For now, users will need to obtain their own frequencies, Z1, and Z2 data in order to use this function. An alternative data loading and processing function is under development for EIS instruments that provide frequency-domain harmonic data or time-domain data suitable for signal processing.   
+Since there isn't an instrumentation standard for acquisition and processing of second harmonic NLEIS data, :code:`nleis.py` provides simple :code:`data_truncation` to help users truncate their own data. For now, users will need to obtain their own frequencies, Z1, and Z2 data in order to use this function. In the latest release (v0.3), an alternative data loading and processing function is introduced for EIS instruments that provide frequency-domain harmonic data or time-domain data suitable for signal processing.
 
 .. code-block:: python
 
@@ -68,9 +68,9 @@ Here, we provide a simple data processing function to help you truncate your dat
 
 .. code-block:: python
 
-    from nleis.nleis_fitting import data_processing
+    from nleis.data_processing import data_truncation
 
-    f,Z1,Z2,f2_trunc,Z2_trunc = data_processing(frequencies,Z1,Z2)
+    f,Z1,Z2,f2_trunc,Z2_trunc = data_truncation(frequencies,Z1,Z2)
 
 Step 4: Define your model
 ==========================

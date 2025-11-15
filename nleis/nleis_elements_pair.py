@@ -166,7 +166,8 @@ def RCn(p, f):
 
     ω_star = ω*Rct*Cdl
 
-    return -ε*F/(R*T)*Rct**2 / (1 + 4*ω_star*1j - 5*ω_star**2 - 2*ω_star**3*1j)
+    return -0.5 * ε*F/(R*T)*Rct**2 / (1 + 4*ω_star*1j -
+                                      5*ω_star**2 - 2*ω_star**3*1j)
 
 
 @element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
@@ -307,7 +308,7 @@ def RCDn(p, f):
 
     Z2 = (const * Z1**2) / (2 * ω_star * 1j + Rct / (Zd2 + Rct))
 
-    return Z2
+    return 0.5 * Z2
 
 
 @element(num_params=4, units=['Ohms', 'F', 'Ohms', 's'])
@@ -453,7 +454,7 @@ def RCSn(p, f):
 
     Z2 = (const * Z1**2) / (2 * ω_star * 1j + Rct / (Zd2 + Rct))
 
-    return Z2
+    return 0.5 * Z2
 
 
 @element(num_params=3, units=['Ohms', 'Ohms', 'F'])
@@ -568,7 +569,7 @@ def TPn(p, f):
     part2 = -cosh2 / (2 * (b2 ** 2 - 4 * b1 ** 2)) - 1 / (2 * b2 ** 2)
     Z = mf * (part1 + part2)
 
-    return Z
+    return 0.5 * Z
 
 
 @element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
@@ -732,7 +733,7 @@ def TDPn(p, f):
     part2 = -cosh2 / (2 * (b2**2 - 4 * b1**2)) - 1 / (2 * b2**2)
     Z = mf * (part1 + part2)
 
-    return Z
+    return 0.5 * Z
 
 
 @element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
@@ -900,7 +901,7 @@ def TDSn(p, f):
     part2 = -cosh2 / (2 * (b2**2 - 4 * b1**2)) - 1 / (2 * b2**2)
     Z = mf * (part1 + part2)
 
-    return Z
+    return 0.5 * Z
 
 
 @element(num_params=5, units=['Ohms', 'Ohms', 'F', 'Ohms', 's'])
@@ -1069,7 +1070,7 @@ def TDCn(p, f):
     part2 = -cosh2 / (2 * (b2**2 - 4 * b1**2)) - 1 / (2 * b2**2)
     Z = mf * (part1 + part2)
 
-    return Z
+    return 0.5 * Z
 
 ##################################################################
 # TLM Model
@@ -2082,7 +2083,7 @@ def RCSQn(p, f):
 
     Z2 = (const * Z1**2) / (tau * (1j * 2 * ω) ** alpha + Rct / (Zd2 + Rct))
 
-    return Z2
+    return 0.5 * Z2
 
 
 @element(num_params=5, units=['Ohms', 'F', '-', 'Ohms', 's'])
@@ -2155,7 +2156,16 @@ def RCDQn(p, f):
 
     Z2 = (const * Z1**2) / (tau * (1j * 2 * ω) ** alpha + Rct / (Zd2 + Rct))
 
-    return Z2
+    return 0.5 * Z2
+
+
+@element(num_params=2, units=['Ohm', 's'])
+def Kn(p, f):
+    omega = 2 * np.pi * np.array(f)
+    R2, tau_k = p[0], p[1]
+    Z = R2 / (1 + 4*1j * omega * tau_k - 5 *
+              (omega * tau_k)**2 - 2*1j*(omega * tau_k)**3)
+    return (Z)
 
 
 def get_element_from_name(name):

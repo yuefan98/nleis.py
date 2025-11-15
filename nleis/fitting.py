@@ -195,6 +195,9 @@ def set_default_bounds(circuit, constants={}):
             elif raw_element in ['TLMSn', 'TLMDn'] and (i == 8):
                 upper_bounds.append(np.inf)
                 lower_bounds.append(-np.inf)
+            elif raw_element in ['K', 'Kn'] and i == 0:
+                upper_bounds.append(np.inf)
+                lower_bounds.append(-np.inf)
             elif raw_element in ['RCSQ', 'RCSQn',
                                  'RCDQ', 'RCDQn'] and (i == 2):
                 upper_bounds.append(1)
