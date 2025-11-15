@@ -2,7 +2,7 @@
 Release Notes
 ====================
 
-Version 0.3 (2025-Nov-09)
+Version 0.3 (2025-Nov-15)
 ---------------------------
 This release brings some exciting new features and some corrections to previous versions, enabling a complete and efficient workflow 
 for 2nd-NLEIS from data processing and validation to parallelization capabilities in analysis.
