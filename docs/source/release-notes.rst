@@ -10,26 +10,36 @@ for 2nd-NLEIS from data processing and validation to parallelization capabilitie
 **What's Changed** `#31 <https://github.com/yuefan98/nleis.py/pull/31>`_
 
 **Data Processing Module**
-- Added a new data processing module (:code:`nleis.data_processing`) to facilitate the extraction of raw impedance data from time-domain, including filtering and normalization steps.
+
+- Added a new data processing module (:code:`nleis.data_processing`) to facilitate the extraction of raw impedance data from time-domain using Fast Fourier Transform. Phase correction and baseline correction options are also included.
 
 **Data Validation Module**
+
 - Introduced a new data validation module (:code:`nleis.validation`) to ensure data integrity before analysis through the measurement model approach.
 For more details, refer to our recent publication `Measurement Model Validation of Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy <https://iopscience.iop.org/article/10.1149/1945-7111/ae1064/meta>`_ in JECS
 
 **Parallelization Support**
-- Added parallel computing capabilities in fitting and analysis via the new module (:code:`nleis.parallel`), providing an efficient way to explore minimization landscapes with different initial guesses.
+
+- Added parallel computing capabilities in fitting and analysis via the new module (:code:`nleis.parallel`), providing an efficient way to explore minimization landscapes with different initial guesses or to do batch data analysis.
+
 - New functions include :code:`multistart_fit`, :code:`batch_data_fit`, and :code:`batch_model_fit` to facilitate parallel fitting of multiple initial guesses, datasets, or models.
 
 **Documentation Updates**
+
 - Updated documentation with examples for data validation and parallel fitting.
 
 **Fundamental governing equations correction**
+
 - We introduced a 0.5 factor correction in all of our nonlinear circuit elements to align with the usage of sine or cosine perturbation in practical impedance experiments
 
 **Code Improvements and Handling Improvements**
-- We changed the default value of max_f from 10 Hz to np.inf to make it general for any impedance measurement.
-- Changed data_processing function name to data_truncation to better reflect its functionality and moved it to the `data_processing` module.
+
+- We changed the default value of max_f in :code:`EISandNLEIS` and :code:`NLEISCustomCircuit` from 10 Hz to np.inf to make it general for any impedance measurement.
+
+- Changed data_processing function name to :code:`data_truncation` to better reflect its functionality and moved it to the :code:`data_processing` module.
+
 - Restructured the automated tests to cover new modules and functionalities.
+
 - Improved code structure and readability across modules.
 
 **Full Changelog**: https://github.com/yuefan98/nleis.py/compare/v0.2...v0.3

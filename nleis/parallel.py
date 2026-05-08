@@ -19,53 +19,86 @@ def fit_once(base_model, initial_guess, f, run_idx=None, show_results=True,
              **fit_kwargs):
     """
     Run one fit with initial_guess using the base_model
+
     Parameters
     ----------
-    base_model : instance of circuit for EIS, NLEIS, EISandNLEIS
+
+    base_model : instance of circuit for EIS, NLEIS, or EISandNLEIS
+
         The model to be fitted. The initial_guess attribute will be used as
         the starting point for the optimization.
+
     initial_guess : array_like
+
         The initial guess for the fitting parameters.
+
     f : array_like
+
         Frequencies at which the data is measured.
+
     run_idx : int or None, optional
+
         Optional index identifying runs (e.g., from enumerate).
+
     show_results : bool, optional
+
         Whether to print the fitting results. The default is True.
+
     **fit_kwargs : keyword arguments
+
         Additional keyword arguments to pass to the fit method of the model
-        from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
+        from CustomCircuit, NLESCustomCircuit, or EISandNLEIS.
+
         Supported keywords are:
-        - Z1: array_like, the EIS data to fit. For simultaneous EIS
-        and 2nd-NLEIS fitting.
-        - Z2: array_like, the 2nd-NLEIS data to fit. For simultaneous EIS and
-        2nd-NLEIS fitting.
-        - impedance: array_like, the impedance data to fit. For EIS or NLEIS
-        only fitting.
-        - cost_func: callable, the cost function to use for fitting.
-        The default is cost_max_norm. It must take two arguments:
-        the measured data
-        and the fitted data, and return a scalar cost value.
-        Other cost functions will be supported in the future.
-        - cost: float, the weight of cost
-            function when fitting both Z1 and Z2.
-            A value greater than 0.5 puts more weight on EIS,
-            while a value less than 0.5 puts more weight on 2nd-NLEIS.
-            (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
-            The default is 0.5.
+
+        - Z1: array_like. The EIS data to fit.
+
+          For simultaneous EIS and 2nd-NLEIS fitting.
+
+        - Z2: array_like. The 2nd-NLEIS data to fit.
+
+          For simultaneous EIS and 2nd-NLEIS fitting.
+
+        - impedance: array_like. The impedance data to fit.
+
+          For EIS or NLEIS only fitting.
+
+        - cost_func: callable. The default is cost_max_norm
+
+          The cost function to use for fitting.
+          It takes two arguments: the measured data and the fitted data,
+          and returns a scalar cost value.
+          Other cost functions will be supported in the future.
+
+        - cost: float. The default is 0.5.
+
+          The weight of the cost function when fitting both Z1 and Z2.
+          A value greater than 0.5 puts more weight on EIS,
+          while a value less than 0.5 puts more weight on 2nd-NLEIS.
+          (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
+
         - max_f : float, optional
-            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
-            Avaliable only with EISandNLEIS and NLESCustomCircuit circuit.
+
+          The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
+          Available only with EISandNLEIS and NLESCustomCircuit circuit.
+
     Returns
     -------
     results : dict
         A dictionary containing the fitting results:
+
         - 'idx': int or None, the index of the run if provided.
+
         - 'Status': bool, whether the fit was successful.
+
         - 'p0': array_like, the initial guess used for the fit.
+
         - 'p': array_like, the fitted parameters if the fit was successful.
+
         - 'cost': float, the cost value of the fit if successful.
+
         - 'model': the fitted model instance if the fit was successful.
+
         - 'err': str, the error message if the fit failed.
     """
 
@@ -128,17 +161,19 @@ def fit_once(base_model, initial_guess, f, run_idx=None, show_results=True,
 def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
                    n_jobs=-1, backend="loky", batch_size="auto", **fit_kwargs):
     """
-    Try many initial guesses in parallel. 'guesses' must be an iterable of p0.
+    Try many initial guesses in parallel.
+    This can help to avoid local minima in the optimization.
+
     Parameters
     ----------
-    base_model : instance of circuit for EIS, NLEIS, EISandNLEIS
+    base_model : instance of circuit for EIS, NLEIS, or EISandNLEIS
         The model to be fitted. The initial_guess attribute will be used as
         the starting point for the optimization.
     f : array_like
         Frequencies at which the data is measured.
-    sampling_method : str, optional
+    sampling_method : str, optional. The default is 'sobol'.
         Method to sample the initial guesses. Supported methods are 'sobol',
-        'random', or 'custom'. The default is 'sobol'.
+        'random', or 'custom'.
     num_samples : int, optional
         Number of initial guesses to sample. The default is 1024.
     n_jobs : int, optional
@@ -151,26 +186,39 @@ def multistart_fit(base_model, f, sampling_method="sobol", num_samples=1024,
         'auto'.
     **fit_kwargs : keyword arguments
         Additional keyword arguments to pass to the fit method of the model
-        from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
+        from CustomCircuit, NLESCustomCircuit, or EISandNLEIS.
         Supported keywords are:
-        - Z1: array_like, the EIS data to fit. For simultaneous EIS and
-        2nd-NLEIS fitting.
-        - Z2: array_like, the 2nd-NLEIS data to fit. For simultaneous EIS and
-        2nd-NLEIS fitting.
-        - impedance: array_like, the impedance data to fit. For EIS or NLEIS
-        only fitting.
-        - cost_func: callable, the cost function to use for fitting.
-        The default is cost_max_norm. It must take two arguments:
-        the measured data and the fitted data, and return a scalar cost value.
-        Other cost functions will be supported in the future.
-        - cost: float, the weight of cost
-            function when fitting both Z1 and Z2.
-            A value greater than 0.5 puts more weight on EIS,
-            while a value less than 0.5 puts more weight on 2nd-NLEIS.
-            (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
-            The default is 0.5.
-        - max_f : float, optional
-            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
+
+        - Z1: array_like, the EIS data to fit.
+
+          For simultaneous EIS and 2nd-NLEIS fitting.
+
+        - Z2: array_like, the 2nd-NLEIS data to fit.
+
+          For simultaneous EIS and 2nd-NLEIS fitting.
+
+        - impedance: array_like, the impedance data to fit.
+
+          For EIS or NLEIS only fitting.
+
+        - cost_func: callable, optional. The default is cost_max_norm.
+
+          It takes two arguments:
+          the measured data and the fitted data,
+          and returns a scalar cost value.
+          Other cost functions will be supported in the future.
+
+        - cost: float, The default is 0.5.
+
+          The weight of the cost function when fitting both Z1 and Z2.
+          A value greater than 0.5 puts more weight on EIS,
+          while a value less than 0.5 puts more weight on 2nd-NLEIS.
+          (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
+
+        - max_f : float, optional. Default is np.inf
+
+          The maximum frequency of interest for 2nd-NLEIS
+
     Returns
     -------
     best : dict
@@ -260,20 +308,28 @@ def batch_data_fit(base_model, f, impedance_list=None, Z1_list=None,
         'auto'.
     **fit_kwargs : keyword arguments
         Additional keyword arguments to pass to the fit method of the model.
-        from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
+        These models can be from CustomCircuit,
+        NLESCustomCircuit, or EISandNLEIS.
+
         Supported keywords are:
-        - cost_func: callable, the cost function to use for fitting.
-        The default is cost_max_norm. It must take two arguments:
-        the measured data and the fitted data, and return a scalar cost value.
-        Other cost functions will be supported in the future.
-        - cost: float, the weight of cost
-            function when fitting both Z1 and Z2.
-            A value greater than 0.5 puts more weight on EIS,
-            while a value less than 0.5 puts more weight on 2nd-NLEIS.
-            (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
-            The default is 0.5.
-        - max_f : float, optional
-            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
+
+        - cost_func: callable, optional. The default is cost_max_norm.
+
+          It takes two arguments:
+          the measured data and the fitted data,
+          and returns a scalar cost value.
+          Other cost functions will be supported in the future.
+
+        - cost: float, optional. The default is 0.5.
+
+          The weight of the cost function when fitting both Z1 and Z2.
+          A value greater than 0.5 puts more weight on EIS,
+          while a value less than 0.5 puts more weight on 2nd-NLEIS.
+          (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
+
+        - max_f : float, optional. The default is np.inf.
+
+            The maximum frequency of interest for 2nd-NLEIS.
 
     Returns
     -------
@@ -331,6 +387,7 @@ def batch_model_fit(base_models, f,
 
     Parameters
     ----------
+
     base_models : list of objects
         The base circuit models.
     f : array_like
@@ -345,26 +402,40 @@ def batch_model_fit(base_models, f,
         'auto'.
     **fit_kwargs : keyword arguments
         Additional keyword arguments to pass to the fit method of the model.
-        from CustomCircuit, NLESCustomCircuit, EISandNLEIS.
+        These models can be from CustomCircuit,
+        NLESCustomCircuit, or EISandNLEIS.
+
         Supported keywords are:
-        - Z1: array_like, the EIS data to fit. For simultaneous EIS and
-        2nd-NLEIS fitting.
-        - Z2: array_like, the 2nd-NLEIS data to fit. For simultaneous EIS and
-        2nd-NLEIS fitting.
-        - impedance: array_like, the impedance data to fit. For EIS or NLEIS
-        only fitting.
-        - cost_func: callable, the cost function to use for fitting.
-        The default is cost_max_norm. It must take two arguments:
-        the measured data and the fitted data, and return a scalar cost value.
-        Other cost functions will be supported in the future.
-        - cost: float, the weight of cost
-            function when fitting both Z1 and Z2.
-            A value greater than 0.5 puts more weight on EIS,
-            while a value less than 0.5 puts more weight on 2nd-NLEIS.
-            (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
-            The default is 0.5.
-        - max_f : float, optional
-            The maximum frequency of interest for 2nd-NLEIS. Default is np.inf.
+
+        - Z1: array_like, the EIS data to fit.
+
+          For simultaneous EIS and 2nd-NLEIS fitting.
+
+        - Z2: array_like, the 2nd-NLEIS data to fit.
+
+          For simultaneous EIS and 2nd-NLEIS fitting.
+
+        - impedance: array_like, the impedance data to fit.
+
+          For EIS or NLEIS only fitting.
+
+        - cost_func: callable, optional. The default is cost_max_norm.
+
+          It takes two arguments:
+          the measured data and the fitted data,
+          and returns a scalar cost value.
+          Other cost functions will be supported in the future.
+
+        - cost: float, optional. The default is 0.5.
+
+          The weight of the cost function when fitting both Z1 and Z2.
+          A value greater than 0.5 puts more weight on EIS,
+          while a value less than 0.5 puts more weight on 2nd-NLEIS.
+          (i.e. cost*cost_func(Z1)+(1-cost)*cost_func(Z2))
+
+        - max_f : float, optional. The default is np.inf.
+
+          The maximum frequency of interest for 2nd-NLEIS.
 
     Returns
     -------
