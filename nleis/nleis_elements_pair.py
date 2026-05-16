@@ -1240,7 +1240,8 @@ def TLMn(p, f):
         # initialize the Ax and b matrix
         Ax = A_matrices_TLMn(N, Rpore, Z12t[freq_idx])
 
-        b = np.zeros((N, 1), dtype=np.complex128)
+        # b = np.zeros((N, 1), dtype=np.complex128)
+        b = np.zeros(N, dtype=np.complex128)
 
         # construct the b matrix
         for i in range(N - 1):
@@ -1485,7 +1486,8 @@ def TLMSn(p, f):
         # construct the Ax matrix
         Ax = A_matrices_TLMn(N, Rpore, Z12t_freq)
         # initialize the b matrix
-        b = np.zeros((N, 1), dtype=np.complex128)
+        # b = np.zeros((N, 1), dtype=np.complex128)
+        b = np.zeros(N, dtype=np.complex128)
 
         # construct the b matrix
         for i in range(N-1):
@@ -1663,7 +1665,9 @@ def mTiSn(p, f):
         # construct the Ax matrix
         Ax = A_matrices_TLMn(N, Rpore, Z12t[freq_idx])
         # initialize and b matrix
-        b = np.zeros((N, 1), dtype=np.complex128)
+        # b = np.zeros((N, 1), dtype=np.complex128)
+        b = np.zeros(N, dtype=np.complex128)
+
         # construct the b matrix
         for i in range(0, N-1):
             b[i] = Ii[-1]**2-Ii[i]**2
@@ -1824,7 +1828,8 @@ def TLMDn(p, f):
         # construct the Ax matrix
         Ax = A_matrices_TLMn(N, Rpore, Z12t_freq)
         # initialize the b matrix
-        b = np.zeros((N, 1), dtype=np.complex128)
+        # b = np.zeros((N, 1), dtype=np.complex128)
+        b = np.zeros(N, dtype=np.complex128)
 
         # construct the b matrix
         for i in range(0, N-1):
@@ -2000,7 +2005,8 @@ def mTiDn(p, f):
         # construct the Ax matrix
         Ax = A_matrices_TLMn(N, Rpore, Z12t[freq_idx])
         # initialize the b matrix
-        b = np.zeros((N, 1), dtype=np.complex128)
+        # b = np.zeros((N, 1), dtype=np.complex128)
+        b = np.zeros(N, dtype=np.complex128)
 
         # construct the b matrix
         for i in range(N-1):

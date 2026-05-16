@@ -65,7 +65,7 @@ nleis.py supports a variety of linear and 2nd harmonic nonlinear circuit element
 
 # Side-by-Side Comparison between impedance.py and nleis.py API
 
-nleis.py comes with detailed documentation with examples and concepts for new users to [get started](https://nleispy.readthedocs.io/en/latest/getting-started.html). For existing impedance.py users, we expect this side-by-side comparison between impedance.py and nleis.py can reduce barriers for extending your impedance analysis to the weakly nonlinear regime.
+nleis.py comes with detailed documentation with examples and concepts for new users to [get started](https://nleispy.readthedocs.io/en/latest/getting-started/). For existing impedance.py users, we expect this side-by-side comparison between impedance.py and nleis.py can reduce barriers for extending your impedance analysis to the weakly nonlinear regime.
 
 ![Side-by-side comparison between `impedance.py` and `nleis.py` API](API_comparison.png) 
 

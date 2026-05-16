@@ -23,7 +23,7 @@ The `nleis.py` is avaliable in a standalone version now. You can install it dire
 pip install nleis
 ```
 
-See [Getting started with nleis.py](https://nleispy.readthedocs.io/en/latest/getting-started.html) for instructions on how to get most of this toolbox.
+See [Getting started with nleis.py](https://nleispy.readthedocs.io/en/latest/getting-started/) for instructions on how to get most of this toolbox.
 
 In the near future, you will be able to access all the funcationality for `nleis.py` from `impedance.py`.
 
