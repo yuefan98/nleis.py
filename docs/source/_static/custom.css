@@ -1,0 +1,143 @@
+.nleis-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin: 1.75rem 0 2.25rem;
+}
+
+.nleis-doc-card {
+  border: 1px solid var(--pst-color-border);
+  border-radius: 6px;
+  box-shadow: 0 0.15rem 0.4rem rgba(0, 0, 0, 0.08);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 18rem;
+  overflow: hidden;
+  text-align: center;
+}
+
+.nleis-doc-card__icon {
+  color: var(--pst-color-primary);
+  font-size: 2.6rem;
+  line-height: 1;
+  padding-top: 1.25rem;
+}
+
+.nleis-doc-card__icon i {
+  line-height: 1;
+}
+
+.nleis-section-nav {
+  font-size: 1rem;
+}
+
+.nleis-section-nav__title {
+  color: var(--pst-color-text-base);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.2rem;
+}
+
+.nleis-section-nav__group {
+  margin: 0 0 1.4rem;
+}
+
+.nleis-section-nav__heading {
+  color: var(--pst-color-text-base);
+  font-weight: 700;
+  margin: 0 0 0.55rem;
+}
+
+.nleis-section-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.75rem;
+}
+
+.nleis-section-nav__list li {
+  margin: 0.35rem 0;
+}
+
+.nleis-section-nav__list a {
+  color: var(--pst-color-text-muted);
+  text-decoration: none;
+}
+
+.nleis-section-nav__list a:hover,
+.nleis-section-nav__list a:focus {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+}
+
+.nleis-section-nav__link.active,
+.nleis-section-nav__link[aria-current="page"] {
+  color: var(--pst-color-primary);
+  font-weight: 700;
+}
+
+.nleis-section-nav__link.active::before,
+.nleis-section-nav__link[aria-current="page"]::before {
+  content: "";
+  border-left: 3px solid var(--pst-color-primary);
+  margin-left: -0.75rem;
+  padding-left: 0.55rem;
+}
+
+.nleis-video-figure {
+  margin: 1.5rem 0;
+}
+
+.nleis-video-figure figcaption {
+  color: var(--pst-color-text-muted);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.nleis-doc-card h2 {
+  border-bottom: 1px solid var(--pst-color-border);
+  font-size: 1.05rem;
+  margin: 0;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.nleis-doc-card__description {
+  align-self: start;
+  color: var(--pst-color-text-base);
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+}
+
+.bd-main .nleis-doc-card__button {
+  background: var(--pst-color-primary);
+  border-radius: 4px;
+  color: #fff !important;
+  display: block;
+  font-weight: 600;
+  margin: 0 1.25rem 1.25rem;
+  padding: 0.6rem 0.85rem;
+  text-decoration: none;
+  -webkit-text-fill-color: #fff;
+}
+
+.bd-main .nleis-doc-card__button:visited {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
+
+.bd-main .nleis-doc-card__button:hover,
+.bd-main .nleis-doc-card__button:focus {
+  background: var(--pst-color-secondary);
+  color: #fff !important;
+  text-decoration: none;
+  -webkit-text-fill-color: #fff;
+}
+
+@media (max-width: 768px) {
+  .nleis-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nleis-doc-card {
+    min-height: 0;
+  }
+}

@@ -16,6 +16,7 @@ for 2nd-NLEIS from data processing and validation to parallelization capabilitie
 **Data Validation Module**
 
 - Introduced a new data validation module (:code:`nleis.validation`) to ensure data integrity before analysis through the measurement model approach.
+
 For more details, refer to our recent publication `Measurement Model Validation of Second-Harmonic Nonlinear Electrochemical Impedance Spectroscopy <https://iopscience.iop.org/article/10.1149/1945-7111/ae1064/meta>`_ in JECS
 
 **Parallelization Support**

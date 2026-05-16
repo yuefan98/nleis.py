@@ -4,6 +4,14 @@
 __pycache__/
 .coverage
 
+# Documentation build artifacts
+docs/build/
+docs/source/_build/
+
+# Local documentation-generation workspace, not required for deployed docs
+docs/source/visualizations/
+docs/visualizations/
+
 # Distribution / packaging
 .Python
 build/
