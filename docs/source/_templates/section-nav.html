@@ -1,0 +1,132 @@
+{% set getting_started_url = pathto('getting-started/index') %}
+{% set getting_started_base = '' if getting_started_url == '#' else getting_started_url %}
+{% set getting_started_active = pagename == 'getting-started/index' %}
+{% macro nav_link(target, label) -%}
+<a class="nleis-section-nav__link{% if pagename == target %} active{% endif %}" href="{{ pathto(target) }}"{% if pagename == target %} aria-current="page"{% endif %}>{{ label }}</a>
+{%- endmacro %}
+
+<nav class="bd-docs-nav bd-links nleis-section-nav" aria-label="Section Navigation">
+  <p class="bd-links__title nleis-section-nav__title" role="heading" aria-level="1">Section Navigation</p>
+
+  <div class="nleis-section-nav__group">
+    <p class="nleis-section-nav__heading">Getting Started</p>
+    <ul class="nleis-section-nav__list">
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor{% if getting_started_active %} active{% endif %}" href="{{ getting_started_base }}#getting-started"{% if getting_started_active %} aria-current="page"{% endif %}>Workflow overview</a></li>
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor" href="{{ getting_started_base }}#step-1-installation">Installation</a></li>
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor" href="{{ getting_started_base }}#step-2-import-your-data">Import data</a></li>
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor" href="{{ getting_started_base }}#step-3-process-your-data">Process data</a></li>
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor" href="{{ getting_started_base }}#step-4-define-your-model">Define a model</a></li>
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor" href="{{ getting_started_base }}#step-5-fit-to-data">Fit data</a></li>
+      <li><a class="nleis-section-nav__link nleis-section-nav__anchor" href="{{ getting_started_base }}#step-6-visualize-and-print-the-results">Visualize results</a></li>
+    </ul>
+  </div>
+
+  <div class="nleis-section-nav__group">
+    <p class="nleis-section-nav__heading">User Guide</p>
+    <ul class="nleis-section-nav__list">
+      <li>{{ nav_link('user-guide/second-harmonic-nleis-video', 'Video Tutorial for 2nd-NLEIS') }}</li>
+      <li>{{ nav_link('user-guide/model-concepts', 'Model Concepts') }}</li>
+      <li>{{ nav_link('user-guide/data-processing', 'Data Processing') }}</li>
+      <li>{{ nav_link('user-guide/validation', 'Data Validation') }}</li>
+      <li>{{ nav_link('user-guide/fitting', 'Fitting Workflows') }}</li>
+      <li>{{ nav_link('user-guide/visualization', 'Visualization') }}</li>
+      <li>{{ nav_link('user-guide/parallel', 'Parallel Workflows') }}</li>
+      <li>{{ nav_link('user-guide/application-notes', 'Application Notes') }}</li>
+    </ul>
+  </div>
+
+  <div class="nleis-section-nav__group">
+    <p class="nleis-section-nav__heading">Examples</p>
+    <ul class="nleis-section-nav__list">
+      <li>{{ nav_link('examples/nleis_example', 'Introduction to EIS and 2nd-NLEIS') }}</li>
+      <li>{{ nav_link('examples/graph_example', 'Graph Based Evaluation and Benchmark') }}</li>
+      <li>{{ nav_link('examples/validation', 'Validation of 2nd-NLEIS') }}</li>
+      <li>{{ nav_link('examples/multistart', 'Parallel: Multistart Fitting Example') }}</li>
+      <li>{{ nav_link('examples/batch_data', 'Parallel: Batch Data Fitting Example') }}</li>
+      <li>{{ nav_link('examples/batch_model', 'Parallel: Batch Model Fitting Example') }}</li>
+    </ul>
+  </div>
+
+  <div class="nleis-section-nav__group">
+    <p class="nleis-section-nav__heading">API Reference</p>
+    <ul class="nleis-section-nav__list">
+      <li>{{ nav_link('api/nleis', 'NLEIS') }}</li>
+      <li>{{ nav_link('api/nleis-elements-pair', 'Linear and Nonlinear Circuit Element Pairs') }}</li>
+      <li>{{ nav_link('api/fitting', 'General Fitting') }}</li>
+      <li>{{ nav_link('api/nleis-fitting', 'NLEIS Fitting') }}</li>
+      <li>{{ nav_link('api/data-processing', 'Data Processing') }}</li>
+      <li>{{ nav_link('api/validation', 'Validation') }}</li>
+      <li>{{ nav_link('api/visualization', 'Visualization') }}</li>
+      <li>{{ nav_link('api/parallel', 'Parallel Processing') }}</li>
+    </ul>
+  </div>
+
+  <div class="nleis-section-nav__group">
+    <p class="nleis-section-nav__heading">Extras</p>
+    <ul class="nleis-section-nav__list">
+      <li>{{ nav_link('release-notes', 'Release Notes') }}</li>
+      <li><a class="nleis-section-nav__link" href="https://github.com/yuefan98/nleis.py">Source repository</a></li>
+      <li><a class="nleis-section-nav__link" href="https://github.com/yuefan98/nleis.py/issues">Issue tracker</a></li>
+    </ul>
+  </div>
+</nav>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const links = Array.from(document.querySelectorAll(".nleis-section-nav__anchor"));
+  const normalizePath = function (path) {
+    return path.replace(/\/index\.html$/, "/");
+  };
+  const currentPath = normalizePath(window.location.pathname);
+  const samePageLinks = links.filter(function (link) {
+    const target = new URL(link.href, window.location.href);
+    return normalizePath(target.pathname) === currentPath && target.hash;
+  });
+  if (!samePageLinks.length) {
+    return;
+  }
+  const clearActiveLinks = function () {
+    samePageLinks.forEach(function (link) {
+      link.classList.remove("active");
+      link.removeAttribute("aria-current");
+    });
+  };
+  const activateLink = function (link) {
+    clearActiveLinks();
+    link.classList.add("active");
+    link.setAttribute("aria-current", "page");
+  };
+  const findCurrentSectionLink = function () {
+    let currentSection = null;
+    document.querySelectorAll("section[id]").forEach(function (section) {
+      if (section.getBoundingClientRect().top <= 120) {
+        currentSection = section;
+      }
+    });
+    if (!currentSection) {
+      return null;
+    }
+    return samePageLinks.find(function (link) {
+      return new URL(link.href, window.location.href).hash === "#" + currentSection.id;
+    });
+  };
+  const updateActiveLink = function () {
+    let exact = null;
+    samePageLinks.forEach(function (link) {
+      const target = new URL(link.href, window.location.href);
+      if (target.hash === window.location.hash) {
+        exact = link;
+      }
+    });
+    const scrollLink = findCurrentSectionLink();
+    if (window.location.hash && exact) {
+      activateLink(exact);
+    } else if (scrollLink) {
+      activateLink(scrollLink);
+    }
+  };
+  updateActiveLink();
+  window.addEventListener("hashchange", updateActiveLink);
+  window.addEventListener("scroll", updateActiveLink, { passive: true });
+});
+</script>
