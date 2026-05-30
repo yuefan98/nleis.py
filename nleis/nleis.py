@@ -1,5 +1,5 @@
-from .nleis_fitting import simul_fit, \
-    wrappedImpedance, individual_parameters
+from .nleis_fitting import simul_fit, sequential_fit, \
+    sequential_initial_guess, wrappedImpedance, individual_parameters
 from .nleis_elements_pair import *  # noqa: F401, F403
 from impedance.models.circuits.fitting import check_and_eval
 from impedance.models.circuits.elements import circuit_elements, \
@@ -19,7 +19,6 @@ import warnings
 
 
 class EISandNLEIS:
-    # ToDO: add SSO method and SO method
     def __init__(self, circuit_1='', circuit_2='', initial_guess=[],
                  constants=None, name=None, graph=False, **kwargs):
         """
@@ -77,7 +76,7 @@ class EISandNLEIS:
         # if supplied, check that initial_guess is valid and store
         initial_guess = [x for x in initial_guess if x is not None]
         for i in initial_guess:
-            if not isinstance(i, (float, int, np.int32, np.float64)):
+            if not isinstance(i, (float, int, np.integer, np.floating)):
                 raise TypeError(f'value {i} in initial_guess is not a number')
 
         # initalize class attributes
@@ -228,9 +227,9 @@ class EISandNLEIS:
         else:
             raise TypeError('Comparing object is not of the same type.')
 
-    def fit(self, frequencies, Z1, Z2, bounds=None,
+    def fit(self, frequencies, Z1, Z2, bounds=None, method='simul_fit',
             opt='max', max_f=np.inf, cost=0.5, param_norm=True,
-            positive=True, **kwargs):
+            positive=True, weight_by_modulus=False, **kwargs):
         """
 
         Fit the EIS and 2nd-NLEIS circuit model simultaneously.
@@ -249,7 +248,17 @@ class EISandNLEIS:
         bounds : tuple of array_like, optional
             A 2-tuple representing the lower and upper bounds on parameters.
             If bounds are provided, the input will be normalized to stabilize
-            the algorithm.
+            the algorithm. For 'SO' and 'SSO', these bounds are split into
+            EIS and 2nd-NLEIS bounds based on the edited circuit parameter
+            order.
+
+        method : {'simul_fit', 'SO', 'SSO'}, optional
+            Fitting workflow to use. 'simul_fit' preserves the existing
+            simultaneous fitting behavior. 'SO' performs sequential
+            optimization, fitting EIS first and then 2nd-NLEIS with shared
+            EIS parameters held fixed. 'SSO' uses EIS fitting results and
+            the initial 2nd-NLEIS parameters to initialize simultaneous
+            fitting.
 
         opt : str, optional
             Optimization method to use. Default is 'max'. 'max' refers to the
@@ -271,6 +280,11 @@ class EISandNLEIS:
         positive : bool, optional
             Whether to restrict the EIS values to the positive real quadrant.
             Default is True.
+
+        weight_by_modulus : bool, optional
+            If True, uses the modulus of each data point as the weighting
+            factor for the EIS fits used by 'SO'
+            and 'SSO'. Default is False.
 
         kwargs :
             Additional keyword arguments passed to `simul_fit`,
@@ -306,17 +320,48 @@ class EISandNLEIS:
         Z2 = np.array(Z2, dtype=complex)
         if len(frequencies) != len(Z1):
             raise ValueError(
-                'length of frequencies and impedance do not match for EIS')
+                'length of frequencies and impedance do not match '
+                + 'for EIS data')
+        if len(frequencies) != len(Z2):
+            raise ValueError(
+                'length of frequencies and impedance do not match '
+                + 'for 2nd-NLEIS')
+
+        allowed_methods = ['simul_fit', 'SO', 'SSO']
+        if method not in allowed_methods:
+            raise ValueError(
+                "method must be one of 'simul_fit', 'SO', or 'SSO'")
 
         if self.initial_guess != []:
-            parameters, conf = simul_fit(
-                frequencies, Z1, Z2, self.circuit_1, self.circuit_2,
-                self.edited_circuit, self.initial_guess,
-                constants_1=self.constants_1,
-                constants_2=self.constants_2, bounds=bounds, opt=opt,
-                cost=cost, max_f=max_f, param_norm=param_norm,
-                positive=positive, graph=self.graph,
-                **kwargs)
+            initial_guess = self.initial_guess
+            if method == 'SO':
+                parameters, conf = sequential_fit(
+                    frequencies, Z1, Z2, self.circuit_1, self.circuit_2,
+                    self.edited_circuit, initial_guess,
+                    constants_1=self.constants_1,
+                    constants_2=self.constants_2, bounds=bounds,
+                    weight_by_modulus=weight_by_modulus,
+                    max_f=max_f, graph=self.graph, **kwargs)
+
+            else:
+                if method == 'SSO':
+                    initial_guess = sequential_initial_guess(
+                        frequencies, Z1, self.circuit_1, self.circuit_2,
+                        self.edited_circuit, initial_guess,
+                        constants_1=self.constants_1,
+                        constants_2=self.constants_2, bounds=bounds,
+                        weight_by_modulus=weight_by_modulus,
+                        graph=self.graph, **kwargs)
+
+                parameters, conf = simul_fit(
+                    frequencies, Z1, Z2, self.circuit_1, self.circuit_2,
+                    self.edited_circuit, initial_guess,
+                    constants_1=self.constants_1,
+                    constants_2=self.constants_2, bounds=bounds, opt=opt,
+                    cost=cost, max_f=max_f, param_norm=param_norm,
+                    positive=positive, graph=self.graph,
+                    **kwargs
+                )
             # self.parameters_ = list(parameters)
             self.parameters_ = parameters
 
@@ -756,8 +801,8 @@ class EISandNLEIS:
         initial_guess = self.initial_guess
 
         if self._is_fit():
-            parameters_ = list(self.parameters_)
-            model_conf_ = list(self.conf_)
+            parameters_ = list(self.parameters_) # type: ignore
+            model_conf_ = list(self.conf_) # type: ignore
             # model_cov_ = list(self.cov_)
             # parameters_ = self.parameters_
             # model_conf_ = self.conf_

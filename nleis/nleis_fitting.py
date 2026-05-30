@@ -7,7 +7,8 @@ from scipy.optimize import curve_fit
 from impedance.models.circuits.elements import circuit_elements, \
     get_element_from_name
 from impedance.models.circuits.fitting import check_and_eval
-from .fitting import set_default_bounds, buildCircuit, extract_circuit_elements
+from .fitting import circuit_fit, set_default_bounds, buildCircuit, \
+    extract_circuit_elements
 from scipy.optimize import minimize
 import warnings
 from nleis.fitting import CircuitGraph
@@ -21,7 +22,7 @@ ints = '0123456789'
 
 def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
               initial_guess, constants_1={}, constants_2={},
-              bounds=None, opt='max', cost=0.5, max_f=10, param_norm=True,
+              bounds=None, opt='max', cost=0.5, max_f=10.0, param_norm=True,
               positive=True, graph=False, **kwargs):
     """
     Main function for the simultaneous fitting of EIS and 2nd-NLEIS data.
@@ -95,8 +96,8 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         while a value less than 0.5 puts more weight on 2nd-NLEIS.
         Default is 0.5.
 
-    max_f : int, optional
-        Maximum frequency of interest for 2nd-NLEIS. Default is 10.
+    max_f : float, optional
+        Maximum frequency of interest for 2nd-NLEIS. Default is 10.0.
 
     param_norm : bool, optional
         If True, parameter normalization is applied to improve convergence.
@@ -195,7 +196,7 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         perror = np.sqrt(np.diag(ub*pcov*ub.T))
 
         return popt*ub, perror
-    if opt == 'neg':
+    elif opt == 'neg':
         # This method does not provides converge solution
         # for porous electrode model under current development
         # The method is introduced by Kirk et al, J. Electrochem. Soc. (2023)
@@ -213,11 +214,14 @@ def simul_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
             x0=initial_guess, bounds=bounds, **kwargs)
 
         return (res.x*ub, None)
+    else:
+        raise ValueError("Invalid optimization method. "
+                         "Supported methods are 'max' and 'neg'.")
 
 
 def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
                            circuit_1, constants_1,
-                           circuit_2, constants_2, ub, max_f=10, cost=0.5,
+                           circuit_2, constants_2, ub, max_f=10.0, cost=0.5,
                            graph=False):
     ''' wraps function so we can pass the circuit string
     for negtive log likelihood optimization'''
@@ -237,7 +241,7 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
         circuit_2 : string
         constants_2 : dict
         ub : list of floats upper bound if bounds are provided
-        max_f: int
+        max_f: float
         cost : float, optional
             Weighting between EIS and 2nd-NLEIS data. A value greater than 0.5
             puts more weight on EIS,
@@ -276,7 +280,7 @@ def wrapNeg_log_likelihood(frequencies, Z1, Z2, edited_circuit,
 
 
 def wrapCircuit_simul(edited_circuit, circuit_1, constants_1, circuit_2,
-                      constants_2, ub, max_f=10, graph=False):
+                      constants_2, ub, max_f=10.0, graph=False):
     """ wraps function so we can pass the circuit string
     for simultaneous fitting """
     def wrappedCircuit_simul(frequencies, *parameters):
@@ -392,6 +396,543 @@ def wrappedImpedance(edited_circuit, circuit_1, constants_1, circuit_2,
     return (x1, x2)
 
 
+def circuit_param_names(circuit, constants={}):
+    '''
+    Extract parameter names from the circuit string, excluding constants.
+
+    Parameters
+    ----------
+    circuit : str
+        Circuit string defining the equivalent circuit.
+    constants : dict
+        Dictionary of constant parameters and their values.
+
+    Returns
+    -------
+    names : list of str
+        List of parameter names.
+    '''
+
+    names = circuit.replace('d', '').replace('(', '').replace(')', '')
+    names = names.replace('p', '').replace('(', '').replace(')', '')
+    names = names.replace(',', '-').replace(' ', '').split('-')
+
+    full_names = []
+    for name in names:
+        elem = get_element_from_name(name)
+        num_params = check_and_eval(elem).num_params
+        if num_params > 1:
+            for j in range(num_params):
+                full_name = '{}_{}'.format(name, j)
+                if full_name not in constants:
+                    full_names.append(full_name)
+        elif name not in constants:
+            full_names.append(name)
+
+    return full_names
+
+
+def parameter_dict(circuit, constants, parameters):
+    '''
+    Create a dictionary mapping parameter names to their values.
+
+    Parameters    
+    ----------
+    circuit : str
+        Circuit string defining the equivalent circuit.
+    constants : dict
+        Dictionary of constant parameters and their values.
+    parameters : list of float
+        List of parameter values corresponding to the non-constant parameters.      
+
+    Returns
+    -------
+        param_dict : dict
+        Dictionary mapping parameter names to their values.
+        '''
+    return dict(zip(circuit_param_names(circuit, constants), parameters))
+
+
+def paired_nleis_parameter(name, nleis_names):
+    '''
+    Given a parameter name from the EIS circuit, find the corresponding parameter
+    name in the 2nd-NLEIS circuit if it exists.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name from the EIS circuit.
+    nleis_names : list of str
+        List of parameter names in the 2nd-NLEIS circuit.
+
+    Returns
+    -------
+    str or None
+        Corresponding parameter name in the 2nd-NLEIS circuit, or None if not found.
+    '''
+    if '_' in name:
+        elem, param = name.rsplit('_', 1)
+        raw_elem = get_element_from_name(elem)
+        nl_elem = elem[0:len(raw_elem)] + 'n' + elem[len(raw_elem):]
+        nl_name = nl_elem + '_' + param
+    else:
+        return None
+
+    if nl_name in nleis_names:
+        return nl_name
+
+
+def extract_num_params_from_name(name):
+    '''
+    Extract the number of parameters for a given element name based on the circuit definition. 
+    This function checks the element type and determines the
+    number of parameters for both EIS and 2nd-NLEIS based on the naming convention. 
+    For example, if the element is a T element with 'n' in its name, it will check the corresponding T element without
+    the 'n' to determine the number of parameters for EIS, 
+    while the number of parameters for 2nd-NLEIS will be based on the original element name. 
+    This function is useful for correctly mapping parameters between EIS and 2nd-NLEIS when they share elements with different parameter counts.
+
+    Parameters
+    ----------
+    name : str
+        The name of the circuit element, which may include 'n' to indicate a 2nd-NLEIS element. For example, 'TDPn0' or 'RCn1'.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the number of parameters for EIS and 2nd-NLEIS, respectively. 
+        For example, (2, 3) if the EIS element has 2 parameters and the corresponding 2nd-NLEIS element has 3 parameters.
+
+    '''
+
+    raw_elem = get_element_from_name(name)
+    nleis_num_params = check_and_eval(raw_elem).num_params
+    # this might be improvable, but depends on
+    # how we want to define the name
+    if (name[0] == 'T' or name[0:2] == 'RC') and 'n' in name:
+        eis_num_params = check_and_eval(raw_elem[0:-1]).num_params
+    else:
+        eis_num_params = nleis_num_params
+
+    return eis_num_params, nleis_num_params
+
+
+def extract_parameter_names(name, eis_num_params, idx):
+    '''
+    Generate parameter names for EIS and 2nd-NLEIS based on the element name and the number of parameters for each.
+    This function creates parameter names for both EIS and 2nd-NLEIS based on the element name and the number of parameters for each. 
+    If the EIS element has more than one parameter, it appends an index to the base name for EIS parameters, 
+    while the 2nd-NLEIS parameters will have the original name with an index. 
+    If the EIS element has only one parameter, 
+    both EIS and 2nd-NLEIS parameters will have the same name without an index. 
+    This function is useful for maintaining a consistent naming convention when mapping
+    parameters between EIS and 2nd-NLEIS, especially when they share elements with different parameter counts.
+
+    Parameters
+    ----------
+    name : str
+        The base name of the circuit element, which may include 'n' to indicate a 2nd-NLEIS element. For example, 'TDPn' or 'RCn'.  
+    eis_num_params : int
+        The number of parameters for the EIS element.
+    idx : int
+        The index of the parameter for the current element, used when there are multiple parameters.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the parameter name for EIS and the parameter name for 2nd-NLEIS. 
+        For example, ('TDP_0', 'TDPn_0') if the EIS element has multiple parameters and the current index is 0, 
+        or ('TDP', 'TDP') if the EIS element has only one parameter.
+    '''
+
+    if eis_num_params > 1:
+        if idx < eis_num_params:
+            eis_name = name.replace("n", "") + '_{}'.format(idx)
+        else:
+            eis_name = None
+        nleis_name = name + '_{}'.format(idx)
+    else:
+        eis_name = name
+        nleis_name = name
+
+    return eis_name, nleis_name
+
+
+def combined_parameter_names(edited_circuit, constants_1, constants_2):
+    '''
+    Generate a list of parameter names for the combined EIS and 2nd-NLEIS fitting
+    based on the edited circuit string and the constants for both circuits.
+
+    Parameters
+    ----------
+    edited_circuit : str
+        Edited circuit string combining both EIS and 2nd-NLEIS elements.
+        For example, if the EIS string is 'L0-R0-TDP0-TDS1' and the 2nd-NLEIS string is 'd(TDPn0-TDSn1)',
+        the edited string becomes 'L0-R0-TDPn0-TDSn1'.
+    constants_1 : dict
+        Constants for the EIS circuit elements.
+    constants_2 : dict
+        Constants for the 2nd-NLEIS circuit elements.
+
+    Returns
+    -------
+        list of tuples
+            List of (EIS_parameter_name, NLEIS_parameter_name) tuples.
+        '''
+    names = []
+    elements = extract_circuit_elements(edited_circuit)
+
+    for elem in elements:
+
+        eis_num_params, nleis_num_params = extract_num_params_from_name(elem)
+
+        for j in range(nleis_num_params):
+
+            eis_name, nleis_name = extract_parameter_names(
+                elem, eis_num_params, j)
+
+            if eis_name in constants_1:
+                continue
+            if nleis_name in constants_2 and eis_name not in constants_1:
+                continue
+
+            names.append((eis_name, nleis_name))
+
+    return names
+
+
+def join_parameters(edited_circuit, constants_1, constants_2,
+                    p1_dict, p2_dict):
+    '''
+    Join parameters for EIS and 2nd-NLEIS based on the edited circuit and constants.
+    This function combines the parameters for EIS and 2nd-NLEIS into a single list 
+    based on the edited circuit string and the constants for both circuits.
+    It uses the combined parameter names generated from the edited circuit to 
+    determine the order of parameters in the final list. 
+    If a parameter is a constant in either circuit, it will be skipped in the
+    final list. This function is useful for preparing the parameter list for simultaneous fitting, 
+    ensuring that the parameters are correctly aligned with the edited circuit structure.
+
+    Parameters
+    ----------
+    edited_circuit : str
+        Edited circuit string combining both EIS and 2nd-NLEIS elements.
+        For example, if the EIS string is 'L0-R0-TDP0-TDS1' and the 2nd-NLEIS string is 'd(TDPn0-TDSn1)',
+        the edited string becomes 'L0-R0-TDPn0-TDSn1'.  
+    constants_1 : dict
+        Constants for the EIS circuit elements. 
+    constants_2 : dict      
+        Constants for the 2nd-NLEIS circuit elements.
+    p1_dict : dict
+        Dictionary mapping EIS parameter names to their values.
+    p2_dict : dict
+        Dictionary mapping 2nd-NLEIS parameter names to their values.   
+
+    Returns
+    -------
+    list of float
+        Combined list of parameters for EIS and 2nd-NLEIS based on the edited circuit and constants.
+    '''
+    parameters = []
+
+    for eis_name, nleis_name in combined_parameter_names(
+            edited_circuit, constants_1, constants_2):
+        if eis_name is not None:
+            parameters.append(p1_dict[eis_name])
+        else:
+            parameters.append(p2_dict[nleis_name])
+
+    return np.array(parameters)
+
+
+def split_bounds(bounds, edited_circuit, circuit_1, constants_1,
+                 circuit_2, constants_2):
+    '''
+    Split combined bounds into separate bounds for EIS and 2nd-NLEIS based on the edited circuit and constants.
+    This function takes the combined bounds for simultaneous fitting and splits them into separate bounds for EIS and 2nd-NLEIS.
+    It uses the combined parameter names generated from the edited circuit to determine which bounds correspond 
+    to EIS parameters and which correspond to 2nd-NLEIS parameters. 
+    If a parameter is a constant in either circuit, it will be skipped in the bounds. 
+    This function is useful for preparing the bounds for sequential fitting, 
+    ensuring that the bounds are correctly aligned with the parameters for each circuit.
+
+    Parameters
+    ----------
+    bounds : 2-tuple of array_like
+        Lower and upper bounds on parameters for simultaneous fitting.
+    edited_circuit : str
+        Edited circuit string combining both EIS and 2nd-NLEIS elements.
+        For example, if the EIS string is 'L0-R0-TDP0-TDS1' and the 2nd-NLEIS string is 'd(TDPn0-TDSn1)',
+        the edited string becomes 'L0-R0-TDPn0-TDSn1'.  
+    circuit_1 : str
+        The equivalent circuit string for EIS.
+    constants_1 : dict
+        Constants used in the EIS circuit model.
+    circuit_2 : str
+        The equivalent circuit string for 2nd-NLEIS.
+    constants_2 : dict
+        Constants used in the 2nd-NLEIS circuit model.  
+
+    Returns
+    -------
+    tuple
+        bounds_eis : 2-tuple of array_like
+            Lower and upper bounds for EIS parameters.
+        bounds_nleis : 2-tuple of array_like
+            Lower and upper bounds for 2nd-NLEIS parameters.
+    '''
+    if bounds is None:
+        return None, None
+
+    lower, upper = bounds
+    combined_names = combined_parameter_names(
+        edited_circuit, constants_1, constants_2)
+
+    bounds_by_name = {}
+    for i, (eis_name, nleis_name) in enumerate(combined_names):
+        if eis_name is not None:
+            bounds_by_name[eis_name] = (lower[i], upper[i])
+        if nleis_name is not None:
+            bounds_by_name[nleis_name] = (lower[i], upper[i])
+
+    p1_names = circuit_param_names(circuit_1, constants_1)
+    p2_names = circuit_param_names(circuit_2, constants_2)
+    bounds_eis = tuple(
+        [bounds_by_name[name][i] for name in p1_names]
+        for i in range(2))
+    bounds_nleis = tuple(
+        [bounds_by_name[name][i] for name in p2_names]
+        for i in range(2))
+
+    return bounds_eis, bounds_nleis
+
+
+def filter_bounds(bounds, input_names, output_names):
+    '''
+    Filter bounds based on input and output parameter names.
+    This function takes the combined bounds for simultaneous fitting and filters them 
+    based on the input and output parameter names for sequential fitting.
+    It creates a mapping of parameter names to their bounds and 
+    then constructs new bounds for the output parameters based on the input parameter names. 
+    If a parameter in the output is not present in the input, it will be skipped in the bounds. 
+    This function is useful for ensuring that the bounds for sequential fitting 
+    are correctly aligned with the parameters that are being optimized in each stage.
+
+    Parameters
+    ----------
+
+    bounds : 2-tuple of array_like
+        Lower and upper bounds on parameters for simultaneous fitting.
+    input_names : list of str
+        List of parameter names corresponding to the input parameters for sequential fitting (e.g., EIS parameters).
+    output_names : list of str
+        List of parameter names corresponding to the output parameters for sequential fitting (e.g., 2nd-NLEIS parameters).  
+
+    Returns
+    -------
+    tuple
+        bounds_filtered : 2-tuple of array_like
+            Lower and upper bounds for the output parameters based on the input parameter names.
+    '''
+    if bounds is None:
+        return None
+
+    lower, upper = bounds
+    bounds_by_name = {
+        name: (lower[i], upper[i])
+        for i, name in enumerate(input_names)
+    }
+
+    return tuple(
+        [bounds_by_name[name][i] for name in output_names]
+        for i in range(2))
+
+
+def sequential_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
+                   initial_guess, constants_1={}, constants_2={},
+                   bounds=None, weight_by_modulus=False, max_f=np.inf,
+                   graph=False, **kwargs):
+    """
+    Sequential fitting of EIS and 2nd-NLEIS data with shared parameters.
+    Fit EIS first, then fit 2nd-NLEIS with shared EIS parameters fixed.
+
+    Bounds for the EIS and 2nd-NLEIS stages are derived from the combined
+    bounds used by simultaneous fitting.
+
+    Parameters
+    ----------  
+    frequencies : numpy.ndarray
+        Array of frequency values.
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data (complex impedance values).
+    Z2 : numpy.ndarray of dtype complex128
+        2nd-NLEIS data (complex impedance values).
+    circuit_1 : str
+        String defining the EIS equivalent circuit to be fit.
+    circuit_2 : str
+        String defining the 2nd-NLEIS equivalent circuit to be fit.
+    edited_circuit : str
+        Edited circuit string that is applied to both EIS and NLEIS fitting.
+        Example:
+        circuit_1 = L0-R0-TDP0-TDS1
+        circuit_2 = TDPn0-TDSn1
+        edited_circuit = L0-R0-TDPn0-TDSn1
+    initial_guess : list of float
+        Initial guesses for the fit parameters.
+    constants_1 : dict, optional
+        Parameters and their values to hold constant during EIS fitting.
+        Defaults to an empty dictionary.
+    constants_2 : dict, optional
+        Parameters and their values to hold constant during 2nd-NLEIS fitting.
+        Defaults to an empty dictionary.
+    bounds : 2-tuple of array_like, optional
+        Lower and upper bounds on parameters for simultaneous fitting. If not provided, default bounds
+        will be set based on the circuit elements. Special bounds:
+        - CPE alpha has an upper bound of 1.
+        - Symmetry parameter (ε) for 2nd-NLEIS has bounds between -0.5 and 0.5.
+        - Curvature parameter (κ) for 2nd-NLEIS has bounds between -np.inf and np.inf.
+    weight_by_modulus : bool, optional
+        Whether to weight the fitting by the modulus of the impedance for EIS. Defaults to False.
+    max_f : float, optional
+        Maximum frequency for the fitting. Defaults to np.inf.
+    graph : bool, optional
+        Whether to use execution graph to process the circuit. Defaults to False, which uses eval based code.
+    kwargs :
+        Additional keyword arguments passed to `scipy.optimize.curve_fit`.  
+
+    Returns
+    -------
+    parameters : dict
+        Dictionary of best-fit parameters for EIS and 2nd-NLEIS.
+    conf : dict
+        Dictionary of confidence intervals for the fit parameters.  
+    """
+
+    bounds_eis, bounds_nleis = split_bounds(
+        bounds, edited_circuit, circuit_1, constants_1, circuit_2, constants_2)
+
+    p1_initial, p2_initial = individual_parameters(
+        edited_circuit, initial_guess, constants_1, constants_2)
+
+    p1, conf1 = circuit_fit(
+        frequencies, Z1, circuit_1, p1_initial, constants=constants_1,
+        bounds=bounds_eis, weight_by_modulus=weight_by_modulus,
+        graph=graph, **kwargs)
+
+    p1_dict = parameter_dict(circuit_1, constants_1, p1)
+    conf1_dict = parameter_dict(circuit_1, constants_1, conf1)
+
+    sequential_constants_2 = constants_2.copy()
+    nleis_names = circuit_param_names(circuit_2, {})
+    for name, value in p1_dict.items():
+        nl_name = paired_nleis_parameter(name, nleis_names)
+        if nl_name is not None and nl_name not in sequential_constants_2:
+            sequential_constants_2[nl_name] = value
+
+    p2_initial_dict = parameter_dict(circuit_2, constants_2, p2_initial)
+    original_p2_names = circuit_param_names(circuit_2, constants_2)
+    p2_names = circuit_param_names(circuit_2, sequential_constants_2)
+    p2_initial = [p2_initial_dict[name] for name in p2_names]
+    bounds_nleis = filter_bounds(bounds_nleis, original_p2_names, p2_names)
+
+    mask = frequencies < max_f
+    p2, conf2 = circuit_fit(
+        frequencies[mask], Z2[mask], circuit_2, p2_initial,
+        constants=sequential_constants_2, bounds=bounds_nleis,
+        weight_by_modulus=False, graph=graph, **kwargs)
+
+    p2_dict = sequential_constants_2.copy()
+    p2_dict.update(parameter_dict(circuit_2, sequential_constants_2, p2))
+    conf2_dict = dict.fromkeys(sequential_constants_2, 0)
+    conf2_dict.update(
+        parameter_dict(circuit_2, sequential_constants_2, conf2))
+
+    parameters = join_parameters(
+        edited_circuit, constants_1, constants_2, p1_dict, p2_dict)
+    conf = join_parameters(
+        edited_circuit, constants_1, constants_2, conf1_dict, conf2_dict)
+
+    return parameters, conf
+
+
+def sequential_initial_guess(frequencies, Z1, circuit_1, circuit_2,
+                             edited_circuit, initial_guess, constants_1={},
+                             constants_2={}, bounds=None,
+                             weight_by_modulus=False, graph=False, **kwargs):
+    """
+
+    This function performs a sequential fitting of EIS data to obtain the best-fit parameters for EIS,
+    and then combines those values with the initial guess 
+    for 2nd-NLEIS parameters to create a new initial guess for simultaneous fitting. 
+    The bounds for the EIS fitting are derived from the combined bounds 
+    used by simultaneous fitting, ensuring that the initial guess 
+    for EIS parameters is consistent with the bounds. 
+    This function is useful for providing a more informed initial guess for simultaneous fitting, 
+    which can help improve convergence and fitting accuracy when EIS and 2nd-NLEIS share parameters.
+
+    Parameters
+    ----------
+    frequencies : numpy.ndarray
+        Array of frequency values.
+    Z1 : numpy.ndarray of dtype complex128
+        EIS data (complex impedance values).
+    circuit_1 : str       
+        String defining the EIS equivalent circuit to be fit.
+    circuit_2 : str
+        String defining the 2nd-NLEIS equivalent circuit to be fit.
+    edited_circuit : str
+        Edited circuit string that is applied to both EIS and NLEIS fitting.
+        Example:
+        circuit_1 = L0-R0-TDP0-TDS1
+        circuit_2 = TDPn0-TDSn1
+        edited_circuit = L0-R0-TDPn0-TDSn1
+    initial_guess : list of float
+        Initial guesses for the fit parameters.
+    constants_1 : dict, optional
+        Parameters and their values to hold constant during EIS fitting.
+        Defaults to an empty dictionary.
+    constants_2 : dict, optional
+        Parameters and their values to hold constant during 2nd-NLEIS fitting.
+        Defaults to an empty dictionary.
+    bounds : 2-tuple of array_like, optional
+        Lower and upper bounds on parameters for simultaneous fitting. If not provided, default bounds
+        will be set based on the circuit elements. Special bounds:
+        - CPE alpha has an upper bound of 1.
+        - Symmetry parameter (ε) for 2nd-NLEIS has bounds between -0.5 and 0.5.
+        - Curvature parameter (κ) for 2nd-NLEIS has bounds between -np.inf and np.inf.
+    weight_by_modulus : bool, optional
+        Whether to weight the fitting by the modulus of the impedance for EIS. Defaults to False.
+    graph : bool, optional
+        Whether to use execution graph to process the circuit. Defaults to False, which uses eval based
+        code.
+    kwargs :
+        Additional keyword arguments passed to `scipy.optimize.curve_fit`.
+
+    Returns
+    -------
+    parameters : dict
+        Dictionary of best-fit parameters for EIS and 2nd-NLEIS 
+        based on the sequential fitting of EIS and the initial guess for 2nd-NLEIS.
+
+    """
+    bounds_eis, _ = split_bounds(
+        bounds, edited_circuit, circuit_1, constants_1, circuit_2, constants_2)
+
+    p1_initial, p2_initial = individual_parameters(
+        edited_circuit, initial_guess, constants_1, constants_2)
+
+    p1, _ = circuit_fit(
+        frequencies, Z1, circuit_1, p1_initial, constants=constants_1,
+        bounds=bounds_eis, weight_by_modulus=weight_by_modulus,
+        graph=graph, **kwargs)
+
+    p1_dict = parameter_dict(circuit_1, constants_1, p1)
+    p2_dict = parameter_dict(circuit_2, constants_2, p2_initial)
+
+    return join_parameters(
+        edited_circuit, constants_1, constants_2, p1_dict, p2_dict)
+
+
 def individual_parameters(edited_circuit,
                           parameters, constants_1, constants_2):
     """
@@ -436,40 +977,25 @@ def individual_parameters(edited_circuit,
     # Parse elements and store values
     for elem in elements_1:
 
-        raw_elem = get_element_from_name(elem)
-        nleis_elem_number = check_and_eval(raw_elem).num_params
-        # this might be improvable, but depends on
-        # how we want to define the name
-        if (elem[0] == 'T' or elem[0:2] == 'RC') and 'n' in elem:
-            # check for nonlinear element
-            eis_elem_number = check_and_eval(raw_elem[0:-1]).num_params
+        eis_num_params, nleis_num_params = extract_num_params_from_name(elem)
 
-        else:
-            eis_elem_number = nleis_elem_number
+        for j in range(nleis_num_params):
 
-        for j in range(nleis_elem_number):
-            if eis_elem_number > 1:
-                if j < eis_elem_number:
-                    eis_current_elem = elem.replace("n", "") + '_{}'.format(j)
-                else:
-                    eis_current_elem = None
-                nleis_current_elem = elem + '_{}'.format(j)
+            eis_name, nleis_name = extract_parameter_names(
+                elem, eis_num_params, j)
 
-            else:
-                eis_current_elem = elem
-                nleis_current_elem = elem
-            if eis_current_elem in constants_1.keys():
+            if eis_name in constants_1:
                 continue
-            elif (nleis_current_elem in constants_2.keys() and
-                  eis_current_elem not in constants_1.keys()):
+            elif (nleis_name in constants_2 and
+                  eis_name not in constants_1):
                 continue
             else:
-                if eis_elem_number == 1:
+                if eis_num_params == 1:
                     p1.append(parameters[index])
 
-                elif eis_elem_number > 1 and j < eis_elem_number:
+                elif eis_num_params > 1 and j < eis_num_params:
                     p1.append(parameters[index])
-                    if nleis_elem_number > eis_elem_number:
+                    if nleis_num_params > eis_num_params:
                         p2.append(parameters[index])
                 else:
                     p2.append(parameters[index])

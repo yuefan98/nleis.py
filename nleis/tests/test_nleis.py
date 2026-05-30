@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt  # noqa: F401
 import pytest
 
 from nleis.nleis import EISandNLEIS, NLEISCustomCircuit  # noqa: F401
+from nleis.fitting import set_default_bounds
 
 from nleis.data_processing import data_truncation
 
@@ -293,6 +294,44 @@ def test_EISandNLEIS_fitting():
                 1.71140213e+02, 2.77968560e+09, 1.02284629e+00, 6.38830393e-03]
 
     assert np.allclose(p2, results2, rtol=1e-3, atol=1e-3)
+
+
+def test_EISandNLEIS_fit_methods():
+    circ_str_1 = 'L0-R0-TDS0-TDS1'
+    circ_str_2 = 'd(TDSn0,TDSn1)'
+    initial_guess = [2.76862889e-07, 9.27338912e-03, 2.57626033e-02,
+                     6.09369447e-03, 6.91681283e+00, 1.23574283e-04,
+                     5.13935770e+00, 2.54622037e+01, 1.37710342e-01,
+                     2.45544428e-02, 2.65941949e-03, 7.05861025e-02,
+                     1.85837897e+02, 3.20561842e+09, 1.87142864e+00,
+                     3.66300641e-03]
+
+    simul_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess)
+    simul_circuit.fit(f, Z1, Z2, method='simul_fit', max_f=10)
+    assert simul_circuit._is_fit()
+    bounds = np.array(set_default_bounds(simul_circuit.edited_circuit))
+
+    so_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess)
+    assert so_circuit.fit(
+        f, Z1, Z2, bounds=bounds, method='SO', max_f=10) is so_circuit
+    Z1_so, Z2_so = so_circuit.predict(f, max_f=10)
+    assert Z1_so.shape == Z1.shape
+    assert Z2_so.shape == Z2_trunc.shape
+
+    sso_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess)
+    assert sso_circuit.fit(
+        f, Z1, Z2, bounds=bounds, method='SSO', max_f=10) is sso_circuit
+    Z1_sso, Z2_sso = sso_circuit.predict(f, max_f=10)
+    assert Z1_sso.shape == Z1.shape
+    assert Z2_sso.shape == Z2_trunc.shape
+
+    invalid_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess)
+    with pytest.raises(ValueError):
+        invalid_circuit.fit(f, Z1, Z2, method='bad-method', max_f=10)
 
 
 def test_NLEISCustomCircuit():
