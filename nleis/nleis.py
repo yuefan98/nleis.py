@@ -275,7 +275,7 @@ class EISandNLEIS:
             Overall cost = cost * EIS + (1 - cost) * 2nd-NLEIS.
 
         param_norm : bool, optional
-            Whether to apply parameter normalization. Default is True.
+            Whether to apply parameter normalization for simultaneous fitting. Default is True.
 
         positive : bool, optional
             Whether to restrict the EIS values to the positive real quadrant.
@@ -341,7 +341,8 @@ class EISandNLEIS:
                     constants_1=self.constants_1,
                     constants_2=self.constants_2, bounds=bounds,
                     weight_by_modulus=weight_by_modulus,
-                    max_f=max_f, graph=self.graph, **kwargs)
+                    max_f=max_f, positive=positive,
+                    graph=self.graph, **kwargs)
 
             else:
                 if method == 'SSO':
@@ -351,7 +352,7 @@ class EISandNLEIS:
                         constants_1=self.constants_1,
                         constants_2=self.constants_2, bounds=bounds,
                         weight_by_modulus=weight_by_modulus,
-                        graph=self.graph, **kwargs)
+                        positive=positive, graph=self.graph, **kwargs)
 
                 parameters, conf = simul_fit(
                     frequencies, Z1, Z2, self.circuit_1, self.circuit_2,
@@ -801,8 +802,8 @@ class EISandNLEIS:
         initial_guess = self.initial_guess
 
         if self._is_fit():
-            parameters_ = list(self.parameters_) # type: ignore
-            model_conf_ = list(self.conf_) # type: ignore
+            parameters_ = list(self.parameters_)  # type: ignore
+            model_conf_ = list(self.conf_)  # type: ignore
             # model_cov_ = list(self.cov_)
             # parameters_ = self.parameters_
             # model_conf_ = self.conf_

@@ -751,7 +751,7 @@ def filter_bounds(bounds, input_names, output_names):
 def sequential_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
                    initial_guess, constants_1={}, constants_2={},
                    bounds=None, weight_by_modulus=False, max_f=np.inf,
-                   graph=False, **kwargs):
+                   positive=True, graph=False, **kwargs):
     """
     Sequential fitting of EIS and 2nd-NLEIS data with shared parameters.
     Fit EIS first, then fit 2nd-NLEIS with shared EIS parameters fixed.
@@ -795,6 +795,10 @@ def sequential_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
         Whether to weight the fitting by the modulus of the impedance for EIS. Defaults to False.
     max_f : float, optional
         Maximum frequency for the fitting. Defaults to np.inf.
+    positive : bool, optional
+        If True, restrict EIS fitting to the positive real quadrant by
+        removing points where the imaginary part is non-negative. The same
+        frequency mask is applied before fitting 2nd-NLEIS.
     graph : bool, optional
         Whether to use execution graph to process the circuit. Defaults to False, which uses eval based code.
     kwargs :
@@ -813,6 +817,12 @@ def sequential_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 
     p1_initial, p2_initial = individual_parameters(
         edited_circuit, initial_guess, constants_1, constants_2)
+
+    if positive:
+        mask_positive = np.array(Z1.imag) < 0
+        frequencies = frequencies[mask_positive]
+        Z1 = Z1[mask_positive]
+        Z2 = Z2[mask_positive]
 
     p1, conf1 = circuit_fit(
         frequencies, Z1, circuit_1, p1_initial, constants=constants_1,
@@ -858,7 +868,8 @@ def sequential_fit(frequencies, Z1, Z2, circuit_1, circuit_2, edited_circuit,
 def sequential_initial_guess(frequencies, Z1, circuit_1, circuit_2,
                              edited_circuit, initial_guess, constants_1={},
                              constants_2={}, bounds=None,
-                             weight_by_modulus=False, graph=False, **kwargs):
+                             weight_by_modulus=False, positive=True,
+                             graph=False, **kwargs):
     """
 
     This function performs a sequential fitting of EIS data to obtain the best-fit parameters for EIS,
@@ -902,6 +913,9 @@ def sequential_initial_guess(frequencies, Z1, circuit_1, circuit_2,
         - Curvature parameter (κ) for 2nd-NLEIS has bounds between -np.inf and np.inf.
     weight_by_modulus : bool, optional
         Whether to weight the fitting by the modulus of the impedance for EIS. Defaults to False.
+    positive : bool, optional
+        If True, restrict EIS fitting to the positive real quadrant by
+        removing points where the imaginary part is non-negative.
     graph : bool, optional
         Whether to use execution graph to process the circuit. Defaults to False, which uses eval based
         code.
@@ -920,6 +934,11 @@ def sequential_initial_guess(frequencies, Z1, circuit_1, circuit_2,
 
     p1_initial, p2_initial = individual_parameters(
         edited_circuit, initial_guess, constants_1, constants_2)
+
+    if positive:
+        mask_positive = np.array(Z1.imag) < 0
+        frequencies = frequencies[mask_positive]
+        Z1 = Z1[mask_positive]
 
     p1, _ = circuit_fit(
         frequencies, Z1, circuit_1, p1_initial, constants=constants_1,
