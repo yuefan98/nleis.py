@@ -46,6 +46,85 @@ def test_parsing():
     assert NLEIS_circuit.constants_2 == {'TDSn0_2': 10, 'TDSn1_6': 0}
 
 
+def test_EISandNLEIS_dict_initial_guess():
+    circ_str_1 = 'L0-R0-TDS0-TDS1'
+    circ_str_2 = 'd(TDSn0,TDSn1)'
+    initial_guess = [1e-7, 1e-3,
+                     5e-3, 1e-3, 10, 1e-2, 100, 10, 0.1,
+                     1e-3, 1e-3, 1e-3, 1e-2, 1000, 0, 0]
+
+    list_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess)
+    names = list_circuit.get_initial_guess_names()
+
+    assert names == ['L0', 'R0',
+                     'TDS0_0', 'TDS0_1', 'TDS0_2', 'TDS0_3', 'TDS0_4',
+                     'TDSn0_5', 'TDSn0_6',
+                     'TDS1_0', 'TDS1_1', 'TDS1_2', 'TDS1_3', 'TDS1_4',
+                     'TDSn1_5', 'TDSn1_6']
+
+    dict_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2,
+        initial_guess=dict(zip(names, initial_guess)))
+
+    assert dict_circuit.initial_guess == initial_guess
+    assert np.allclose(dict_circuit.p1, list_circuit.p1)
+    assert np.allclose(dict_circuit.p2, list_circuit.p2)
+    assert np.allclose(dict_circuit.predict(f)[0], list_circuit.predict(f)[0])
+    assert np.allclose(dict_circuit.predict(f)[1], list_circuit.predict(f)[1])
+
+    nonlinear_dict = dict(zip(names, initial_guess))
+    nonlinear_dict['TDSn0_1'] = nonlinear_dict.pop('TDS0_1')
+    nonlinear_dict['TDSn1_4'] = nonlinear_dict.pop('TDS1_4')
+    nonlinear_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=nonlinear_dict)
+    assert nonlinear_circuit.initial_guess == initial_guess
+
+    duplicate_dict = dict(zip(names, initial_guess))
+    duplicate_dict['TDSn0_1'] = 42
+    with pytest.warns(UserWarning, match='using TDSn0_1'):
+        duplicate_circuit = EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=duplicate_dict)
+    assert duplicate_circuit.initial_guess[3] == 42
+
+
+def test_EISandNLEIS_dict_initial_guess_constants_and_errors():
+    circ_str_1 = 'L0-R0-TDS0-TDS1'
+    circ_str_2 = 'd(TDSn0,TDSn1)'
+    constants = {'TDSn0_2': 10, 'TDSn1_6': 0}
+    initial_guess = [1e-7, 1e-3,
+                     5e-3, 1e-3, 1e-2, 100, 10, 0.1,
+                     1e-3, 1e-3, 1e-3, 1e-2, 1000, 0]
+
+    list_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2, initial_guess=initial_guess,
+        constants=constants)
+    names = list_circuit.get_initial_guess_names()
+    dict_circuit = EISandNLEIS(
+        circ_str_1, circ_str_2,
+        initial_guess=dict(zip(names, initial_guess)), constants=constants)
+    assert dict_circuit.initial_guess == initial_guess
+
+    missing_guess = dict(zip(names, initial_guess))
+    missing_guess.pop('TDS0_1')
+    with pytest.raises(ValueError, match='missing parameter names'):
+        EISandNLEIS(circ_str_1, circ_str_2, initial_guess=missing_guess)
+
+    invalid_guess = dict(zip(names, initial_guess))
+    invalid_guess['TDSn0_2'] = 1
+    with pytest.raises(ValueError, match='unexpected parameter names'):
+        EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=invalid_guess,
+            constants=constants)
+
+    nonnumeric_guess = dict(zip(names, initial_guess))
+    nonnumeric_guess['R0'] = 'bad'
+    with pytest.raises(TypeError, match='is not a number'):
+        EISandNLEIS(
+            circ_str_1, circ_str_2, initial_guess=nonnumeric_guess,
+            constants=constants)
+
+
 def test_EISandNLEIS():
     circ_str_1 = 'L0-R0-TDS0-TDS1'
     circ_str_2 = 'd(TDSn0,TDSn1)'
@@ -346,6 +425,45 @@ def test_NLEISCustomCircuit():
     NLEIS_circuit = NLEISCustomCircuit(
         circ_str, initial_guess=initial_guess)
 
+    names = NLEIS_circuit.get_initial_guess_names()
+    assert names == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
+                     'TDSn0_4', 'TDSn0_5',
+                     'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
+                     'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
+
+    dict_circuit = NLEISCustomCircuit(
+        circ_str, initial_guess=dict(zip(names, initial_guess)))
+    assert dict_circuit.initial_guess == initial_guess
+    assert np.allclose(dict_circuit.predict(f), NLEIS_circuit.predict(f))
+
+    alias_guess = dict(zip(names, initial_guess))
+    alias_guess['TDS0_1'] = alias_guess.pop('TDSn0_1')
+    alias_guess['TDS1_4'] = alias_guess.pop('TDSn1_4')
+    alias_circuit = NLEISCustomCircuit(circ_str, initial_guess=alias_guess)
+    assert alias_circuit.initial_guess == initial_guess
+
+    duplicate_guess = dict(zip(names, initial_guess))
+    duplicate_guess['TDS0_1'] = 42
+    with pytest.warns(UserWarning, match='using TDSn0_1'):
+        duplicate_circuit = NLEISCustomCircuit(
+            circ_str, initial_guess=duplicate_guess)
+    assert duplicate_circuit.initial_guess[1] == initial_guess[1]
+
+    missing_guess = dict(zip(names, initial_guess))
+    missing_guess.pop('TDSn0_0')
+    with pytest.raises(ValueError, match='missing parameter names'):
+        NLEISCustomCircuit(circ_str, initial_guess=missing_guess)
+
+    invalid_guess = dict(zip(names, initial_guess))
+    invalid_guess['TDS0_5'] = 1
+    with pytest.raises(ValueError, match='unexpected parameter names'):
+        NLEISCustomCircuit(circ_str, initial_guess=invalid_guess)
+
+    nonnumeric_guess = dict(zip(names, initial_guess))
+    nonnumeric_guess['TDSn0_0'] = 'bad'
+    with pytest.raises(TypeError, match='is not a number'):
+        NLEISCustomCircuit(circ_str, initial_guess=nonnumeric_guess)
+
     assert not NLEIS_circuit._is_fit()
 
     # check get_param_names()
@@ -370,11 +488,12 @@ def test_NLEISCustomCircuit():
     assert NLEIS_circuit._is_fit()
 
     # test extract method
-    dict = NLEIS_circuit.extract()
-    assert list(dict.keys()) == ['TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
-                                 'TDSn0_4', 'TDSn0_5',
-                                 'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
-                                 'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
+    params_dict = NLEIS_circuit.extract()
+    assert list(params_dict.keys()) == [
+        'TDSn0_0', 'TDSn0_1', 'TDSn0_2', 'TDSn0_3',
+        'TDSn0_4', 'TDSn0_5',
+        'TDSn0_6', 'TDSn1_0', 'TDSn1_1', 'TDSn1_2',
+        'TDSn1_3', 'TDSn1_4', 'TDSn1_5', 'TDSn1_6']
 
     # test plotting
     # kind = {'nyquist', 'bode'} should return a plt.Axes() object

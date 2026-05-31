@@ -1022,3 +1022,218 @@ def individual_parameters(edited_circuit,
                 index += 1
 
     return p1, p2
+
+def check_initial_guess_values(initial_guess):
+    """
+    Validate the non-dictionary initial guesses.
+    """
+    initial_guess = [x for x in initial_guess if x is not None]
+    for value in initial_guess:
+        if not isinstance(value, (float, int, np.integer, np.floating)):
+            raise TypeError(f'value {value} in initial_guess is not a number')
+    return initial_guess
+
+
+def check_initial_guess_dict_values(initial_guess):
+    """
+    Validate dictionary initial guess values before name conversion.
+    """
+    for name, value in initial_guess.items():
+        if not isinstance(value, (float, int, np.integer, np.floating)):
+            raise TypeError(
+                f'value {value} for {name} in initial_guess is not a number')
+
+
+def convert_initial_guess_dict(initial_guess, aliases_by_parameter):
+    """
+    Convert a dictionary initial guess to the current ordered parameter vector.
+    """
+    check_initial_guess_dict_values(initial_guess)
+
+    accepted_names = {
+        alias
+        for _, aliases, _ in aliases_by_parameter
+        for alias in aliases
+    }
+    invalid_names = sorted(
+        name for name in initial_guess if name not in accepted_names)
+    if invalid_names:
+        raise ValueError(
+            'initial_guess contains unexpected parameter names: '
+            + ', '.join(invalid_names))
+
+    converted = []
+    missing_names = []
+    for canonical_name, aliases, preferred_name in aliases_by_parameter:
+        provided_names = [name for name in aliases if name in initial_guess]
+        if not provided_names:
+            missing_names.append(canonical_name)
+            continue
+
+        if len(provided_names) > 1:
+            warnings.warn(
+                'Both {} were provided for the same parameter; using {}.'
+                .format(' and '.join(provided_names), preferred_name),
+                UserWarning)
+            converted.append(initial_guess[preferred_name])
+        else:
+            converted.append(initial_guess[provided_names[0]])
+
+    if missing_names:
+        raise ValueError(
+            'initial_guess is missing parameter names: '
+            + ', '.join(missing_names))
+
+    return converted
+
+
+def prepare_initial_guess(initial_guess, aliases_by_parameter):
+    """
+    Convert dictionary initial guesses or validate ordered initial guesses.
+    """
+    if isinstance(initial_guess, dict):
+        return convert_initial_guess_dict(initial_guess, aliases_by_parameter)
+    return check_initial_guess_values(initial_guess)
+
+def combined_initial_guess_aliases(edited_circuit, constants_1, constants_2):
+    '''
+    Generate ordered canonical names and accepted aliases for a simultaneous
+    EIS/2nd-NLEIS initial guess dictionary.
+
+    Parameters that are shared between EIS and 2nd-NLEIS 
+    will have the EIS name as the canonical name and the 2nd-NLEIS name as an accepted alias.
+
+    Parameters
+    ----------
+    edited_circuit : str
+        Edited circuit string combining both EIS and 2nd-NLEIS elements.
+        For example, if the EIS string is 'L0-R0-TDP0-TDS1' and the 2nd-NLEIS string is 'd(TDPn0-TDSn1)',
+        the edited string becomes 'L0-R0-TDPn0-TDSn1'.
+    constants_1 : dict
+        Constants for the EIS circuit elements.
+    constants_2 : dict
+        Constants for the 2nd-NLEIS circuit elements.
+
+    Returns
+    -------
+    list of tuples
+        List of (canonical_name, accepted_aliases, preferred_name) tuples 
+        for each parameter in the combined EIS/2nd-NLEIS fitting. For example, 
+        if the EIS parameter is 'TDP0' and the corresponding 2nd-NLEIS parameter is 'TDPn0', 
+        the tuple would be ('TDP0', ['TDP0', 'TDPn0'], 'TDP0').
+    '''
+    if edited_circuit == '':
+        return []
+
+    aliases = []
+    for eis_name, nleis_name in combined_parameter_names(
+            edited_circuit, constants_1, constants_2):
+        canonical_name = eis_name if eis_name is not None else nleis_name
+        parameter_aliases = [canonical_name]
+        if nleis_name != canonical_name:
+            parameter_aliases.append(nleis_name)
+        aliases.append((canonical_name, parameter_aliases, nleis_name))
+    return aliases
+
+
+def combined_initial_guess_names(edited_circuit, constants_1, constants_2):
+    '''
+    Generate ordered canonical names for a simultaneous EIS/2nd-NLEIS initial
+    guess dictionary.
+
+    Parameters
+    ----------
+    edited_circuit : str
+        Edited circuit string combining both EIS and 2nd-NLEIS elements.
+        For example, if the EIS string is 'L0-R0-TDP0-TDS1' and the 2nd-NLEIS string is 'd(TDPn0-TDSn1)',
+        the edited string becomes 'L0-R0-TDPn0-TDSn1'.
+    constants_1 : dict
+        Constants for the EIS circuit elements.
+    constants_2 : dict
+        Constants for the 2nd-NLEIS circuit elements.
+
+    Returns
+    -------
+    list of str
+        List of canonical parameter names for the combined EIS/2nd-NLEIS fitting, 
+        in the order they appear in the edited circuit. For example, 
+        if the parameters are 'TDP_0' for EIS and 'TDPn_0' for 2nd-NLEIS, 
+        and 'TDP_0' is chosen as the canonical name, then 'TDP_0' would be included in the returned list.
+
+    '''
+    return [
+        canonical_name
+        for canonical_name, _, _ in combined_initial_guess_aliases(
+            edited_circuit, constants_1, constants_2)
+    ]
+
+
+def circuit_initial_guess_aliases(circuit, constants={}):
+    '''
+    Generate ordered canonical names and accepted aliases for a single-circuit
+    initial guess dictionary for NLEISCustomCircuit, 
+    which can also be used as a helper function for impedance.py CustomCircuit.
+
+    Parameters
+    ----------
+    circuit : str
+        Circuit string defining the equivalent circuit for which to generate parameter aliases.
+    constants : dict
+        Dictionary of constant parameters and their values.
+    
+    Returns
+    -------
+    list of tuples
+        List of (canonical_name, accepted_aliases, preferred_name) tuples for each parameter in the circuit. 
+        For example, if the circuit has a parameter 'TDP0', 
+        the tuple would be ('TDP0', ['TDP0'], 'TDP0'). 
+        If there parameter is 'TDPn0', 
+        the tuple would be ('TDPn0', ['TDPn0'], 'TDPn0').
+    '''
+    if circuit == '':
+        return []
+
+    aliases = []
+    elements = extract_circuit_elements(circuit)
+
+    for elem in elements:
+        eis_num_params, nleis_num_params = extract_num_params_from_name(elem)
+
+        for j in range(nleis_num_params):
+            eis_name, nleis_name = extract_parameter_names(
+                elem, eis_num_params, j)
+            if nleis_name in constants:
+                continue
+
+            canonical_name = nleis_name
+            parameter_aliases = [canonical_name]
+            if eis_name is not None and eis_name != canonical_name:
+                parameter_aliases.append(eis_name)
+            aliases.append((canonical_name, parameter_aliases, nleis_name))
+
+    return aliases
+
+
+def circuit_initial_guess_names(circuit, constants={}):
+    '''
+    Generate ordered canonical names for a single-circuit initial guess
+    dictionary.
+    Parameters
+    ----------
+    circuit : str
+        Circuit string defining the equivalent circuit for which to generate parameter names.
+    constants : dict
+        Dictionary of constant parameters and their values.
+    Returns
+    -------
+    list of str
+        List of canonical parameter names for the circuit, in the order they appear in the circuit string. 
+        For example, if the circuit has parameters 'TDP0',
+        the returned list would be['TDP0_0', 'TDP0_1', 'TDP0_2', 'TDP0_3', 'TDP0_4'].
+    '''
+    return [
+        canonical_name
+        for canonical_name, _, _ in circuit_initial_guess_aliases(
+            circuit, constants)
+    ]
+

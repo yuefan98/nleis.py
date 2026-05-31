@@ -1,5 +1,8 @@
 from .nleis_fitting import simul_fit, sequential_fit, \
-    sequential_initial_guess, wrappedImpedance, individual_parameters
+    sequential_initial_guess, wrappedImpedance, individual_parameters, \
+    prepare_initial_guess, combined_initial_guess_aliases, \
+    combined_initial_guess_names, circuit_initial_guess_aliases, \
+    circuit_initial_guess_names
 from .nleis_elements_pair import *  # noqa: F401, F403
 from impedance.models.circuits.fitting import check_and_eval
 from impedance.models.circuits.elements import circuit_elements, \
@@ -73,15 +76,7 @@ class EISandNLEIS:
 
         """
         self.graph = graph
-        # if supplied, check that initial_guess is valid and store
-        initial_guess = [x for x in initial_guess if x is not None]
-        for i in initial_guess:
-            if not isinstance(i, (float, int, np.integer, np.floating)):
-                raise TypeError(f'value {i} in initial_guess is not a number')
-
-        # initalize class attributes
-        # self.initial_guess = list(initial_guess)
-        self.initial_guess = initial_guess
+        raw_initial_guess = initial_guess
 
         self.circuit_1 = circuit_1
         self.circuit_2 = circuit_2
@@ -193,6 +188,11 @@ class EISandNLEIS:
             self.constants = {}
             self.constants_1 = {}
             self.constants_2 = {}
+
+        self.initial_guess = prepare_initial_guess(
+            raw_initial_guess,
+            combined_initial_guess_aliases(
+                self.edited_circuit, self.constants_1, self.constants_2))
 
         if len(self.initial_guess) + len(self.constants) != circuit_len:
             raise ValueError('The number of initial guesses ' +
@@ -499,6 +499,13 @@ class EISandNLEIS:
                     all_units.append(units[0])
 
         return full_names, all_units
+
+    def get_initial_guess_names(self):
+        """
+        Return the ordered parameter names accepted in an initial_guess dict.
+        """
+        return combined_initial_guess_names(
+            self.edited_circuit, self.constants_1, self.constants_2)
 
     def __str__(self):
         """
@@ -943,10 +950,20 @@ class NLEISCustomCircuit(BaseCircuit):
 
         """
 
+        raw_initial_guess = kwargs.get('initial_guess', [])
+        initial_guess_is_dict = isinstance(raw_initial_guess, dict)
+        if initial_guess_is_dict:
+            kwargs['initial_guess'] = []
+
         super().__init__(**kwargs)
         # self.cov_ = None
         self.circuit = circuit.replace(" ", "")
         self.graph = graph
+        if initial_guess_is_dict:
+            self.initial_guess = prepare_initial_guess(
+                raw_initial_guess,
+                circuit_initial_guess_aliases(self.circuit, self.constants))
+
         if self.circuit:
             self.cg = CircuitGraph(self.circuit, self.constants)
 
@@ -1121,6 +1138,12 @@ class NLEISCustomCircuit(BaseCircuit):
                     all_units.append(units[0])
 
         return full_names, all_units
+
+    def get_initial_guess_names(self):
+        """
+        Return the ordered parameter names accepted in an initial_guess dict.
+        """
+        return circuit_initial_guess_names(self.circuit, self.constants)
 
     def extract(self):
         """
