@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.special import iv
+from scipy.linalg import solve_banded
 from scipy import constants
 from impedance.models.circuits.elements import circuit_elements, \
     ElementError, OverwriteError
@@ -1111,6 +1112,344 @@ def A_matrices_TLMn(N, Rpore, Z12t):
     return (Ax)
 
 
+def solve_banded_tridiagonal(diagonal, off_diagonal, rhs):
+    """
+    Solve a tridiagonal linear system using SciPy's banded format.
+
+    Parameters
+    ----------
+    diagonal : np.ndarray
+        Main diagonal of the tridiagonal matrix.
+    off_diagonal : complex
+        Constant upper and lower off-diagonal value.
+    rhs : np.ndarray
+        Right-hand side vector.
+
+    Returns
+    -------
+    x : np.ndarray
+        Solution of the tridiagonal system.
+
+    """
+    n = len(rhs)
+    ab = np.zeros((3, n), dtype=np.complex128)
+    ab[0, 1:] = off_diagonal
+    ab[1, :] = diagonal
+    ab[2, :-1] = off_diagonal
+    return solve_banded((1, 1), ab, rhs)
+
+
+def solve_tlm_current_distribution(Zb, Rpore, Ztot, N):
+    """
+    Solve the first-harmonic current distribution for a TLM.
+
+    The dense matrix used in Eq. 14 of Ji and Schwartz [1] has the
+    structure
+
+    .. math::
+
+        A^{(N)}_{kl} = Z_{1,b}^{(N)} \\delta_{kl}
+        + R_{\\text{pore},N} \\min(k, l),
+        \\quad k,l=1,\\ldots,N
+
+    or
+
+    .. math::
+
+        A^{(N)} = Z_{1,b}^{(N)} I + R_{\\text{pore},N} B,
+        \\quad B_{kl}=\\min(k,l).
+
+    The inverse of :math:`B` is tridiagonal,
+
+    .. math::
+
+        B^{-1} =
+        \\begin{bmatrix}
+        2 & -1 & 0 & \\cdots & 0 \\\\
+        -1 & 2 & -1 & \\cdots & 0 \\\\
+        0 & -1 & 2 & \\cdots & 0 \\\\
+        \\vdots & \\vdots & \\vdots & \\ddots & -1 \\\\
+        0 & 0 & 0 & -1 & 1
+        \\end{bmatrix}.
+
+    Multiplying Eq. 14 by :math:`B^{-1}` gives the equivalent
+    tridiagonal system
+
+    .. math::
+
+        \\left(Z_{1,b}^{(N)} B^{-1} + R_{\\text{pore},N} I\\right)
+        \\theta_{1}^{(N)}
+        = B^{-1} Z_{1}^{(N)}.
+
+    :math:`Z_{1}^{(N)}` is the constant vector
+    whose entries are the total impedance calculated with the corresponding
+    TLM functions.
+
+    Parameters
+    ----------
+    Zb : np.ndarray
+        Branch impedance at the fundamental frequency.
+    Rpore : float
+        Discretized pore electrolyte resistance.
+    Ztot : np.ndarray
+        Total impedance plus final pore electrolyte resistance.
+
+    N : int
+        Number of TLM elements.
+
+    Returns
+    -------
+    I1 : np.ndarray
+        The first-harmonic current distribution with shape
+        ``(len(Zb), N)``.
+
+    References
+    ----------
+    [1] Y. Ji and D. T. Schwartz, Extending Transmission Line Models
+    to Second-Harmonic Nonlinear Electrochemical Impedance Spectra,
+    J. Electrochem. Soc. 173, 053501 (2026).
+
+    """
+    len_freq = len(Zb)
+    I1 = np.zeros((len_freq, N), dtype=np.complex128)
+
+    q_diagonal = np.full(N, 2, dtype=np.complex128)
+    q_diagonal[-1] = 1
+    rhs = np.zeros(N, dtype=np.complex128)
+
+    for freq_idx in range(len_freq):
+        Zb_freq = Zb[freq_idx]
+        diagonal = Zb_freq * q_diagonal + Rpore
+        rhs[0] = Ztot[freq_idx]
+        rhs[1:] = 0
+        I1[freq_idx, :] = solve_banded_tridiagonal(
+            diagonal, -Zb_freq, rhs
+        )
+
+    return I1
+
+
+def solve_tlm_second_harmonic_current(N, Rpore, Z12t, rhs):
+    """
+    Solve the second-harmonic TLM current distribution from Eq. 18.
+    An alternative to the dense matrix solve is presented here to
+    speed up the solution for large N.
+
+    Following the notation of Ji and Schwartz [1], let
+
+    .. math::
+
+        x_i = \\left(\\theta_2^{(N)}\\right)_i,
+        \\quad i=1,\\ldots,N,
+
+    .. math::
+
+        Z = Z_{1@2ω,b}^{(N)},
+        \\quad R = R_{\\text{pore},N}.
+
+    The code accepts a general right-hand side whose final entry is
+    :math:`s`; for the physical zero second-harmonic flux boundary
+    condition in Eq. 15, :math:`s=0`:
+
+    .. math::
+
+        \\sum_{i=1}^{N} x_i = s.
+
+    For :math:`m=1,\\ldots,N-1`, the Eq. 18 voltage-balance rows can
+    be written as
+
+    .. math::
+
+        Z(x_1 - x_{m+1})
+        + R
+        \\sum_{j=1}^{m}(m+1-j)x_j = E_m,
+
+    followed by the boundary row
+
+    .. math::
+
+        \\sum_{k=1}^{N} x_k = s.
+
+    The dense matrix in Eq. 18 stores these
+    :math:`E_m` rows in reverse order:
+
+    .. math::
+
+        E_m = \\text{rhs}_{N-1-m},
+        \\quad m=1,\\ldots,N-1.
+
+    Taking differences of the first :math:`N-1` equations removes the
+    cumulative pore-resistance kernel. The first transformed row is
+    simply the :math:`m=1` voltage balance:
+
+    .. math::
+
+        (Z + R)x_1 - Zx_2 = E_1,
+
+    For the remaining rows, use the second finite difference
+    :math:`F_m - 2F_{m-1} + F_{m-2}`, where
+
+    .. math::
+
+        F_m =
+        Z(x_1 - x_{m+1})
+        + R \\sum_{j=1}^{m}(m+1-j)x_j.
+
+    The paper defines :math:`E_m` only for :math:`m=1,\\ldots,N-1`.
+    For the :math:`m=2` transformed row, we introduce the auxiliary
+    :math:`m=0` extension
+
+    .. math::
+
+        F_0 = Z(x_1 - x_1)
+        + R \\sum_{j=1}^{0}(\\cdots) = 0,
+
+    so the compatible auxiliary right-hand-side value is
+    :math:`E_0=0`. This is not an additional physical equation from
+    the paper; it is only a notational device that makes the finite
+    difference formula uniform.
+
+    Therefore the second transformed row is
+
+    .. math::
+
+        -Zx_1 + (2Z + R)x_2 - Zx_3 = E_2 - 2E_1,
+
+    and the general rows are
+
+    .. math::
+
+        -Zx_{m-1} + (2Z + R)x_m - Zx_{m+1}
+        = E_m - 2E_{m-1} + E_{m-2},
+        \\quad m=3,\\ldots,N-1.
+
+    Equivalently, the same formula can be used for
+    :math:`m=2,\\ldots,N-1` if :math:`E_0=0` is understood as the
+    auxiliary value above. This gives a bordered tridiagonal system
+
+    together with
+
+    .. math::
+
+        \\sum_{k=1}^{N} x_k = s.
+
+    Letting :math:`\\mathbf{u}=(x_1,\\ldots,x_{N-1})` and
+    :math:`v=x_N`, this is
+
+    .. math::
+
+        M\\mathbf{u} + \\mathbf{q}v = \\mathbf{d},
+        \\quad \\mathbf{1}^T\\mathbf{u} + v = s.
+
+    The tridiagonal matrix :math:`M` is
+
+    .. math::
+
+        M =
+        \\begin{bmatrix}
+        Z+R & -Z & 0 & \\cdots & 0 \\\\
+        -Z & 2Z+R & -Z & \\cdots & 0 \\\\
+        0 & -Z & 2Z+R & \\cdots & 0 \\\\
+        \\vdots & \\vdots & \\vdots & \\ddots & -Z \\\\
+        0 & 0 & 0 & -Z & 2Z+R
+        \\end{bmatrix},
+
+    and the border vector is
+
+    .. math::
+
+        \\mathbf{q} =
+        \\begin{bmatrix}
+        0 & 0 & \\cdots & -Z
+        \\end{bmatrix}^T.
+
+    The transformed right-hand side is
+
+    .. math::
+
+        d_1 = E_1,
+
+    .. math::
+
+        d_m = E_m - 2E_{m-1} + E_{m-2},
+        \\quad m=2,\\ldots,N-1.
+
+    The border is eliminated with two tridiagonal solves,
+
+    .. math::
+
+        \\mathbf{y}=M^{-1}\\mathbf{d},
+        \\quad \\mathbf{w}=M^{-1}\\mathbf{q},
+
+    .. math::
+
+        v = \\frac{s - \\mathbf{1}^T\\mathbf{y}}
+        {1 - \\mathbf{1}^T\\mathbf{w}},
+        \\quad \\mathbf{u}=\\mathbf{y}-\\mathbf{w}v.
+
+    The full solution returned by this helper is then
+
+    .. math::
+
+        \\mathbf{x} =
+        \\begin{bmatrix}
+        \\mathbf{u} \\\\
+        v
+        \\end{bmatrix},
+
+    in the same order as the dense Eq. 18 solve.
+
+    Parameters
+    ----------
+    N : int
+        Number of TLM elements.
+    Rpore : float
+        Discretized pore electrolyte resistance.
+    Z12t : complex
+        Branch impedance at twice the fundamental frequency.
+    rhs : np.ndarray
+        Right-hand side vector in the same row order expected by
+        :func:`A_matrices_TLMn`.
+
+    Returns
+    -------
+    I2 : np.ndarray
+        Solution in the same order as ``np.linalg.solve(Ax, rhs)`` for
+        ``Ax = A_matrices_TLMn(N, Rpore, Z12t)``.
+
+    References
+    ----------
+    [1] Y. Ji and D. T. Schwartz, Extending Transmission Line Models
+    to Second-Harmonic Nonlinear Electrochemical Impedance Spectra,
+    J. Electrochem. Soc. 173, 053501 (2026).
+
+    """
+    if N == 1:
+        return np.array([rhs[-1]], dtype=np.complex128)
+
+    E = np.zeros(N, dtype=np.complex128)
+    E[1:] = rhs[N-2::-1]
+
+    d = np.empty(N - 1, dtype=np.complex128)
+    d[0] = E[1]
+    if N > 2:
+        d[1:] = E[2:] - 2 * E[1:-1] + E[:-2]
+
+    diagonal = np.full(N - 1, 2 * Z12t + Rpore, dtype=np.complex128)
+    diagonal[0] = Z12t + Rpore
+    off_diagonal = -Z12t
+
+    q = np.zeros(N - 1, dtype=np.complex128)
+    q[-1] = off_diagonal
+
+    y = solve_banded_tridiagonal(diagonal, off_diagonal, d)
+    w = solve_banded_tridiagonal(diagonal, off_diagonal, q)
+
+    v = (rhs[-1] - np.sum(y)) / (1 - np.sum(w))
+    u = y - w * v
+    return np.append(u, v)
+
+
 @element(num_params=6, units=['Ohm', 'Ohm', 'F', 'Ohm', 'F', '-'])
 def TLM(p, f):
     """
@@ -1237,17 +1576,11 @@ def TLMn(p, f):
     Z = np.zeros(len_freq, dtype=np.complex128)
     for freq_idx in range(len_freq):
         Ii = I1[freq_idx]
-        # initialize the Ax and b matrix
-        Ax = A_matrices_TLMn(N, Rpore, Z12t[freq_idx])
-
-        # b = np.zeros((N, 1), dtype=np.complex128)
-        b = np.zeros(N, dtype=np.complex128)
-
-        # construct the b matrix
-        for i in range(N - 1):
-            b[i] = Ii[-1]**2 - Ii[i]**2
-
-        I2 = np.linalg.solve(Ax, -b * Z2[freq_idx])
+        rhs = np.zeros(N, dtype=np.complex128)
+        rhs[:-1] = (Ii[:-1]**2 - Ii[-1]**2) * Z2[freq_idx]
+        I2 = solve_tlm_second_harmonic_current(
+            N, Rpore, Z12t[freq_idx], rhs
+        )
         Z[freq_idx] = Z2[freq_idx] * Ii[0]**2 + I2[-1] * Z12t[freq_idx]
 
     return Z
@@ -1310,27 +1643,7 @@ def mTi(p, f):
 
     Req = Req+Rpore
 
-    len_freq = len(frequencies)
-    I1 = np.zeros((len_freq, N), dtype=np.complex128)
-
-    for freq_idx in range(0, len_freq):
-        Req_freq = Req[freq_idx]
-        Zran_freq = Zran[freq_idx]
-
-        # initialize the matrix and fill the diagonal with Zran
-        Ax = np.eye(N) * Zran_freq
-        # Get lower triangular indices of Ax matrix
-        i_idx, j_idx = np.tril_indices(N, -1)
-        # Fill lower triangular part of Ax matrix
-        Ax[i_idx, j_idx] = -(i_idx - j_idx) * Rpore
-        # Add the scaled Rpore matrix directly
-        # with addition to each row
-        Ax += np.arange(1, N + 1).reshape(-1, 1) * Rpore
-
-        b = np.ones(N)*Req_freq
-
-        I1[freq_idx, :] = np.linalg.solve(Ax, b)
-    return (I1)
+    return solve_tlm_current_distribution(Zran, Rpore, Req, N)
 
 
 @element(num_params=8, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-'])
@@ -1482,18 +1795,11 @@ def TLMSn(p, f):
         Ii = I1[freq_idx]
         Z12t_freq = Z12t[freq_idx]
         Z2_freq = Z2[freq_idx]
-
-        # construct the Ax matrix
-        Ax = A_matrices_TLMn(N, Rpore, Z12t_freq)
-        # initialize the b matrix
-        # b = np.zeros((N, 1), dtype=np.complex128)
-        b = np.zeros(N, dtype=np.complex128)
-
-        # construct the b matrix
-        for i in range(N-1):
-            b[i] = Ii[-1]**2 - Ii[i]**2
-
-        I2 = np.linalg.solve(Ax, -b*Z2_freq)
+        rhs = np.zeros(N, dtype=np.complex128)
+        rhs[:-1] = (Ii[:-1]**2 - Ii[-1]**2) * Z2_freq
+        I2 = solve_tlm_second_harmonic_current(
+            N, Rpore, Z12t_freq, rhs
+        )
         Z[freq_idx] = Z2_freq*Ii[0]**2 + I2[-1]*Z12t_freq
 
     return (Z)
@@ -1559,27 +1865,7 @@ def mTiS(p, f):
         Req = 1 / ((1 / (Req + Rpore)) + inv_Zran)
 
     Req = Req+Rpore
-    len_freq = len(frequencies)
-    I1 = np.zeros((len_freq, N), dtype=np.complex128)
-    for freq_idx in range(0, len_freq):
-        Req_freq = Req[freq_idx]
-        Zran_freq = Zran[freq_idx]
-
-        # initialize the matrix and fill the diagonal with Zran
-        Ax = np.eye(N) * Zran_freq
-        # Get lower triangular indices of Ax matrix
-        i_idx, j_idx = np.tril_indices(N, -1)
-        # Fill lower triangular part of Ax matrix
-        Ax[i_idx, j_idx] = -(i_idx - j_idx) * Rpore
-        # Add the scaled Rpore matrix directly
-        # with addition to each row
-        Ax += np.arange(1, N + 1).reshape(-1, 1) * Rpore
-
-        # construct the b matrix
-        b = np.ones(N)*Req_freq
-
-        I1[freq_idx, :] = np.linalg.solve(Ax, b)
-    return (I1)
+    return solve_tlm_current_distribution(Zran, Rpore, Req, N)
 
 
 @element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-',
@@ -1662,19 +1948,13 @@ def mTiSn(p, f):
 
     for freq_idx in range(0, len_freq):
         Ii = I1[freq_idx]
-        # construct the Ax matrix
-        Ax = A_matrices_TLMn(N, Rpore, Z12t[freq_idx])
-        # initialize and b matrix
-        # b = np.zeros((N, 1), dtype=np.complex128)
-        b = np.zeros(N, dtype=np.complex128)
-
-        # construct the b matrix
-        for i in range(0, N-1):
-            b[i] = Ii[-1]**2-Ii[i]**2
-
-        # reverse the order to display
-        # the correct result from small to larger N
-        I2[freq_idx, :] = np.linalg.solve(Ax, -b*Z2[freq_idx]).flatten()[::-1]
+        rhs = np.zeros(N, dtype=np.complex128)
+        rhs[:-1] = (Ii[:-1]**2 - Ii[-1]**2) * Z2[freq_idx]
+        # Reverse the order to display the correct result from small to
+        # larger N, matching the historical dense implementation.
+        I2[freq_idx, :] = solve_tlm_second_harmonic_current(
+            N, Rpore, Z12t[freq_idx], rhs
+        )[::-1]
 
     return (I2)
 
@@ -1824,18 +2104,11 @@ def TLMDn(p, f):
         Ii = I1[freq_idx]
         Z12t_freq = Z12t[freq_idx]
         Z2_freq = Z2[freq_idx]
-
-        # construct the Ax matrix
-        Ax = A_matrices_TLMn(N, Rpore, Z12t_freq)
-        # initialize the b matrix
-        # b = np.zeros((N, 1), dtype=np.complex128)
-        b = np.zeros(N, dtype=np.complex128)
-
-        # construct the b matrix
-        for i in range(0, N-1):
-            b[i] = Ii[-1]**2-Ii[i]**2
-
-        I2 = np.linalg.solve(Ax, -b*Z2_freq)
+        rhs = np.zeros(N, dtype=np.complex128)
+        rhs[:-1] = (Ii[:-1]**2 - Ii[-1]**2) * Z2_freq
+        I2 = solve_tlm_second_harmonic_current(
+            N, Rpore, Z12t_freq, rhs
+        )
         Z[freq_idx] = Z2_freq*Ii[0]**2 + I2[-1]*Z12t_freq
     return (Z)
 
@@ -1902,26 +2175,7 @@ def mTiD(p, f):
 
     Req = Req+Rpore
 
-    I1 = np.zeros((len(frequencies), N), dtype=np.complex128)
-    for freq_idx in range(0, len(frequencies)):
-        Req_freq = Req[freq_idx]
-        Zran_freq = Zran[freq_idx]
-
-        # initialize the matrix and fill the diagonal with Zran
-        Ax = np.eye(N) * Zran_freq
-        # Get lower triangular indices of Ax matrix
-        i_idx, j_idx = np.tril_indices(N, -1)
-        # Fill lower triangular part of Ax matrix
-        Ax[i_idx, j_idx] = -(i_idx - j_idx) * Rpore
-        # Add the scaled Rpore matrix directly
-        # with addition to each row
-        Ax += np.arange(1, N + 1).reshape(-1, 1) * Rpore
-
-        b = np.ones(N)*Req_freq
-
-        I1[freq_idx, :] = np.linalg.solve(Ax, b)
-
-    return (I1)
+    return solve_tlm_current_distribution(Zran, Rpore, Req, N)
 
 
 @element(num_params=11, units=['Ohm', 'Ohm', 'F', 'Ohm', 's', 'Ohm', 'F', '-',
@@ -2001,20 +2255,13 @@ def mTiDn(p, f):
         return (I2)
     for freq_idx in range(len_freq):
         Ii = I1[freq_idx]
-
-        # construct the Ax matrix
-        Ax = A_matrices_TLMn(N, Rpore, Z12t[freq_idx])
-        # initialize the b matrix
-        # b = np.zeros((N, 1), dtype=np.complex128)
-        b = np.zeros(N, dtype=np.complex128)
-
-        # construct the b matrix
-        for i in range(N-1):
-            b[i] = Ii[-1]**2 - Ii[i]**2
-
-        # reverse the order to display
-        # the correct result from small to larger N
-        I2[freq_idx, :] = np.linalg.solve(Ax, -b*Z2[freq_idx]).flatten()[::-1]
+        rhs = np.zeros(N, dtype=np.complex128)
+        rhs[:-1] = (Ii[:-1]**2 - Ii[-1]**2) * Z2[freq_idx]
+        # Reverse the order to display the correct result from small to
+        # larger N, matching the historical dense implementation.
+        I2[freq_idx, :] = solve_tlm_second_harmonic_current(
+            N, Rpore, Z12t[freq_idx], rhs
+        )[::-1]
 
     return (I2)
 
